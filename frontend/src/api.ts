@@ -31,6 +31,8 @@ export function useApi<T>(path: string | null, interval = 0) {
               ? "No encontramos esos datos."
               : "No pudimos conectar con los resultados.",
           );
+        if (!response.headers.get("content-type")?.includes("application/json"))
+          throw new Error("El servicio de resultados todavía no está disponible.");
         const body = (await response.json()) as Result<T>;
         if (!("data" in body) || !body.meta)
           throw new Error("La API no devolvió datos válidos.");

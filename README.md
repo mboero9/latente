@@ -2,6 +2,8 @@
 
 **Dominio de producción: [latente.com.ar](https://latente.com.ar).**
 
+**¿Publicaste en Workers y se ve en blanco?** Seguí [la guía de Workers](docs/DEPLOY-WORKERS.md). Hay que publicar `frontend/dist` después de compilar. El ZIP del código fuente no es una publicación estática lista para subir. El frontend compilado también se genera como artifact `latente-cloudflare` en GitHub Actions.
+
 Aplicación de resultados de fútbol en español: partidos por fecha, marcadores en vivo, posiciones por zona/grupo, goleadores, ligas y fichas de equipos. Prioriza Argentina y suma las principales competiciones internacionales. Diseño original, responsive, con modo claro/oscuro, controles de teclado y horarios seleccionables.
 
 **No scrapea Promiedos.** Obtiene datos de API-Football / API-SPORTS, los persiste en PostgreSQL y los sirve desde una API propia. El navegador nunca consulta al proveedor ni recibe su clave.
