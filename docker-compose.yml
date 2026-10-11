@@ -1,0 +1,99 @@
+name: latente
+
+x-backend: &backend
+  build: ./backend
+  env_file: .env
+  environment:
+    POSTGRES_HOST: db
+  restart: unless-stopped
+  init: true
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  networks: [backend]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-latente}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configurá POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: ${POSTGRES_DB:-latente}
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    networks: [backend]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  migrate:
+    <<: *backend
+    restart: "no"
+    command: [alembic, upgrade, head]
+    depends_on:
+      db: { condition: service_healthy }
+
+  api:
+    <<: *backend
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health',timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  worker:
+    <<: *backend
+    command: [python, -m, app.worker]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    healthcheck:
+      test: [CMD, python, -m, app.healthcheck]
+      interval: 30s
+      timeout: 10s
+      retries: 4
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+    volumes: [frontend_dist:/output]
+    network_mode: none
+    restart: "no"
+
+  nginx:
+    image: nginx:1.28-alpine
+    ports: ['${HTTP_BIND:-127.0.0.1}:${HTTP_PORT:-8080}:8080']
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - frontend_dist:/usr/share/nginx/html:ro
+    networks: [backend]
+    depends_on:
+      frontend: { condition: service_completed_successfully }
+      api: { condition: service_healthy }
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, wget, -q, --spider, http://127.0.0.1:8080/]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+networks:
+  backend:
+volumes:
+  postgres_data:
+  frontend_dist:

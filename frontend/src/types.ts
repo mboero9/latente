@@ -1,0 +1,93 @@
+export type Meta = {
+  mode: "demo" | "api";
+  updated_at: string | null;
+  fetched_at: string;
+  provider: string;
+  total?: number;
+  coverage?: boolean;
+};
+export type Result<T> = { data: T; meta: Meta };
+export type Team = {
+  id: number;
+  name: string;
+  code: string | null;
+  country: string | null;
+  founded: number | null;
+  venue: string | null;
+  city: string | null;
+  capacity: number | null;
+};
+export type League = {
+  id: number;
+  name: string;
+  country: string;
+  kind: string;
+  season: number;
+  loaded_seasons: number[];
+  coverage: Record<string, boolean>;
+};
+export type Match = {
+  id: number;
+  league_id: number;
+  season: number;
+  round: string | null;
+  kickoff: string;
+  status: string;
+  elapsed: number | null;
+  extra: number | null;
+  home_goals: number | null;
+  away_goals: number | null;
+  home: Team;
+  away: Team;
+  league: League;
+  venue: string | null;
+  referee: string | null;
+  score: Record<string, { home: number | null; away: number | null }>;
+  updated_at: string;
+  stale: boolean;
+};
+export type Standing = {
+  team: Team;
+  group: string;
+  rank: number;
+  points: number;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goals_for: number;
+  goals_against: number;
+  difference: number;
+  form: string | null;
+  description: string | null;
+  updated_at: string;
+};
+export type Scorer = {
+  player_id: number;
+  name: string;
+  team: Team;
+  rank: number;
+  goals: number;
+  assists: number | null;
+  appearances: number | null;
+  penalties: number | null;
+};
+export type TeamDetail = Team & {
+  recent: Match[];
+  upcoming: Match[];
+  competitions: { league_id: number; season: number }[];
+};
+export type Status = {
+  mode: "api" | "demo";
+  worker_online: boolean;
+  heartbeat: string | null;
+  message: string;
+  configured: boolean;
+  quota_exhausted: boolean;
+  failed_jobs: number;
+  last_success: string | null;
+  requests_today: number;
+  daily_budget: number;
+  live_interval_seconds: number;
+  profile: string;
+};
