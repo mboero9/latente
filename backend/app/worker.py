@@ -1,9 +1,11 @@
 """Scheduler persistente, un líder por PostgreSQL; no requiere Redis ni Celery."""
 
 import logging
+import argparse
 import os
 import signal
 import threading
+import time
 from datetime import timedelta
 from sqlalchemy import select, text, delete, or_
 from .config import settings
@@ -160,7 +162,7 @@ def tick(client):
             .limit(1)
         )
         if not job:
-            return
+            return False
         key, kind, params, failures = job.key, job.kind, job.params, job.failures
     try:
         seconds = execute_job(client, kind, params)
@@ -189,14 +191,11 @@ def tick(client):
         # Nunca volcar requests, headers o variables con secretos en logs.
         reason = str(exc) if isinstance(exc, ProviderError) else type(exc).__name__
         log.warning("sync_failed key=%s reason=%s retry_in=%s", key, reason, delay)
+    return True
 
 
-def main():
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
-    )
-    signal.signal(signal.SIGTERM, lambda *_: stop.set())
-    signal.signal(signal.SIGINT, lambda *_: stop.set())
+def run(once=False, max_seconds=120):
+    deadline = time.monotonic() + max_seconds if once else float("inf")
     # Lock de sesión (no de transacción); liberar automáticamente al perder conexión.
     with engine.connect() as leader:
         if not leader.scalar(text("SELECT pg_try_advisory_lock(67120834)")):
@@ -208,7 +207,10 @@ def main():
                 ensure_job(s, "live", "live", {}, utcnow() + timedelta(seconds=60))
         client = FootballClient()
         try:
-            while not stop.is_set():
+            if once and settings.mode == "api" and not settings.api_key:
+                heartbeat("Falta configurar API_FOOTBALL_KEY")
+                return
+            while not stop.is_set() and time.monotonic() < deadline:
                 # Fallar y reiniciar si se pierde la conexión que mantiene el liderazgo.
                 leader.execute(text("SELECT 1"))
                 if settings.mode == "demo":
@@ -217,12 +219,37 @@ def main():
                     with session_scope() as s:
                         seed_demo(s)
                     heartbeat("Demostración: datos ficticios")
+                    if once:
+                        break
                     stop.wait(30)
                 else:
-                    tick(client)
-                    stop.wait(2)
+                    worked = tick(client)
+                    if once and not worked:
+                        break
+                    pause = settings.minimum_gap if once else 2
+                    stop.wait(min(pause, max(0, deadline - time.monotonic())))
         finally:
             client.close()
+            if not leader.invalidated:
+                leader.execute(text("SELECT pg_advisory_unlock(67120834)"))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--once", action="store_true", help="Procesar pendientes y salir")
+    parser.add_argument("--max-seconds", type=int, default=120)
+    args = parser.parse_args()
+    if args.max_seconds < 1:
+        parser.error("--max-seconds debe ser positivo")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
+    )
+    signal.signal(signal.SIGTERM, lambda *_: stop.set())
+    signal.signal(signal.SIGINT, lambda *_: stop.set())
+    try:
+        run(args.once, args.max_seconds)
+    finally:
+        engine.dispose()
 
 
 if __name__ == "__main__":

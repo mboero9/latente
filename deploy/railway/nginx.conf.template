@@ -1,0 +1,52 @@
+user nginx;
+worker_processes 1;
+pid /var/run/nginx.pid;
+events { worker_connections 512; }
+http {
+  include /etc/nginx/mime.types;
+  default_type application/octet-stream;
+  server_tokens off;
+  sendfile on;
+  keepalive_timeout 15;
+  client_max_body_size 1k;
+  gzip on;
+  gzip_vary on;
+  gzip_min_length 512;
+  gzip_types application/json application/javascript text/css image/svg+xml;
+  map $uri $latente_csp {
+    default "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'";
+    /api/docs "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://fastapi.tiangolo.com; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'";
+  }
+  log_format compact '$request_method $uri $status $body_bytes_sent';
+  access_log /dev/stdout compact;
+  error_log /dev/stderr warn;
+  server {
+    listen ${PORT};
+    listen [::]:${PORT};
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+    add_header Permissions-Policy 'camera=(), microphone=(), geolocation=()' always;
+    add_header Content-Security-Policy $latente_csp always;
+    location /api/ {
+      limit_except GET OPTIONS { deny all; }
+      # Los proyectos nuevos de Railway y Docker ofrecen DNS privado IPv4.
+      resolver ${NGINX_RESOLVER} valid=10s ipv6=off;
+      set $api http://${API_HOST}:${API_PORT};
+      proxy_pass $api$request_uri;
+      proxy_http_version 1.1;
+      proxy_set_header Host $host;
+      proxy_set_header Connection "";
+      proxy_connect_timeout 10s;
+      proxy_read_timeout 30s;
+      proxy_hide_header Server;
+    }
+    location /assets/ { expires 1y; try_files $uri =404; }
+    location = /index.html { expires -1; }
+    location / { try_files $uri $uri/ /index.html; }
+    location ~ /\. { deny all; }
+  }
+}

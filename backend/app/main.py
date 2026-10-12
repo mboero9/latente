@@ -154,7 +154,9 @@ def status():
             else None
         )
         healthy = bool(
-            state and (utcnow() - aware(state.heartbeat)).total_seconds() < 90
+            state
+            and (utcnow() - aware(state.heartbeat)).total_seconds()
+            < settings.worker_heartbeat_timeout
         )
         return {
             "data": {

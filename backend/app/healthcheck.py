@@ -9,5 +9,9 @@ from .provider import aware
 with session_scope() as s:
     row = s.get(WorkerState, settings.mode)
     sys.exit(
-        0 if row and (utcnow() - aware(row.heartbeat)).total_seconds() < 120 else 1
+        0
+        if row
+        and (utcnow() - aware(row.heartbeat)).total_seconds()
+        < settings.worker_heartbeat_timeout
+        else 1
     )

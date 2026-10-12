@@ -1,0 +1,51 @@
+# Solo integración local/CI. La contraseña es ficticia y la base es desechable.
+name: latente-railway-test
+x-env: &env
+  DATABASE_URL: postgresql://latente:test_only@postgres:5432/latente_test
+  DATA_MODE: demo
+  DB_POOL_MODE: none
+  WORKER_EXPECTED_INTERVAL_SECONDS: 1800
+  CORS_ORIGINS: https://latente.dimebag.workers.dev
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: latente
+      POSTGRES_PASSWORD: test_only
+      POSTGRES_DB: latente_test
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U latente -d latente_test']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  api:
+    build: ../../backend
+    environment:
+      <<: *env
+      PORT: 8000
+      API_BIND_HOST: 0.0.0.0
+    command: [python, -m, app.hosted, api]
+    depends_on:
+      postgres: { condition: service_healthy }
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health',timeout=3)"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+  ingest:
+    build: ../../backend
+    environment: *env
+    command: [python, -m, app.hosted, ingest]
+    depends_on:
+      api: { condition: service_healthy }
+  nginx:
+    build:
+      context: ../..
+      dockerfile: deploy/railway/Dockerfile
+    environment:
+      PORT: 8080
+      API_HOST: api
+      API_PORT: 8000
+    ports: ['127.0.0.1:8088:8080']
+    depends_on:
+      api: { condition: service_healthy }

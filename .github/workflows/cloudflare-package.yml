@@ -1,0 +1,40 @@
+name: Compilar frontend para Cloudflare
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: URL HTTPS pública de Nginx en Railway, sin /api
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Validar URL pública
+        env:
+          API_BASE_URL: ${{ inputs.api_base_url }}
+        run: |
+          node - <<'JS'
+          const u = new URL(process.env.API_BASE_URL);
+          if (u.protocol !== 'https:' || u.username || u.password || u.search || u.hash || u.pathname !== '/') {
+            throw new Error('Usá solo el origen HTTPS público, sin credenciales ni /api');
+          }
+          JS
+      - run: npm ci && npm run build
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: ${{ inputs.api_base_url }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: latente-cloudflare
+          path: frontend/dist/
+          if-no-files-found: error
+          retention-days: 14

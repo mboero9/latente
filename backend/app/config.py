@@ -3,6 +3,7 @@
 import os
 from dataclasses import dataclass, field
 from sqlalchemy import URL
+from sqlalchemy.engine import make_url
 
 
 def integer(name: str, default: int, minimum: int = 1) -> int:
@@ -74,8 +75,19 @@ class Settings:
         )
 
     @property
+    def worker_heartbeat_timeout(self):
+        interval = integer("WORKER_EXPECTED_INTERVAL_SECONDS", 0, 0)
+        return interval + 180 if interval else 90
+
+    @property
     def database_url(self):
-        return os.getenv("DATABASE_URL") or URL.create(
+        supplied = os.getenv("DATABASE_URL")
+        if supplied:
+            url = make_url(supplied)
+            if url.drivername in {"postgres", "postgresql"}:
+                url = url.set(drivername="postgresql+psycopg")
+            return url
+        return URL.create(
             "postgresql+psycopg",
             username=os.getenv("POSTGRES_USER", "latente"),
             password=os.getenv("POSTGRES_PASSWORD", "latente_local_only"),
