@@ -1,8 +1,8 @@
 # Latente
 
-**Dominio de producción: [latente.com.ar](https://latente.com.ar).**
+**Sitio publicado: [Latente en Railway](https://nginx-production-c1c2.up.railway.app/).** El dominio `latente.com.ar` está pendiente de registro y configuración; no es necesario para usar la app.
 
-**Sin VPS:** [despliegue en Cloudflare + Railway](docs/DEPLOY-RAILWAY.md), con PostgreSQL, Nginx e ingesta por cron. Se puede iniciar con crédito gratuito; ese crédito no garantiza alojamiento permanente ni cobertura en vivo.
+**Sin VPS:** [despliegue completo en Railway](docs/DEPLOY-RAILWAY.md), con PostgreSQL, Nginx, API y actualización programada. Cloudflare es opcional. La cuenta de alojamiento y la suscripción a los datos deportivos son independientes.
 
 **¿Publicaste en Workers y se ve en blanco?** Seguí [la guía de Workers](docs/DEPLOY-WORKERS.md). Hay que publicar `frontend/dist` después de compilar. El ZIP del código fuente no es una publicación estática lista para subir. El frontend compilado también se genera como artifact `latente-cloudflare` en GitHub Actions.
 
@@ -82,6 +82,8 @@ Requisitos: Docker Engine/Desktop con **Docker Compose v2**, Git y un puerto loc
 Para probar desde otro dispositivo de tu LAN, configurá `HTTP_BIND=0.0.0.0`, recreá Nginx y abrí `http://IP_DE_TU_PC:8080`. Para producción con Tunnel conservá `127.0.0.1`.
 
 ## 3. Activar datos reales
+
+Para el despliegue Hobby existente y el catálogo global, seguí [Datos reales, todas las ligas y ampliación a otros deportes](docs/DATOS-REALES.md). `LEAGUE_SCOPE=all` descubre todas las competiciones del catálogo del proveedor, prioriza Argentina y consulta los partidos de todas las ligas por fecha. Las estadísticas disponibles dependen de cada temporada y del plan de API-Football; ninguna suscripción de alojamiento las habilita automáticamente.
 
 1. Registrate en [API-Football](https://dashboard.api-football.com/register). En el dashboard, sección **Account → My Access**, copiá la clave del acceso **directo API-SPORTS**. Este adaptador no usa las cabeceras de RapidAPI.
 

@@ -7,7 +7,8 @@ import signal
 import threading
 import time
 from datetime import timedelta
-from sqlalchemy import select, text, delete, or_
+from zoneinfo import ZoneInfo
+from sqlalchemy import select, text, delete, or_, case
 from .config import settings
 from .db import engine, session_scope
 from .models import League, Fixture, SyncJob, WorkerState, utcnow
@@ -37,10 +38,24 @@ def save_catalog(s, rows):
         if part.strip()
     )
     active_keys = {"catalog", "live"}
+    if settings.all_leagues:
+        active_keys.add("settle")
+        ensure_job(s, "settle", "settle", {}, utcnow() + timedelta(minutes=2))
+        # Ventana móvil global: dos días previos y siete próximos. Una llamada
+        # por fecha sustituye miles de consultas de fixtures por liga.
+        for offset in (0, -1, 1, -2, 2, 3, 4, 5, 6, 7):
+            key = f"day:{offset}"
+            active_keys.add(key)
+            ensure_job(s, key, "day", {"offset": offset})
+    priority = {league_id: i for i, league_id in enumerate(settings.league_ids)}
+    rows = sorted(rows, key=lambda r: (
+        0 if r.get("country", {}).get("name") == "Argentina" else 1,
+        priority.get(r["league"]["id"], 1000), r["league"]["id"],
+    ))
     matched = 0
     for row in rows:
         league = row["league"]
-        if league["id"] not in settings.league_ids:
+        if not settings.accepts_league(league["id"]):
             continue
         seasons = row.get("seasons") or []
         if not seasons:
@@ -73,7 +88,14 @@ def save_catalog(s, rows):
             ),
         )
         params = {"league": league["id"], "season": season["year"]}
-        for kind in ("fixtures", "teams", "standings", "scorers"):
+        matched += 1
+        is_priority = league["id"] in settings.league_ids
+        if settings.all_leagues and not season.get("current") and not is_priority and str(league["id"]) not in overrides:
+            continue
+        # Perfil completo/fixture de temporada para ligas prioritarias; las
+        # demás obtienen equipos y membresías de los partidos globales.
+        kinds = ("fixtures", "teams", "standings", "scorers") if not settings.all_leagues or is_priority else ("standings", "scorers")
+        for kind in kinds:
             coverage = season.get("coverage") or {}
             if kind == "standings" and coverage.get("standings") is False:
                 continue
@@ -81,18 +103,16 @@ def save_catalog(s, rows):
                 continue
             key = f"{kind}:{league['id']}:{season['year']}"
             active_keys.add(key)
-            ensure_job(s, key, kind, params)
-        matched += 1
+            ensure_job(s, key, kind, params, utcnow() + timedelta(microseconds=matched))
     if not matched:
         raise ValueError("El catálogo no contiene las ligas configuradas")
     s.execute(delete(SyncJob).where(SyncJob.key.not_in(active_keys)))
 
 
-def live_ids(s, now):
+def live_ids(s, now, stale_before=None):
     # Refrescar por ID permite ver FT/PEN: un encuentro que termina desaparece de live=all.
     q = select(Fixture.id).where(
         Fixture.source == "api",
-        Fixture.league_id.in_(settings.league_ids),
         Fixture.kickoff >= now - timedelta(hours=36),
         Fixture.kickoff <= now + timedelta(minutes=5),
         or_(
@@ -101,6 +121,10 @@ def live_ids(s, now):
             & (Fixture.kickoff >= now - timedelta(hours=4)),
         ),
     )
+    if not settings.all_leagues:
+        q = q.where(Fixture.league_id.in_(settings.league_ids))
+    if stale_before:
+        q = q.where(Fixture.updated_at < stale_before)
     return list(s.scalars(q.order_by(Fixture.updated_at, Fixture.id).limit(20)))
 
 
@@ -110,14 +134,29 @@ def execute_job(client, kind, params):
         with session_scope() as s:
             save_catalog(s, rows)
         return 86400
-    if kind == "live":
+    if kind == "day":
+        offset = params["offset"]
+        day = utcnow().astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date() + timedelta(days=offset)
+        rows = client.get("/fixtures", {"date": day.isoformat(), "timezone": "America/Argentina/Buenos_Aires"})
         with session_scope() as s:
-            ids = live_ids(s, utcnow())
+            save_fixtures(s, rows, settings.allowed_leagues)
+        if settings.profile == "free":
+            return 86400
+        return 900 if offset == 0 else (3600 if abs(offset) == 1 else 86400)
+    if kind == "live" and settings.all_leagues:
+        rows = client.get("/fixtures", {"live": "all"})
+        with session_scope() as s:
+            save_fixtures(s, rows, settings.allowed_leagues)
+        return settings.live_seconds
+    if kind in {"live", "settle"}:
+        with session_scope() as s:
+            now = utcnow()
+            ids = live_ids(s, now, now - timedelta(seconds=max(120, settings.live_seconds * 2)) if kind == "settle" else None)
         if not ids:
             return min(settings.live_seconds, 300)
         rows = client.get("/fixtures", {"ids": "-".join(map(str, ids))})
         with session_scope() as s:
-            save_fixtures(s, rows, settings.league_ids)
+            save_fixtures(s, rows, settings.allowed_leagues)
         return settings.live_seconds
     endpoint = {
         "fixtures": "/fixtures",
@@ -128,19 +167,23 @@ def execute_job(client, kind, params):
     rows = client.get(endpoint, params)
     with session_scope() as s:
         if kind == "fixtures":
-            save_fixtures(s, rows, settings.league_ids)
+            save_fixtures(s, rows, settings.allowed_leagues)
         elif kind == "teams":
             save_teams(s, rows, params["league"], params["season"])
         elif kind == "standings":
             save_standings(s, rows, params["league"], params["season"])
         else:
             save_scorers(s, rows, params["league"], params["season"])
-    return {
+    interval = {
         "fixtures": settings.fixtures_seconds,
         "teams": 604800,
         "standings": settings.tables_seconds,
         "scorers": settings.scorers_seconds,
     }[kind]
+    if settings.all_leagues and params["league"] not in settings.league_ids:
+        # Miles de competiciones no deben multiplicar el refresco horario.
+        interval = max(interval, 86400)
+    return interval
 
 
 def heartbeat(message):
@@ -158,7 +201,10 @@ def tick(client):
         job = s.scalar(
             select(SyncJob)
             .where(SyncJob.next_run <= utcnow())
-            .order_by(SyncJob.next_run, SyncJob.key)
+            .order_by(
+                case((SyncJob.kind.in_(["catalog", "day", "live", "settle"]), 0), else_=1),
+                SyncJob.next_run, SyncJob.key,
+            )
             .limit(1)
         )
         if not job:

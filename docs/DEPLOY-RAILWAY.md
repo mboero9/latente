@@ -1,25 +1,25 @@
-# Latente en Cloudflare + Railway, sin VPS
+# Latente completo en Railway, sin VPS
 
-## Costo cero: alcance real
+## Alojamiento y costo
 
-Configuración pensada para probar Latente sin contratar un plan pago. Al 12/10/2026, Railway documenta hasta 30 días de Trial con USD 5 de crédito; después ofrece Free con USD 1 mensual. **Es crédito de consumo, no cuatro servicios gratuitos ilimitados.** PostgreSQL, memoria, CPU, disco y tráfico consumen saldo. La base sola puede consumir una parte importante del crédito aunque no haya visitas. El alojamiento puede interrumpirse al agotarse y hay límites de retención de volúmenes del Trial. No debe usarse como única copia permanente de datos.
+Esta arquitectura de cuatro servicios funciona en Railway Hobby, que el titular indicó haber activado. Al 12/10/2026 tiene un mínimo de USD 5 mensuales aplicado a consumo; el uso adicional se factura aparte. No confundirlo con la suscripción de la API deportiva. El despliegue publicado es https://nginx-production-c1c2.up.railway.app/ y no requiere Cloudflare. El dominio propio está pendiente de registro.
 
-Conservá Free/Trial. No actives Hobby, Pro, facturación automática ni servicios pagos para seguir esta guía. Revisá el plan y el saldo de la cuenta antes de crear recursos. Si el panel exige pago, detené el despliegue. Activá las alertas de uso disponibles. Las condiciones vigentes de la cuenta prevalecen sobre esta guía.
+Para pruebas nuevas, Railway ofrece Trial de hasta 30 días con USD 5. Después, Free incluye USD 1 mensual, solo tres servicios y sin cron: **la configuración de cuatro servicios con cron de esta guía requiere Hobby fuera del Trial**. La base, memoria, CPU, disco y tráfico consumen saldo. Revisar consumo y copias de respaldo.
 
 La API deportiva tiene límites propios: alojar gratis no habilita resultados ilimitados ni temporadas fuera del plan del proveedor. `SYNC_PROFILE=free` reduce la frecuencia; no equivale a marcadores en tiempo real. El README explica la clave y cobertura de API-Football.
 
 ## 1. Crear el proyecto en Railway
 
-En una cuenta Free/Trial, creá un **proyecto nuevo** llamado `Latente` y un ambiente `production`. Conectá el repositorio `mboero9/latente`, rama `main`. Todos los servicios deben estar en ese mismo ambiente. El proyecto usa cuatro servicios:
+Si el proyecto `Latente` ya existe, reutilizalo. Solo para una instalación nueva, creá el proyecto y un ambiente `production`. Conectá el repositorio `mboero9/latente`, rama `main`. Todos los servicios deben estar en ese mismo ambiente. El proyecto usa cuatro servicios:
 
 | Nombre | Fuente | Directorio raíz | Comando de inicio | Exposición |
 | --- | --- | --- | --- | --- |
-| `postgres` | PostgreSQL de Railway | — | Predeterminado del proveedor | Solo red privada |
+| `Postgres` | PostgreSQL de Railway | — | Predeterminado del proveedor | Solo red privada |
 | `api` | `mboero9/latente` | `/backend` | `python -m app.hosted api` | Solo red privada, puerto 8000 |
 | `ingest` | `mboero9/latente` | `/backend` | `python -m app.hosted ingest` | Sin dominio; cron |
 | `nginx` | `mboero9/latente` | `/` | Usar ENTRYPOINT del Dockerfile | Dominio HTTPS público, puerto 8080 |
 
-Para `postgres`, elegí **New → Database → PostgreSQL**. Conservá el volumen persistente que aprovisiona el proveedor. No publiques un TCP Proxy para la base: la app usa la conexión privada. Si Railway crea el servicio con otro nombre, cambialo a `postgres` antes de agregar las referencias siguientes.
+Para `Postgres`, elegí **New → Database → PostgreSQL**. Conservá el volumen persistente que aprovisiona el proveedor. No publiques un TCP Proxy para la base: la app usa la conexión privada. Las referencias distinguen mayúsculas; adaptalas al nombre real del servicio.
 
 Para los tres servicios de código, podés elegir **New → GitHub Repo** y ajustar Settings antes de desplegar. `api` e `ingest` detectan `backend/Dockerfile` desde su directorio raíz. Para `nginx`, agregá `RAILWAY_DOCKERFILE_PATH=deploy/railway/Dockerfile`. El build de Nginx incorpora también una copia compilada del frontend; no necesita volúmenes compartidos.
 
@@ -30,7 +30,7 @@ No se incluye un `railway.json` antiguo: Railway documenta que esa modalidad est
 Agregá estas variables **en ambos servicios**, `api` e `ingest`:
 
 ```dotenv
-DATABASE_URL=${{postgres.DATABASE_URL}}
+DATABASE_URL=${{Postgres.DATABASE_URL}}
 DATA_MODE=demo
 SYNC_PROFILE=free
 API_DAILY_BUDGET=90
@@ -41,7 +41,7 @@ LEAGUE_IDS=128,129,130,13,11,2,39,140,135,78,61,71
 CORS_ORIGINS=https://latente.dimebag.workers.dev,https://latente.com.ar,https://www.latente.com.ar
 ```
 
-La referencia `${{postgres.DATABASE_URL}}` se pega literalmente en Railway. No la reemplaces por una contraseña en GitHub. El backend admite las URLs `postgresql://`, `postgres://` y `postgresql+psycopg://` sin modificar manualmente la clave.
+La referencia `${{Postgres.DATABASE_URL}}` se pega literalmente en Railway. No la reemplaces por una contraseña en GitHub. El backend admite las URLs `postgresql://`, `postgres://` y `postgresql+psycopg://` sin modificar manualmente la clave. Para habilitar el catálogo global y la activación mediante clave compartida, seguir [DATOS-REALES.md](DATOS-REALES.md).
 
 En `api`, agregá `PORT=8000`. Configurá el healthcheck `/api/health`, timeout de 180 segundos, una réplica y reinicio **On Failure**, máximo 3 intentos. Habilitá **Serverless** y volvé a desplegar para que se aplique. `DB_POOL_MODE=none` evita conservar conexiones inactivas, aunque las visitas y otras conexiones pueden mantener los servicios despiertos.
 
@@ -92,7 +92,11 @@ curl --fail https://TU_NGINX.up.railway.app/api/leagues
 
 `health` debe dar `{"status":"ok"}`. `status` declara `mode: demo` mientras se usen datos ficticios. También podés abrir la raíz del dominio de Nginx para comprobar frontend y API juntos. La primera petición después de dormir puede demorar o devolver 502 temporalmente; reintentá después del arranque.
 
-## 5. Conectar Cloudflare
+## 5. Cloudflare opcional y dominio futuro
+
+El frontend ya se sirve desde Nginx en Railway. Se puede usar esa dirección HTTPS como sitio principal sin desplegar nada en Cloudflare. Cuando se registre el dominio, agregarlo en **nginx → Networking → Custom Domain** y copiar los registros DNS exactos que indique Railway. No registrar ni cambiar DNS antes de disponer del dominio.
+
+La opción siguiente permite alojar una segunda copia estática en Cloudflare; no es necesaria para que funcione Latente:
 
 En el Worker existente `latente`, conectá GitHub con raíz `/`, deploy command `npx wrangler deploy` y `NODE_VERSION=24`. `wrangler.jsonc` ya ejecuta el build. Añadí **como variable de build**:
 

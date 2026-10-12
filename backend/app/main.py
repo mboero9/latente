@@ -78,7 +78,7 @@ def meta(rows=(), **extra):
 
 def league_or_404(s, league_id):
     league = s.get(League, (settings.mode, league_id))
-    if not league or (settings.mode == "api" and league_id not in settings.league_ids):
+    if not league or (settings.mode == "api" and not settings.accepts_league(league_id)):
         raise HTTPException(404, "Liga no encontrada")
     return league
 
@@ -180,6 +180,9 @@ def status():
                 "live_interval_seconds": settings.live_seconds,
                 "profile": settings.profile,
                 "configured": settings.mode == "demo" or bool(settings.api_key),
+                "provider_configured": bool(settings.api_key),
+                "league_scope": settings.league_scope,
+                "leagues_loaded": s.scalar(select(func.count()).select_from(League).where(League.source == settings.mode)),
             },
             "meta": meta(),
         }
@@ -189,11 +192,11 @@ def status():
 def leagues():
     with session_scope() as s:
         q = select(League).where(League.source == settings.mode)
-        if settings.mode == "api":
+        if settings.mode == "api" and not settings.all_leagues:
             q = q.where(League.id.in_(settings.league_ids))
         rows = list(s.scalars(q))
         order = {id: i for i, id in enumerate(settings.league_ids)}
-        rows.sort(key=lambda r: order.get(r.id, 1000))
+        rows.sort(key=lambda r: (0 if r.country == "Argentina" else 1, order.get(r.id, 1000), r.country, r.name))
         known = {}
         for league_id, season in s.execute(
             select(Membership.league_id, Membership.season)
@@ -229,7 +232,7 @@ def fixtures(
             Fixture.kickoff >= start,
             Fixture.kickoff < end,
         )
-        if settings.mode == "api":
+        if settings.mode == "api" and not settings.all_leagues:
             q = q.where(Fixture.league_id.in_(settings.league_ids))
         if league_id:
             q = q.where(Fixture.league_id == league_id)
@@ -351,7 +354,7 @@ def team_detail(team_id: int):
             Fixture.source == settings.mode,
             or_(Fixture.home_id == team_id, Fixture.away_id == team_id),
         )
-        if settings.mode == "api":
+        if settings.mode == "api" and not settings.all_leagues:
             q = q.where(Fixture.league_id.in_(settings.league_ids))
         recent = list(
             s.scalars(

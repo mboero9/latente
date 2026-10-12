@@ -1044,6 +1044,8 @@ function MatchView({ id, tz }: { id: number; tz: string }) {
 
 function LeaguesView({ leagues }: { leagues: League[] }) {
   const [query, setQuery] = useState("");
+  const [visible, setVisible] = useState(60);
+  useEffect(() => setVisible(60), [query]);
   const list = leagues.filter((l) =>
     `${l.name} ${cn(l.country)}`.toLowerCase().includes(query.toLowerCase()),
   );
@@ -1066,7 +1068,7 @@ function LeaguesView({ leagues }: { leagues: League[] }) {
         />
       </label>
       <div class="leagues-grid">
-        {list.map((l) => (
+        {list.slice(0, visible).map((l) => (
           <a class="league-card panel" href={link(`/league/${l.id}`)}>
             <span class="league-flag">{flag(l.country)}</span>
             <div>
@@ -1078,6 +1080,11 @@ function LeaguesView({ leagues }: { leagues: League[] }) {
           </a>
         ))}
       </div>
+      {list.length > visible && (
+        <button class="panel-link" onClick={() => setVisible((n) => n + 60)}>
+          Mostrar más ligas ({visible} de {list.length})
+        </button>
+      )}
       {!list.length && (
         <Empty title="No hay ligas disponibles">
           Revisá la búsqueda o el estado de la sincronización.
@@ -1208,8 +1215,9 @@ function App() {
                     (group === "Argentina"
                       ? l.country === "Argentina"
                       : l.country !== "Argentina") &&
-                    l.name.toLowerCase().includes(leagueSearch.toLowerCase()),
+                    `${l.name} ${cn(l.country)}`.toLowerCase().includes(leagueSearch.toLowerCase()),
                 )
+                .slice(0, leagueSearch ? 30 : 12)
                 .map((l) => (
                   <a
                     class={l.id === id && isLeagueView ? "selected" : ""}
@@ -1221,6 +1229,9 @@ function App() {
                 ))}
             </div>
           ))}
+          <a class="panel-link" href={link("/leagues")}>
+            Explorar todas las ligas ({leagues.length})
+          </a>
           <div class="sidebar-bottom">
             <span class="source-mark">L</span>
             <div>

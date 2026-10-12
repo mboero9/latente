@@ -31,8 +31,8 @@ def migrate():
 
 
 def main():
-    if len(sys.argv) != 2 or sys.argv[1] not in {"api", "ingest"}:
-        raise SystemExit("Uso: python -m app.hosted api|ingest")
+    if len(sys.argv) != 2 or sys.argv[1] not in {"api", "ingest", "worker"}:
+        raise SystemExit("Uso: python -m app.hosted api|ingest|worker")
     mode = sys.argv[1]
     try:
         migrate()
@@ -48,8 +48,10 @@ def main():
             raise SystemExit("PORT debe estar entre 1 y 65535")
         argv = [sys.executable, "-m", "uvicorn", "app.main:app", "--host", os.getenv("API_BIND_HOST", "0.0.0.0"),
                 "--port", str(port), "--no-proxy-headers"]
-    else:
+    elif mode == "ingest":
         argv = [sys.executable, "-m", "app.worker", "--once", "--max-seconds", "120"]
+    else:
+        argv = [sys.executable, "-m", "app.worker"]
     os.execv(sys.executable, argv)
 
 

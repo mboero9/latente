@@ -44,7 +44,10 @@ def membership(s, source, league, season, team_id):
 def save_fixtures(s, rows, allowed, source="api"):
     for raw in rows:
         league, f, teams = raw["league"], raw["fixture"], raw["teams"]
-        if league["id"] not in allowed or not s.get(League, (source, league["id"])):
+        if (allowed is not None and league["id"] not in allowed) or not s.get(League, (source, league["id"])):
+            continue
+        # Los cruces futuros pueden tener un participante todavía sin definir.
+        if not all(teams[side].get("id") and teams[side].get("name") for side in ("home", "away")):
             continue
         for side in ("home", "away"):
             team(s, teams[side], source)

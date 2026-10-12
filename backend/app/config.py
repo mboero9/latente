@@ -13,11 +13,17 @@ def integer(name: str, default: int, minimum: int = 1) -> int:
     return value
 
 
+def data_mode():
+    mode = os.getenv("DATA_MODE", "demo")
+    return ("api" if os.getenv("API_FOOTBALL_KEY", "").strip() else "demo") if mode == "auto" else mode
+
+
 @dataclass(frozen=True)
 class Settings:
-    mode: str = field(default_factory=lambda: os.getenv("DATA_MODE", "demo"))
+    mode: str = field(default_factory=data_mode)
     api_key: str = field(default_factory=lambda: os.getenv("API_FOOTBALL_KEY", ""))
     profile: str = field(default_factory=lambda: os.getenv("SYNC_PROFILE", "free"))
+    league_scope: str = field(default_factory=lambda: os.getenv("LEAGUE_SCOPE", "selected"))
     # Argentina, Conmebol, Europa y Brasil. Son IDs estables del proveedor.
     league_ids: tuple[int, ...] = field(
         default_factory=lambda: tuple(
@@ -47,8 +53,21 @@ class Settings:
             raise ValueError("DATA_MODE debe ser demo o api")
         if self.profile not in {"free", "live"}:
             raise ValueError("SYNC_PROFILE debe ser free o live")
+        if self.league_scope not in {"selected", "all"}:
+            raise ValueError("LEAGUE_SCOPE debe ser selected o all")
         if not self.league_ids or any(i <= 0 for i in self.league_ids):
             raise ValueError("LEAGUE_IDS requiere IDs positivos")
+
+    @property
+    def all_leagues(self):
+        return self.league_scope == "all"
+
+    @property
+    def allowed_leagues(self):
+        return None if self.all_leagues else self.league_ids
+
+    def accepts_league(self, league_id):
+        return self.all_leagues or league_id in self.league_ids
 
     @property
     def live_seconds(self):
