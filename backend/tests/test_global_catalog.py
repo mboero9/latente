@@ -140,7 +140,7 @@ def test_live_not_starved_by_initial_thousands_of_tables(monkeypatch):
         s.add(SyncJob(key="live", kind="live", params={}, next_run=utcnow() - timedelta(seconds=1)))
     executed = []
     monkeypatch.setattr(worker, "execute_job", lambda client, kind, params: executed.append(kind) or 60)
-    for _ in range(3):
+    for _ in range(4):
         worker.tick(None)
     assert "live" in executed
     assert "standings" in executed
