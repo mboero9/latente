@@ -2142,3 +2142,15 @@
     .brand .brand-wordmark { transform: skewX(-4deg); }
   }
 }
+
+@layer components {
+  .sport-watch-link {
+    display: inline-flex; width: fit-content; max-width: 100%;
+    flex-wrap: wrap; gap: 6px; align-items: center;
+    color: var(--green); font-size: .8rem; font-weight: 800;
+    border: 1px solid var(--line); border-radius: 7px;
+    background: var(--green-soft); padding: 7px 10px;
+  }
+  .sport-watch-link span { font-weight: 500; font-size: .69rem; color: var(--muted); }
+  .sport-watch-link:hover { border-color: var(--green); }
+}
