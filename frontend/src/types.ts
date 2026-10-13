@@ -5,6 +5,8 @@ export type Meta = {
   provider: string;
   total?: number;
   coverage?: boolean;
+  provisional?: boolean;
+  matches_used?: number;
   stale?: boolean;
 };
 export type Result<T> = { data: T; meta: Meta };
