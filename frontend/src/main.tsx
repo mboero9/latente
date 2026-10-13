@@ -1294,7 +1294,7 @@ function App() {
                     class={l.id === id && isLeagueView ? "selected" : ""}
                     href={link(`/league/${l.id}`)}
                   >
-                    <span aria-hidden="true">{flag(l.country)}</span>
+                    <LeagueLogo league={l} />
                     <span>{l.name}</span>
                   </a>
                 ))}
