@@ -26,7 +26,7 @@ export function SportsStandings({ sport }: { sport: string }) {
         <label class="season-label">Competición / temporada
           <select value={current?.ref || ""} onChange={e=>setSelected(e.currentTarget.value)}>
             {options.map(d => <option key={d.kind + d.ref} value={d.ref}>
-              {d.ref.replace(":", " · temporada ")} · {d.count} registros
+              {d.note?.startsWith("País:") ? d.note.split(".")[0] + " · " : ""}{d.ref.replace(":", " · temporada ")} · {d.count} registros
             </option>)}
           </select>
         </label>
