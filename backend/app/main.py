@@ -391,6 +391,28 @@ def sport_datasets(sport: str):
         } for row in rows], "meta": meta(rows)}
 
 
+@app.get("/api/sports/{sport}/analytics")
+def sport_analytics(sport: str, league_id: str | None = Query(None, max_length=40)):
+    from .other_sports import SPORTS
+    from .models import SportSnapshot
+    from .sports_metrics import compute_rates
+    if sport not in SPORTS:
+        raise HTTPException(404, "Deporte no disponible")
+    with session_scope() as s:
+        snapshots = list(s.scalars(select(SportSnapshot).where(
+            SportSnapshot.sport == sport, SportSnapshot.dataset == "games"
+        ).order_by(SportSnapshot.updated_at.desc()).limit(10)))
+        games = {}
+        for snap in snapshots:
+            for game in snap.data:
+                if isinstance(game, dict) and game.get("id") is not None:
+                    games[str(game["id"])] = game
+        data = compute_rates(games.values(), sport, league_id)
+        data["snapshots_used"] = len(snapshots)
+        return {"data": data, "meta": meta(snapshots, coverage=bool(snapshots),
+                                           provisional=True)}
+
+
 @app.get("/api/sports/{sport}/dataset")
 def sport_dataset(sport: str, kind: str = Query(..., pattern="^(games|standings|drivers)$"),
                   ref: str = Query(..., max_length=90)):
