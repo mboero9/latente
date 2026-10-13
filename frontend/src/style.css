@@ -2013,3 +2013,8 @@
   .sport-team img { width:32px;height:32px;object-fit:contain;flex-shrink:0; }
   .sport-team-away { justify-content:flex-end; }
 }
+
+@layer components {
+  .sports-club {display:inline-flex;align-items:center;gap:7px;}
+  .sports-club img {width:24px;height:24px;object-fit:contain;}
+}
