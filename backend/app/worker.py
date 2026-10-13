@@ -318,9 +318,9 @@ def heartbeat(message):
 
 def tick(client):
     global background_turn
-    # Pro: dos turnos para tablas/planteles/goleadores y uno para vivo.
-    # Si los trabajos de vivo son siempre prioridad 0, un live_seconds=15
-    # puede impedir indefinidamente que se importen temporadas completas.
+    # Turnos equilibrados: uno a importacion de temporadas, otro a
+    # estadisticas/fichas y uno a resultados en vivo. Evita que una sola
+    # categoria con muchos trabajos pendientes monopolice los turnos.
     background_turn = (background_turn + 1) % 3
     heartbeat("Actualización automática activa")
     realtime = ["live", "settle", "day"]
@@ -333,8 +333,9 @@ def tick(client):
                 case(
                     (SyncJob.kind == "catalog", 0),
                     (SyncJob.kind.in_(realtime), 1 if background_turn == 0 else 3),
-                    (SyncJob.kind.in_(bulk), 2 if background_turn == 0 else 1),
-                    else_=4,
+                    (SyncJob.kind.in_(bulk), 1 if background_turn == 1 else 3),
+                    (SyncJob.kind.in_(["statistics", "details"]), 1 if background_turn == 2 else 4),
+                    else_=5,
                 ),
                 case(
                     (SyncJob.kind == "standings", 0),
