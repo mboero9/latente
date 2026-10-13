@@ -2018,3 +2018,11 @@
   .sports-club {display:inline-flex;align-items:center;gap:7px;}
   .sports-club img {width:24px;height:24px;object-fit:contain;}
 }
+
+@layer components {
+  .sport-record-table { padding: 5px 16px; overflow-x: auto; }
+  .sport-record-row { display: grid; grid-template-columns: minmax(155px, 1fr) 54px 54px 80px; gap: 12px; align-items: center; padding: 12px 8px; border-bottom: 1px solid var(--line); font-size: .85rem; }
+  .sport-record-row:last-child { border-bottom: 0; }
+  .sport-record-row span:not(:first-child) { text-align: center; font-variant-numeric: tabular-nums; }
+  .sport-record-heading { color: var(--muted); font-weight: 700; }
+}
