@@ -1189,7 +1189,8 @@ function App() {
     (!status.configured ||
       !status.worker_online ||
       status.quota_exhausted ||
-      status.failed_jobs > 0);
+      status.failed_jobs > 0 ||
+      (status.fixtures_today === 0 && (status.leagues_loaded ?? 0) > 0));
   return (
     <>
       <a
@@ -1327,14 +1328,22 @@ function App() {
                     ? "Cuota de consultas agotada"
                     : !status.worker_online
                       ? "Actualización automática detenida"
-                      : "Algunas actualizaciones están demoradas"}
+                      : (status.restricted_jobs ?? 0) > 0
+                        ? "API-Football limita algunas fechas o temporadas de tu plan"
+                        : status.fixtures_today === 0
+                          ? "No hay partidos disponibles para hoy"
+                          : "Algunas actualizaciones están demoradas"}
               </strong>
               <span>
                 {!status.configured
                   ? "Configurá la clave de API en el servidor."
                   : status.quota_exhausted
                     ? "Se conserva la última copia; las consultas se reanudan al renovar la cuota diaria."
-                    : "Mostramos los últimos datos recibidos. Revisá la hora de actualización."}
+                    : (status.restricted_jobs ?? 0) > 0
+                      ? "La clave funciona, pero el proveedor rechazó ciertas consultas por el plan contratado. Railway Hobby no amplía la cobertura de API-Football."
+                      : status.fixtures_today === 0
+                        ? "El catálogo puede estar cargado, aunque API-Football todavía no haya entregado encuentros para esta fecha."
+                        : "Mostramos los últimos datos recibidos. Revisá la hora de actualización."}
               </span>
             </div>
           )}
