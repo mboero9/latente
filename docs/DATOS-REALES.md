@@ -2,7 +2,7 @@
 
 ## Estado y activación
 
-Latente se aloja íntegramente en Railway. El DNS de `latente.cfd` y sus subdominios queda para la siguiente etapa. **Railway Hobby paga infraestructura, no datos deportivos.** Hasta incorporar una clave válida, el modo de demostración sigue indicando que sus resultados son ficticios.
+Latente se aloja íntegramente en Railway. El dominio principal `latente.cfd` ya está asociado al servicio nginx de Railway. **Railway Hobby paga infraestructura, no datos deportivos.** Hasta incorporar una clave válida, el modo de demostración sigue indicando que sus resultados son ficticios.
 
 1. Crear o abrir una cuenta de acceso directo en [API-Football](https://dashboard.api-football.com/register). En **Account → My Access** se encuentra la clave. El adaptador usa `x-apisports-key`, no las cabeceras de RapidAPI.
 2. En el Live Tester del proveedor consultar `/leagues` y `/fixtures` para la fecha actual. Comprobar que el plan permite la temporada actual, especialmente Argentina. El catálogo no garantiza acceso a todos los datos enumerados.
@@ -46,7 +46,7 @@ En `ingest`, quitar **Cron Schedule**, usar `python -m app.hosted worker`, una r
 - Una consulta `live=all` actualiza todos los encuentros en juego. Otro trabajo reconcilia los partidos que desaparecen del vivo usando lotes de hasta 20 IDs para confirmar su finalización. Así, un partido terminado no queda indefinidamente como «en vivo».
 - Posiciones y goleadores se consultan únicamente cuando la cobertura de la temporada no los excluye. Las competiciones vigentes no prioritarias se refrescan como máximo una vez al día. Las competiciones antiguas del catálogo quedan sin trabajos recurrentes, salvo selección explícita.
 - `LEAGUE_IDS` indica ligas prioritarias: reciben el fixture completo de la temporada y perfiles de equipos, además del flujo global. Las demás reciben equipos desde sus partidos, posiciones y goleadores. Argentina aparece primero y el catálogo tiene buscador y carga progresiva para no renderizar miles de tarjetas juntas.
-- La primera sincronización es gradual. El planificador prioriza catálogo, jornadas y vivo; tablas y goleadores se completan según la cuota. No hay una llamada al proveedor por cada visitante.
+- La primera sincronización es gradual. El perfil gratuito consulta ayer, hoy y mañana (días verificados con la suscripción actual); otras fechas pueden ser rechazadas por `plan`. Las respuestas rechazadas por el plan se postergan 24 horas para no consumir la cuota reintentándolas cada minuto. El planificador prioriza catálogo, jornadas y vivo; tablas y goleadores se completan según la cuota. No hay una llamada al proveedor por cada visitante.
 - El modo `selected` conserva la selección original y permite `SEASON_OVERRIDES` para temporadas históricas. En modo global, los overrides afectan tablas y tareas de esas ligas; los partidos globales siguen siendo de fechas actuales.
 
 ## Estadísticas de partido y refresco de cinco segundos
