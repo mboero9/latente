@@ -70,7 +70,7 @@ def test_free_plan_preserves_catalog_but_bounds_background_jobs(db, monkeypatch)
     worker.save_catalog(db, [catalog_row(128), catalog_row(999, "Spain")])
     db.flush()
     assert db.get(League, ("api", 999))
-    assert db.get(SyncJob, "fixtures:128:2026")
+    assert not db.get(SyncJob, "fixtures:128:2026")
     assert not db.get(SyncJob, "standings:999:2026")
     assert len(list(db.scalars(select(SyncJob).where(SyncJob.kind == "day")))) == 3
 
