@@ -2152,3 +2152,30 @@
   .sport-watch-link span { font-weight: 500; font-size: .69rem; color: var(--muted); }
   .sport-watch-link:hover { border-color: var(--green); }
 }
+
+@layer components {
+  /* Identidad minimalista: wordmark geométrico en minúsculas.
+     Conservar las tres secciones de color y el fondo contrastado
+     en modos claro/oscuro, sin cargar tipografías externas. */
+  .brand .brand-wordmark {
+    font-family: "Avenir Next", "Century Gothic", "Montserrat", "Nunito Sans", "Segoe UI", ui-sans-serif, sans-serif;
+    font-size: 1.82rem;
+    font-weight: 650;
+    letter-spacing: -0.085em;
+    font-style: normal;
+    font-synthesis: none;
+    line-height: 1.1;
+    border-radius: 7px;
+    padding: 6px 12px 7px;
+  }
+  .brand .brand-late { color: #69d5ff; }
+  .brand .brand-nte { color: #fff; }
+  .brand .brand-tld { color: #69d5ff; margin-left: .09em; font-size: .77em; letter-spacing: -.035em; }
+  .brand { flex-shrink: 0; gap: 9px; }
+}
+@layer responsive {
+  @media(max-width:650px) {
+    .brand .brand-wordmark { font-size: 1.42rem; padding: 5px 8px 6px; }
+    .brand > img { width: 34px; height: 34px; }
+  }
+}
