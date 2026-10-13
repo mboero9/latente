@@ -81,7 +81,7 @@ def _game_summary(sport: str, item: dict):
                 "date": (item.get("date") or ""), "home": race.get("name") or "Gran Premio",
                 "away": (item.get("circuit") or {}).get("name") or "",
                 "home_score": None, "away_score": None,
-                "status": (item.get("status") or {}).get("short") or "Programado"}
+                "status": ((item.get("status") or {}).get("short") if isinstance(item.get("status"), dict) else str(item.get("status") or "Programado"))}
     teams = item.get("teams") or {}
     home, away = teams.get("home") or {}, teams.get("away") or {}
     scores = item.get("scores") or {}
