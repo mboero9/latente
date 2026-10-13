@@ -9,20 +9,20 @@
       "Segoe UI",
       sans-serif;
     color-scheme: light;
-    --bg: #f4f6f6;
+    --bg: #eef8ff;
     --surface: #fff;
-    --text: #192a28;
-    --muted: #5c706b;
-    --line: #e2e9e6;
-    --soft: #f1f5f3;
-    --green: #14513e;
-    --green-soft: #e9f2ed;
-    --lime: #ddf98a;
+    --text: #18334a;
+    --muted: #58748b;
+    --line: #d7e9f6;
+    --soft: #e5f4ff;
+    --green: #0879b8;
+    --green-soft: #d8efff;
+    --lime: #a9e5ff;
     --red: #b52b39;
     --red-soft: #fff0f0;
     --header: #fff;
-    --focus: #153f35;
-    --shadow: 0 3px 15px #153f3504;
+    --focus: #07699f;
+    --shadow: 0 3px 15px #07699f04;
     color: var(--text);
     background: var(--bg);
     font-synthesis: none;
@@ -31,19 +31,19 @@
   }
   :root[data-theme="dark"] {
     color-scheme: dark;
-    --bg: #101715;
-    --surface: #18231f;
-    --text: #e6eeea;
-    --muted: #a0b4aa;
-    --line: #2c3c34;
-    --soft: #202e27;
-    --green: #c5ee9b;
-    --green-soft: #263a2b;
-    --lime: #d5f68a;
+    --bg: #0b1622;
+    --surface: #132537;
+    --text: #edf8ff;
+    --muted: #a9c3d6;
+    --line: #284359;
+    --soft: #1a3348;
+    --green: #8fd8ff;
+    --green-soft: #193f5a;
+    --lime: #9adfff;
     --red: #ff939a;
     --red-soft: #3a2328;
-    --header: #15201b;
-    --focus: #1b392c;
+    --header: #102234;
+    --focus: #174564;
     --shadow: none;
   }
   * {
@@ -104,7 +104,7 @@
   input:focus-visible,
   select:focus-visible,
   [tabindex]:focus-visible {
-    outline: 3px solid #649e24;
+    outline: 3px solid #3daee9;
     outline-offset: 3px;
   }
   h1,
