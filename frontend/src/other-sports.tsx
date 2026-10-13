@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import { useApi } from "./api";
 import { SportsStandings } from "./sports-standings";
+import { RugbyCompetitions } from "./rugby-competitions";
 import type { League, Team } from "./types";
 export const sports = [
   { slug: "nhl", name: "NHL · Hockey", emoji: "🏒" },
@@ -100,6 +101,7 @@ export function SportPage({ slug }: { slug: string }) {
           <strong>{name}</strong><span>{data.played}</span><span>{data.wins}</span><span>{data.scored}</span>
         </div>)}
       </div> : <p class="match-details-unavailable">No hay suficientes resultados finales en la ventana para calcular estadísticas fiables.</p>}
+      {slug === "rugby" && <RugbyCompetitions />}
       <SportsStandings sport={sport.slug} />
     </>}
   </section>;
