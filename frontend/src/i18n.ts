@@ -1,6 +1,7 @@
 // Lightweight bilingual presentation layer; original Spanish content remains canonical.
 // Avoids extra translation services or external API usage.
 const dictionary: Record<string, string> = {
+  "LATENTE.CFD - Clubes, Fútbol y Deportes": "LATENTE.CFD - Clubs, Football and Sports",
   "Partidos": "Matches",
   "Ligas": "Leagues",
   "Posiciones": "Standings",
