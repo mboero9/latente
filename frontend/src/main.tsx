@@ -15,6 +15,7 @@ import type {
 import "./style.css";
 import { observeLanguage } from "./i18n";
 import { MatchExtras } from "./match-extras";
+import { WatchView } from "./watch-options";
 import { PromediosPage } from "./argentina-promedios";
 import { FootballAnalytics } from "./football-analytics";
 import { sports, SportPage, HistoryPage } from "./other-sports";
@@ -223,6 +224,7 @@ function MatchRow({
               : labels[m.status] || m.status}
         </span>
         {m.stale && <span class="stale">Demorado</span>}
+        {live && <a class="watch-live-link" href={link(`/watch/${m.id}`)} title="Opciones oficiales para ver este partido" aria-label={`Dónde ver ${m.home.name} contra ${m.away.name}`}>📺 Ver</a>}
       </div>
       <a class="team home" href={link(`/team/${m.home.id}`)}>
         <span>{m.home.name}</span>
@@ -1068,6 +1070,7 @@ function MatchView({ id, tz }: { id: number; tz: string }) {
                   cambiado.
                 </p>
               )}
+              <a class="watch-detail-link" href={link(`/watch/${m.id}`)}>📺 Dónde ver · Plataformas oficiales</a>
               <Updated meta={result.meta} />
             </article>
             <div class="team-facts">
@@ -1196,7 +1199,7 @@ function App() {
     first = leagues[0]?.id || 128;
   const isLeagueView = ["league", "table", "scorers", "teams", "history", "promedios", "analytics"].includes(view);
   useEffect(() => {
-    document.title = `${league?.name || ({ leagues: "Ligas y copas", team: "Equipo", match: "Partido" } as Record<string, string>)[view] || "Resultados"} · Latente`;
+    document.title = `${league?.name || ({ leagues: "Ligas y copas", team: "Equipo", match: "Partido", watch: "Dónde ver el partido" } as Record<string, string>)[view] || "Resultados"} · Latente`;
   }, [route, league?.name]);
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
@@ -1433,6 +1436,8 @@ function App() {
             <TeamView id={id} tz={tz} />
           ) : view === "match" ? (
             <MatchView id={id} tz={tz} />
+          ) : view === "watch" ? (
+            <WatchView id={id} />
           ) : view === "" ? (
             <FixturesView leagues={leagues} tz={tz} day={day} setDay={setDay} />
           ) : (
