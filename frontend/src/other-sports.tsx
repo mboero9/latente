@@ -36,6 +36,31 @@ export function SportPage({ slug }: { slug: string }) {
     if (game.home && game.home !== "Local") clubs.set(game.home, game.home_logo || clubs.get(game.home) || null);
     if (game.away && game.away !== "Visitante") clubs.set(game.away, game.away_logo || clubs.get(game.away) || null);
   }
+  // Estadísticas derivadas exclusivamente de resultados finales reales
+  // presentes en la ventana de ayer/hoy/mañana. No son tablas oficiales.
+  const results = all.filter(game =>
+    typeof game.home_score === "number" &&
+    typeof game.away_score === "number" &&
+    /(^ft$|final|finished|ended|completed|after overtime|after penalties|full time)/i.test(game.status || "")
+  );
+  const recent = new Map<string, { wins: number; played: number; scored: number; conceded: number }>();
+  if (slug !== "f1") for (const game of results) {
+    for (const [team, own, against] of [
+      [game.home, game.home_score!, game.away_score!],
+      [game.away, game.away_score!, game.home_score!],
+    ] as const) {
+      if (!team || team === "Local" || team === "Visitante") continue;
+      const item = recent.get(team) || { wins: 0, played: 0, scored: 0, conceded: 0 };
+      item.played++;
+      item.scored += own;
+      item.conceded += against;
+      if (own > against) item.wins++;
+      recent.set(team, item);
+    }
+  }
+  const ranking = Array.from(recent.entries()).sort((a, b) =>
+    b[1].wins - a[1].wins || b[1].scored - a[1].scored || a[0].localeCompare(b[0])
+  ).slice(0, 12);
   if (!sport) return <p>Deporte no disponible.</p>;
   return <section class="sport-landing">
     <div class="view-heading"><div><span class="eyebrow">LATENTE · DEPORTES</span>
@@ -66,7 +91,16 @@ export function SportPage({ slug }: { slug: string }) {
       <h2 class="sport-section-title">Equipos encontrados ({clubs.size})</h2>
       {clubs.size ? <div class="sports-clubs">{Array.from(clubs.entries()).map(([name, logo]) => <span class="sports-club" key={name}>{logo && <img src={logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{name}</span>)}</div> :
       <p class="match-details-unavailable">Los equipos aparecerán cuando haya encuentros verificados.</p>}
-      <p class="coverage-notice">Cobertura de prueba: ayer, hoy y mañana. Las estadísticas detalladas, planteles y tablas oficiales necesitan validar los endpoints específicos de cada disciplina.</p>
+      <h2 class="sport-section-title">Rendimiento reciente · datos parciales</h2>
+      <p class="updated">Ranking calculado solo con resultados finales verificados de los días consultados; no representa las posiciones de la temporada ni los récords históricos.</p>
+      {ranking.length ? <div class="panel sport-record-table" role="table" aria-label="Victorias en la ventana disponible">
+        <div class="sport-record-row sport-record-heading" role="row"><span>Equipo</span><span>PJ</span><span>G</span><span>A favor</span></div>
+        {ranking.map(([name, data]) => <div class="sport-record-row" role="row" key={name}>
+          <strong>{name}</strong><span>{data.played}</span><span>{data.wins}</span><span>{data.scored}</span>
+        </div>)}
+      </div> : <p class="match-details-unavailable">No hay suficientes resultados finales en la ventana para calcular estadísticas fiables.</p>}
+      <h2 class="sport-section-title">Anotadores e históricos</h2>
+      <p class="coverage-notice">Los máximos anotadores, clasificaciones completas, récords de campeones e históricos de cada deporte requieren importar las temporadas y las estadísticas de jugadores desde sus endpoints oficiales. No calculamos goleadores individuales solo a partir de marcadores.</p>
     </>}
   </section>;
 }
