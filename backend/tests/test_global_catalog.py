@@ -32,7 +32,7 @@ def match(status="2H"):
 
 
 def all_settings(monkeypatch):
-    settings = replace(worker.settings, mode="api", league_scope="all", league_ids=(128,))
+    settings = replace(worker.settings, mode="api", league_scope="all", league_ids=(128,), profile="live")
     monkeypatch.setattr(worker, "settings", settings)
     monkeypatch.setattr(main, "settings", settings)
 
@@ -60,6 +60,19 @@ def test_global_catalog_coverage_and_bounded_fixture_jobs(db, monkeypatch):
     assert not db.get(SyncJob, "fixtures:999:2026")
     assert db.get(SyncJob, "fixtures:128:2026")
     assert len(list(db.scalars(select(SyncJob).where(SyncJob.kind == "day")))) == 10
+
+
+def test_free_plan_preserves_catalog_but_bounds_background_jobs(db, monkeypatch):
+    all_settings(monkeypatch)
+    free_settings = replace(worker.settings, profile="free")
+    monkeypatch.setattr(worker, "settings", free_settings)
+    monkeypatch.setattr(main, "settings", free_settings)
+    worker.save_catalog(db, [catalog_row(128), catalog_row(999, "Spain")])
+    db.flush()
+    assert db.get(League, ("api", 999))
+    assert db.get(SyncJob, "fixtures:128:2026")
+    assert not db.get(SyncJob, "standings:999:2026")
+    assert len(list(db.scalars(select(SyncJob).where(SyncJob.kind == "day")))) == 3
 
 
 def test_global_api_exposes_unlisted_leagues_and_separates_demo(monkeypatch):
