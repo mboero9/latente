@@ -332,6 +332,41 @@ def sports_status():
     return {"data": status(), "meta": meta([])}
 
 
+@app.get("/api/sports/{sport}/datasets")
+def sport_datasets(sport: str):
+    """Lista las temporadas/días disponibles sin consultar al proveedor."""
+    from .other_sports import SPORTS
+    from .models import SportSnapshot
+    if sport not in SPORTS:
+        raise HTTPException(404, "Deporte no disponible")
+    with session_scope() as s:
+        rows = list(s.scalars(select(SportSnapshot).where(
+            SportSnapshot.sport == sport
+        ).order_by(SportSnapshot.updated_at.desc()).limit(120)))
+        return {"data": [{
+            "kind": row.dataset, "ref": row.ref, "updated_at": row.updated_at,
+            "count": row.source_count, "note": row.note,
+        } for row in rows], "meta": meta(rows)}
+
+
+@app.get("/api/sports/{sport}/dataset")
+def sport_dataset(sport: str, kind: str = Query(..., pattern="^(games|standings|drivers)$"),
+                  ref: str = Query(..., max_length=90)):
+    """El cliente lee SOLO PostgreSQL, no consume cuota de API-Sports."""
+    from .other_sports import SPORTS
+    from .models import SportSnapshot
+    if sport not in SPORTS:
+        raise HTTPException(404, "Deporte no disponible")
+    with session_scope() as s:
+        row = s.get(SportSnapshot, (sport, kind, ref))
+        if not row:
+            return {"data": [], "meta": meta([], coverage=False,
+                note="Importación pendiente o endpoint no cubierto")}
+        return {"data": row.data, "meta": meta([row], coverage=True,
+            count=row.source_count, source="api_sports_snapshot",
+            note=row.note, ref=ref)}
+
+
 @app.get("/api/sports/{sport}/games")
 def sport_games(sport: str, date: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$")):
     from .other_sports import SPORTS, games
