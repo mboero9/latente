@@ -2078,3 +2078,67 @@
   .brand .brand-nte { color: #fff; }
   .brand .brand-tld { color: #58caff; margin-left: 2px; }
 }
+
+@layer components {
+  /* Mantener la tipografía histórica Inter y los tres colores originales.
+     Aplicar cursiva visible únicamente a las letras del título. */
+  .brand .brand-wordmark {
+    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-style: italic;
+    font-synthesis: style;
+    transform: skewX(-5deg);
+    transform-origin: left center;
+  }
+  .watch-live-link {
+    display: inline-flex;
+    width: max-content;
+    max-width: 100%;
+    align-items: center;
+    justify-content: center;
+    background: var(--green-soft);
+    color: var(--green);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 3px 4px;
+    margin-top: 2px;
+    font-size: .65rem;
+    font-weight: 850;
+    white-space: nowrap;
+  }
+  .watch-live-link:hover, .watch-detail-link:hover { background: var(--green); color: #fff; }
+  .watch-detail-link {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    margin: 12px 0;
+    padding: 9px 13px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--green);
+    font-weight: 750;
+    background: var(--green-soft);
+  }
+  .watch-view { display: grid; gap: 17px; max-width: 1040px; }
+  .watch-view .view-heading { margin-bottom: 0; }
+  .watch-panel { display: grid; gap: 17px; padding: clamp(17px, 3vw, 26px); }
+  .watch-panel h2 { font-size: 1.18rem; }
+  .watch-panel p { max-width: 760px; color: var(--muted); line-height: 1.6; }
+  .watch-panel p strong { color: var(--text); }
+  .watch-services { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); gap: 11px; }
+  .watch-service {
+    display: grid; gap: 8px; align-content: start;
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 15px; background: var(--soft); text-decoration: none;
+  }
+  .watch-service strong { color: var(--green); }
+  .watch-service small { color: var(--muted); line-height: 1.5; }
+  .watch-access { width: fit-content; padding: 3px 7px; font-size: .73rem;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 5px; }
+}
+@layer responsive {
+  @media (max-width: 600px) {
+    .watch-live-link { font-size: .58rem; padding: 2px; }
+    .watch-panel { padding: 15px; }
+    .brand .brand-wordmark { transform: skewX(-4deg); }
+  }
+}
