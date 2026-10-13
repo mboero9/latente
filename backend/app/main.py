@@ -159,6 +159,22 @@ def status():
             and (utcnow() - aware(state.heartbeat)).total_seconds()
             < settings.worker_heartbeat_timeout
         )
+        fixture_total = s.scalar(
+            select(func.count()).select_from(Fixture).where(Fixture.source == settings.mode)
+        )
+        start, end = date_window(utcnow().astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date(), "America/Argentina/Buenos_Aires")
+        fixture_today = s.scalar(
+            select(func.count()).select_from(Fixture).where(
+                Fixture.source == settings.mode,
+                Fixture.kickoff >= start,
+                Fixture.kickoff < end,
+            )
+        )
+        restricted_jobs = s.scalar(
+            select(func.count()).select_from(SyncJob).where(
+                SyncJob.message.ilike("%plan%")
+            )
+        ) if settings.mode == "api" else 0
         return {
             "data": {
                 "mode": settings.mode,
@@ -186,6 +202,9 @@ def status():
                 "provider_configured": bool(settings.api_key),
                 "league_scope": settings.league_scope,
                 "leagues_loaded": s.scalar(select(func.count()).select_from(League).where(League.source == settings.mode)),
+                "fixtures_loaded": fixture_total,
+                "fixtures_today": fixture_today,
+                "restricted_jobs": restricted_jobs,
             },
             "meta": meta(),
         }
