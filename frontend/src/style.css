@@ -2080,14 +2080,12 @@
 }
 
 @layer components {
-  /* Mantener la tipografía histórica Inter y los tres colores originales.
-     Aplicar cursiva visible únicamente a las letras del título. */
+  /* Marca en minúsculas, tipografía Inter original sin cursiva ni inclinación. */
   .brand .brand-wordmark {
     font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-style: italic;
-    font-synthesis: style;
-    transform: skewX(-5deg);
-    transform-origin: left center;
+    font-style: normal;
+    font-synthesis: none;
+    transform: none;
   }
   .watch-live-link {
     display: inline-flex;
@@ -2139,7 +2137,7 @@
   @media (max-width: 600px) {
     .watch-live-link { font-size: .58rem; padding: 2px; }
     .watch-panel { padding: 15px; }
-    .brand .brand-wordmark { transform: skewX(-4deg); }
+    .brand .brand-wordmark { transform: none; }
   }
 }
 
