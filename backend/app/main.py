@@ -21,6 +21,7 @@ from .models import (
 )
 from .ingest import LIVE
 from .provider import aware
+from .partial_standings import partial_standings
 
 
 @asynccontextmanager
@@ -316,6 +317,29 @@ def standings(league_id: int, season: int | None = Query(None, ge=1900, le=2200)
                 .order_by(Standing.group, Standing.rank)
             )
         )
+        if not rows and league.kind.lower() == "league":
+            # Los datos pueden incluir solo una parte de las fechas.
+            # Nunca representar este cálculo como una clasificación oficial.
+            finals = list(s.scalars(
+                select(Fixture).where(
+                    Fixture.source == settings.mode,
+                    Fixture.league_id == league_id,
+                    Fixture.season == (season or league.season),
+                    Fixture.status == "FT",
+                )
+            ))
+            ids = {team_id for f in finals for team_id in (f.home_id, f.away_id)}
+            partial_teams = {
+                t.id: public(t) for t in s.scalars(
+                    select(Team).where(Team.source == settings.mode, Team.id.in_(ids))
+                )
+            } if ids else {}
+            provisional, matches_used = partial_standings(finals, partial_teams)
+            if provisional:
+                return {
+                    "data": provisional,
+                    "meta": meta(finals, coverage=False, provisional=True, matches_used=matches_used),
+                }
         teams = {
             t.id: public(t)
             for t in s.scalars(
@@ -326,7 +350,7 @@ def standings(league_id: int, season: int | None = Query(None, ge=1900, le=2200)
         }
         return {
             "data": [{**public(r), "team": teams[r.team_id]} for r in rows],
-            "meta": meta(rows, coverage=league.coverage.get("standings")),
+            "meta": meta(rows, coverage=league.coverage.get("standings"), provisional=False),
         }
 
 
