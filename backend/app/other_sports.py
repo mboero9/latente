@@ -36,6 +36,23 @@ def games(sport: str, day: str):
     if sport not in SPORTS:
         raise ValueError("Deporte desconocido")
     datetime.strptime(day, "%Y-%m-%d")
+    # Reutilizar snapshots persistidos antes de tocar API-Sports:
+    # una visita nunca repite una llamada si el cron ya guardó el día.
+    try:
+        from .db import session_scope
+        from .models import SportSnapshot
+        with session_scope() as db:
+            snapshot = db.get(SportSnapshot, (sport, "games", day))
+            if snapshot:
+                return {
+                    "configured": True, "games": snapshot.data,
+                    "message": snapshot.note,
+                    "updated_at": snapshot.updated_at.isoformat(),
+                    "provider": snapshot.provider,
+                }
+    except (ImportError, RuntimeError):
+        # Sin capa de BD (ej. tests unitarios): conservar adaptador original.
+        pass
     env, base, endpoint = SPORTS[sport]
     key = (os.getenv(env) or os.getenv("API_FOOTBALL_KEY", "")).strip()
     if not key:
