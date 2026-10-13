@@ -326,6 +326,48 @@ def fixture_statistics(fixture_id: int):
         return {"data": data, "meta": meta([snapshot] if snapshot else [], coverage=coverage, stale=stale)}
 
 
+@app.get("/api/coverage")
+def audit_coverage(country: str = Query("Argentina", max_length=60),
+                   limit: int = Query(150, ge=1, le=250)):
+    """Auditoría agregada: diferencia catálogo de datos realmente importados."""
+    with session_scope() as db:
+        query = select(League).where(League.source == settings.mode)
+        if country:
+            query = query.where(League.country.ilike(country))
+        leagues = list(db.scalars(query.order_by(League.name).limit(limit)))
+        ids = [l.id for l in leagues]
+        if not ids:
+            return {"data": [], "meta": meta([], scope=country)}
+        def counts(model):
+            return {(lid, year): count for lid, year, count in db.execute(
+                select(model.league_id, model.season, func.count()).where(
+                    model.source == settings.mode, model.league_id.in_(ids),
+                ).group_by(model.league_id, model.season)
+            )}
+        matches = counts(Fixture)
+        standings = counts(Standing)
+        scorers = counts(Scorer)
+        memberships = counts(Membership)
+        rows = []
+        for l in leagues:
+            for year in sorted(set(l.seasons or [l.season]), reverse=True):
+                key = (l.id, year)
+                row = {"league_id": l.id, "league": l.name, "country": l.country,
+                       "season": year, "fixtures": matches.get(key, 0),
+                       "standings_rows": standings.get(key, 0),
+                       "scorers_rows": scorers.get(key, 0),
+                       "teams_rows": memberships.get(key, 0)}
+                row["missing"] = [name for name, count in (
+                    ("fixtures", row["fixtures"]),
+                    ("standings", row["standings_rows"]),
+                    ("scorers", row["scorers_rows"]),
+                    ("teams", row["teams_rows"]),
+                ) if not count]
+                rows.append(row)
+        return {"data": rows, "meta": meta([], scope=country,
+            note="Cobertura real importada; cero no significa que el proveedor no cubra ese dato.")}
+
+
 @app.get("/api/sports/status")
 def sports_status():
     from .other_sports import status
