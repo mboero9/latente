@@ -61,3 +61,65 @@ def test_public_details_only_uses_cache(monkeypatch):
     assert response.json()["data"]["events"][0]["player"] == "Autor"
     assert response.json()["data"]["best_rated_player"] is None
     assert response.json()["meta"]["available"] is True
+
+
+def test_pro_queues_twenty_fixture_batches_for_goal_authors(monkeypatch):
+    from datetime import timedelta
+    from sqlalchemy import select
+    from app.models import SyncJob, utcnow
+    from test_application import fixture as example
+    settings = replace(worker.settings, mode="api", league_scope="all",
+                       profile="live", league_ids=(128,))
+    monkeypatch.setattr(worker, "settings", settings)
+    with session_scope() as db:
+        league(db)
+        for number in range(1, 24):
+            save_fixtures(db, [example(
+                number, "FT", utcnow() - timedelta(days=1),
+                {"home": 1, "away": 0},
+            )], [128])
+        worker.enqueue_hydration(db, 128, 2026)
+        jobs = list(db.scalars(select(SyncJob).where(SyncJob.kind == "hydrate")))
+        assert sorted(len(job.params["ids"]) for job in jobs) == [3, 20]
+        params = next(job.params for job in jobs if len(job.params["ids"]) == 20)
+
+    class Client:
+        def get(self, endpoint, query):
+            assert endpoint == "/fixtures"
+            assert len(query["ids"].split("-")) == 20
+            out = []
+            for number in map(int, query["ids"].split("-")):
+                row = example(number, "FT", utcnow() - timedelta(days=1),
+                              {"home": 1, "away": 0})
+                row["events"] = [{
+                    "team": {"id": 1}, "time": {"elapsed": 22},
+                    "player": {"name": f"Autor {number}"},
+                    "type": "Goal", "detail": "Normal Goal",
+                }]
+                row["lineups"] = []
+                out.append(row)
+            return out
+
+    worker.execute_job(Client(), "hydrate", params)
+    with session_scope() as db:
+        for number in params["ids"]:
+            row = db.get(FixtureDetails, ("api", number))
+            assert row and row.events[0]["player"] == f"Autor {number}"
+            assert row.events_checked_at is not None
+
+
+def test_event_snapshots_do_not_erase_goals_if_provider_omits_events():
+    with session_scope() as db:
+        league(db)
+        save_fixtures(db, [fixture(status="FT", goals={"home": 1, "away": 0})], [128])
+        store_details(db, 1, [{
+            "team": {"id": 1}, "time": {"elapsed": 47},
+            "player": {"name": "Autor verificado"},
+            "type": "Goal", "detail": "Normal Goal",
+        }], None)
+    with session_scope() as db:
+        store_details(db, 1, None, None, mark_events_checked=True)
+        row = db.get(FixtureDetails, ("api", 1))
+        db.expire_all()
+        assert row.events[0]["player"] == "Autor verificado"
+        assert row.events_checked_at is not None
