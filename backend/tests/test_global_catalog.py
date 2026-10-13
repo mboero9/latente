@@ -85,6 +85,9 @@ def test_global_api_exposes_unlisted_leagues_and_separates_demo(monkeypatch):
         assert [league["id"] for league in leagues] == [888, 999]
         fixtures = client.get("/api/fixtures?date=2026-10-12").json()
         assert [row["id"] for row in fixtures["data"]] == [500]
+        # Una fecha distinta no oculta el marcador en el filtro En vivo.
+        live = client.get("/api/fixtures?date=2026-10-13&live=true").json()
+        assert [row["id"] for row in live["data"]] == [500]
         assert fixtures["meta"]["mode"] == "api"
         assert client.get("/api/leagues/999/standings").status_code == 200
         assert client.get("/api/status").json()["data"]["league_scope"] == "all"
