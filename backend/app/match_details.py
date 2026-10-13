@@ -78,12 +78,13 @@ def normalize_player_ratings(rows):
     return output
 
 
-def store_details(s, fixture_id, events, lineups, player_ratings=None):
+def store_details(s, fixture_id, events, lineups, player_ratings=None, mark_events_checked=False):
     # Null representa endpoint aún no consultado; [] representa consultado sin datos.
     old = s.get(FixtureDetails, ("api", fixture_id))
     values = {
         "source": "api", "fixture_id": fixture_id,
         "events": normalize_events(events) if events is not None else (old.events if old else []),
+        "events_checked_at": (utcnow() if events is not None or mark_events_checked else (old.events_checked_at if old else None)),
         "lineups": normalize_lineups(lineups) if lineups is not None else (old.lineups if old else []),
         "player_ratings": normalize_player_ratings(player_ratings) if player_ratings is not None else (old.player_ratings if old else []),
         "updated_at": utcnow(),
