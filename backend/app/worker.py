@@ -118,6 +118,10 @@ def save_catalog(s, rows):
 
 def sync_fixture_rows(s, rows):
     save_fixtures(s, rows, settings.allowed_leagues)
+    # La cuota Free se reserva para marcadores; los snapshots ya guardados
+    # se mantienen, pero no se programan nuevas solicitudes por partido.
+    if settings.profile == "free":
+        return
     now = utcnow()
     for raw in rows:
         if not settings.accepts_league(raw["league"]["id"]):
@@ -330,6 +334,7 @@ def run(once=False, max_seconds=120):
                     )):
                         if queued.params.get("league") not in settings.league_ids:
                             s.delete(queued)
+                    s.execute(delete(SyncJob).where(SyncJob.kind == "statistics"))
         client = FootballClient()
         try:
             if once and settings.mode == "api" and not settings.api_key:
