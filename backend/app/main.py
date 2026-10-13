@@ -326,6 +326,43 @@ def fixture_statistics(fixture_id: int):
         return {"data": data, "meta": meta([snapshot] if snapshot else [], coverage=coverage, stale=stale)}
 
 
+@app.get("/api/leagues/{league_id}/history")
+def league_history(league_id: int):
+    """Resumen histórico solo a partir de temporadas verificadas en DB."""
+    with session_scope() as s:
+        league = league_or_404(s, league_id)
+        years = list(sorted(set(league.seasons or [league.season]), reverse=True))
+        history = []
+        for year in years:
+            fixtures = list(s.scalars(select(Fixture).where(
+                Fixture.source == settings.mode,
+                Fixture.league_id == league_id,
+                Fixture.season == year,
+                Fixture.status.in_(["FT", "AET", "PEN"]),
+            )))
+            official = s.scalar(select(Standing).where(
+                Standing.source == settings.mode,
+                Standing.league_id == league_id,
+                Standing.season == year,
+                Standing.rank == 1,
+            ).order_by(Standing.group))
+            top = s.scalar(select(Scorer).where(
+                Scorer.source == settings.mode, Scorer.league_id == league_id,
+                Scorer.season == year,
+            ).order_by(Scorer.rank))
+            official_team = s.get(Team, (settings.mode, official.team_id)) if official else None
+            top_team = s.get(Team, (settings.mode, top.team_id)) if top else None
+            if not fixtures and not official and not top:
+                continue
+            history.append({
+                "season": year, "matches_loaded": len(fixtures),
+                "official_leader": {"team": public(official_team), "group": official.group} if official_team else None,
+                "leading_scorer": {"name": top.name, "goals": top.goals, "team": public(top_team)} if top and top_team else None,
+                "complete": bool(official and top and fixtures),
+            })
+        return {"data": history, "meta": meta([], archived=True, seasons_known=len(years))}
+
+
 @app.get("/api/leagues/{league_id}/standings")
 def standings(league_id: int, season: int | None = Query(None, ge=1900, le=2200)):
     with session_scope() as s:
