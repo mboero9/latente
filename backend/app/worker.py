@@ -93,26 +93,37 @@ def save_catalog(s, rows):
         )
         params = {"league": league["id"], "season": season["year"]}
         matched += 1
-        is_priority = league["id"] in settings.league_ids
-        # En Free el proveedor puede mostrar el catálogo completo pero
-        # bloquea los endpoints de temporada (tablas, planteles, goleadores).
-        # Usar solo los endpoints globales de fechas y partidos en vivo.
-        if settings.all_leagues and settings.profile == "free":
+        # Los planes pagos importan competiciones importantes y todas las
+        # categorías argentinas presentes en el catálogo, nunca miles de
+        # ligas sin prioridad.
+        is_argentina = (row.get("country") or {}).get("name") == "Argentina"
+        is_priority = league["id"] in settings.league_ids or is_argentina
+        if settings.profile == "free" and settings.all_leagues:
             continue
-        if settings.all_leagues and not season.get("current") and not is_priority and str(league["id"]) not in overrides:
+        if settings.all_leagues and not is_priority:
             continue
-        # Perfil completo/fixture de temporada para ligas prioritarias; las
-        # demás obtienen equipos y membresías de los partidos globales.
-        kinds = ("fixtures", "teams", "standings", "scorers") if not settings.all_leagues or is_priority else ("standings", "scorers")
-        for kind in kinds:
-            coverage = season.get("coverage") or {}
-            if kind == "standings" and coverage.get("standings") is False:
-                continue
-            if kind == "scorers" and coverage.get("top_scorers") is False:
-                continue
-            key = f"{kind}:{league['id']}:{season['year']}"
-            active_keys.add(key)
-            ensure_job(s, key, kind, params, utcnow() + timedelta(microseconds=matched))
+        if settings.all_leagues and not season.get("current") and not is_argentina and str(league["id"]) not in overrides:
+            # Conservamos el último año conocido cuando no hay activo.
+            pass
+        # Datos completos por temporada (tabla, clubes, goleadores y fixtures).
+        years = [season["year"]]
+        if settings.profile == "live":
+            # Archivo acotado: 2025 y 2024, priorizando grandes ligas y AFA.
+            history = [y["year"] for y in seasons if y["year"] < season["year"] and y["year"] >= 2024]
+            years.extend(sorted(history, reverse=True)[:2])
+        for year in dict.fromkeys(years):
+            season_info = next((x for x in seasons if x["year"] == year), None)
+            coverage = (season_info or {}).get("coverage") or {}
+            params = {"league": league["id"], "season": year}
+            for kind in ("fixtures", "teams", "standings", "scorers"):
+                if kind == "standings" and coverage.get("standings") is False:
+                    continue
+                if kind == "scorers" and coverage.get("top_scorers") is False:
+                    continue
+                key = f"{kind}:{league['id']}:{year}"
+                active_keys.add(key)
+                ensure_job(s, key, kind, params, utcnow() + timedelta(seconds=matched))
+
     if not matched:
         raise ValueError("El catálogo no contiene las ligas configuradas")
     s.execute(delete(SyncJob).where(SyncJob.key.not_in(active_keys), SyncJob.kind.not_in(("statistics", "details"))))
