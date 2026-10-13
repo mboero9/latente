@@ -193,7 +193,7 @@
   }
   .brand-dot {
     color: var(--green);
-    margin-left: -8px;
+    margin-left: 3px;
   }
   .top-nav {
     display: flex;
@@ -1918,4 +1918,16 @@
 @layer components {
   .source-logo { width: 40px; height: 40px; object-fit: contain; flex-shrink: 0; }
   .brand img { object-fit: contain; }
+}
+
+@layer components {
+  .brand-wordmark { display: inline-flex; align-items: baseline; white-space: nowrap; }
+  .brand .brand-dot { margin-left: 3px; letter-spacing: 0; }
+  .team-badge { overflow: hidden; }
+  .team-badge img { width: 100%; height: 100%; object-fit: contain; display: block; padding: 2px; }
+  .team-badge.large img { padding: 3px; }
+  .league-flag { display: inline-flex; align-items: center; justify-content: center; overflow: hidden; }
+  .league-flag img { display: block; width: 100%; height: 100%; object-fit: contain; padding: 2px; }
+  .language-toggle { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 6px 9px; font-weight: 700; cursor: pointer; }
+  .language-toggle:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 }
