@@ -1306,8 +1306,8 @@ function App() {
           <div class="sidebar-bottom">
             <img class="source-logo" src="/latente-mark.png?v=3" width="40" height="40" alt="" />
             <div>
-              <strong>Datos con contexto</strong>
-              <p>Fuente: {mode === "demo" ? "demostración" : "API-Football"}</p>
+              <strong>© {new Date().getFullYear()} Latente</strong>
+              <p>Todos los derechos reservados.</p>
             </div>
           </div>
         </aside>
@@ -1348,7 +1348,7 @@ function App() {
                     : !status.worker_online
                       ? "Actualización automática detenida"
                       : (status.restricted_jobs ?? 0) > 0
-                        ? "API-Football limita algunas fechas o temporadas de tu plan"
+                        ? "Algunas fechas o temporadas no están disponibles"
                         : status.fixtures_today === 0
                           ? "No hay partidos disponibles para hoy"
                           : "Algunas actualizaciones están demoradas"}
@@ -1359,9 +1359,9 @@ function App() {
                   : status.quota_exhausted
                     ? "Se conserva la última copia; las consultas se reanudan al renovar la cuota diaria."
                     : (status.restricted_jobs ?? 0) > 0
-                      ? "La clave funciona, pero el proveedor rechazó ciertas consultas por el plan contratado. Railway Hobby no amplía la cobertura de API-Football."
+                      ? "Algunos datos están restringidos por el plan de cobertura contratado."
                       : status.fixtures_today === 0
-                        ? "El catálogo puede estar cargado, aunque API-Football todavía no haya entregado encuentros para esta fecha."
+                        ? "Las ligas están disponibles, pero todavía no hay partidos recibidos para esta fecha."
                         : "Mostramos los últimos datos recibidos. Revisá la hora de actualización."}
               </span>
             </div>
@@ -1418,9 +1418,7 @@ function App() {
               latente.
             </a>
             <span>
-              {mode === "demo"
-                ? "Demostración · datos ficticios"
-                : "Datos de API-Football · sujetos a cobertura y demora"}
+              © {new Date().getFullYear()} Latente. Todos los derechos reservados.
             </span>
             <span>Hecho para seguir el juego.</span>
           </footer>
