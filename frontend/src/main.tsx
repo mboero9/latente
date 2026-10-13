@@ -761,6 +761,11 @@ function ScorersView({ league }: { league: League }) {
         season={season}
         setSeason={setSeason}
       />
+      {result?.meta.provisional && <div class="coverage-notice" role="note">
+        <strong>Goleadores parciales, no oficiales.</strong> Solo se contabilizan los autores
+        verificados en {result.meta.matches_used ?? 0} partidos con eventos importados.
+        Pueden faltar encuentros y jugadores; los autogoles no suman al ranking.
+      </div>}
       {error && <ErrorBox error={error} retry={retry} />}
       {loading ? (
         <Loading />
