@@ -417,10 +417,9 @@ def heartbeat(message):
 
 def tick(client):
     global background_turn
-    # Turnos equilibrados: uno a importacion de temporadas, otro a
-    # estadisticas/fichas y uno a resultados en vivo. Evita que una sola
-    # categoria con muchos trabajos pendientes monopolice los turnos.
-    background_turn = (background_turn + 1) % 3
+    # Cuatro turnos: marcadores, ligas, fichas por lotes y estadísticas.
+    # La importación histórica no puede desplazar goles en vivo, ni al revés.
+    background_turn = (background_turn + 1) % 4
     heartbeat("Actualización automática activa")
     realtime = ["live", "settle", "day"]
     bulk = ["standings", "scorers", "teams", "fixtures"]
@@ -438,9 +437,10 @@ def tick(client):
             .order_by(
                 case(
                     (SyncJob.kind == "catalog", 0),
-                    (SyncJob.kind.in_(realtime), 1 if background_turn == 0 else 3),
-                    (SyncJob.kind.in_(bulk), 1 if background_turn == 1 else 3),
-                    (SyncJob.kind.in_(["statistics", "details"]), 1 if background_turn == 2 else 4),
+                    (SyncJob.kind.in_(realtime), 0 if background_turn == 0 else 4),
+                    (SyncJob.kind.in_(bulk), 0 if background_turn == 1 else 4),
+                    (SyncJob.kind == "hydrate", 0 if background_turn == 2 else 4),
+                    (SyncJob.kind.in_(["statistics", "details"]), 0 if background_turn == 3 else 4),
                     else_=5,
                 ),
                 # Primero todas las temporadas ACTUALES de ligas relevantes,
