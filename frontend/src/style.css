@@ -2062,3 +2062,10 @@
   .brand .brand-nte { color: #ffffff; }
   .brand .brand-dot { color: #6ed7ff; margin-left: 2px; }
 }
+
+@layer components {
+  .brand .brand-wordmark { background: #10283c; padding: 2px 9px 3px; border-radius: 8px; letter-spacing: -1.5px; }
+  .brand .brand-late { color: #58caff; }
+  .brand .brand-nte { color: #fff; }
+  .brand .brand-dot { color: #58caff; }
+}
