@@ -2,7 +2,7 @@
 
 ## Alojamiento y costo
 
-Esta arquitectura de cuatro servicios funciona en Railway Hobby, que el titular indicó haber activado. Al 12/10/2026 tiene un mínimo de USD 5 mensuales aplicado a consumo; el uso adicional se factura aparte. No confundirlo con la suscripción de la API deportiva. El despliegue publicado es https://nginx-production-c1c2.up.railway.app/ y no requiere Cloudflare. El dominio previsto es `latente.cfd`; su configuración de DNS queda para la siguiente etapa.
+Esta arquitectura de cuatro servicios funciona en Railway Hobby, que el titular indicó haber activado. Al 12/10/2026 tiene un mínimo de USD 5 mensuales aplicado a consumo; el uso adicional se factura aparte. No confundirlo con la suscripción de la API deportiva. El despliegue publicado es https://latente.cfd/ con dominio personalizado en nginx de Railway. La dirección https://nginx-production-c1c2.up.railway.app/ continúa como alternativa. No requiere Cloudflare para funcionar.
 
 Para pruebas nuevas, Railway ofrece Trial de hasta 30 días con USD 5. Después, Free incluye USD 1 mensual, solo tres servicios y sin cron: **la configuración de cuatro servicios con cron de esta guía requiere Hobby fuera del Trial**. La base, memoria, CPU, disco y tráfico consumen saldo. Revisar consumo y copias de respaldo.
 
