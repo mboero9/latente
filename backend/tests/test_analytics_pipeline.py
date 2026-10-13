@@ -83,6 +83,9 @@ def test_provider_failure_keeps_last_snapshot(monkeypatch):
     persist_snapshot("nhl", "games", yesterday.isoformat(),
                      [{"id": 7, "home": "Team A"}], 1)
     # A stale snapshot must never be deleted because of a provider error.
+    with session_scope() as db:
+        snap = db.get(SportSnapshot, ("nhl", "games", yesterday.isoformat()))
+        snap.updated_at = utcnow() - timedelta(days=15)
     monkeypatch.setattr(sc, "due_jobs",
                         lambda: [("nhl", "games", yesterday.isoformat(), yesterday)])
     monkeypatch.setattr(sc, "reserve_quota", lambda sport: True)
@@ -95,3 +98,35 @@ def test_provider_failure_keeps_last_snapshot(monkeypatch):
     with session_scope() as db:
         assert db.get(SportSnapshot, ("nhl", "games", yesterday.isoformat())).data[0]["id"] == 7
     assert outcome["updated"] == []
+
+
+def test_sport_metrics_are_per_league_and_only_final_games():
+    from app.sports_metrics import compute_rates
+    records = [
+        {"id": 1, "league_id": 55, "home_id": 10, "away_id": 11,
+         "home": "Team A", "away": "Team B", "home_score": 120,
+         "away_score": 110, "status": "FT"},
+        {"id": 2, "league_id": 55, "home_id": 10, "away_id": 12,
+         "home": "Team A", "away": "Team C", "home_score": None,
+         "away_score": None, "status": "NS"},
+        {"id": 3, "league_id": 99, "home_id": 10, "away_id": 11,
+         "home": "Team A", "away": "Team B", "home_score": 1,
+         "away_score": 3, "status": "FT"},
+    ]
+    rates = compute_rates(records, "basketball", league_id="55")
+    assert rates["finished_matches_counted"] == 1
+    a = next(t for t in rates["teams"] if t["team"] == "Team A")
+    assert a["scoring_avg"] == 120
+    assert a["win_pct"] == 100
+    assert rates["partial"] is True
+
+
+def test_coverage_audit_flags_import_gaps(monkeypatch):
+    monkeypatch.setattr(main, "settings", replace(main.settings, mode="api"))
+    with session_scope() as db:
+        league(db)
+    with TestClient(main.app) as client:
+        rows = client.get("/api/coverage?country=Argentina").json()["data"]
+        assert len(rows) == 1
+        assert rows[0]["league_id"] == 128
+        assert "scorers" in rows[0]["missing"]
