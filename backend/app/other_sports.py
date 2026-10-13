@@ -1,0 +1,96 @@
+"""Otros deportes: consultas bajo demanda, claves separadas y caché en servidor.
+
+No se llama a proveedores sin suscripción/clave. Cada deporte tiene una
+cuota Free independiente: máximo 20 solicitudes por día y por instancia
+(la página nunca debe producir una solicitud de proveedor por visitante).
+"""
+import os
+import threading
+import time
+from datetime import datetime, timezone
+from typing import Any
+import httpx
+
+SPORTS = {
+    "nhl": ("HOCKEY_API_KEY", "https://v1.hockey.api-sports.io", "games"),
+    "mlb": ("BASEBALL_API_KEY", "https://v1.baseball.api-sports.io", "games"),
+    "nba": ("NBA_API_KEY", "https://v2.nba.api-sports.io", "games"),
+    "basketball": ("BASKETBALL_API_KEY", "https://v1.basketball.api-sports.io", "games"),
+    "f1": ("FORMULA1_API_KEY", "https://v1.formula-1.api-sports.io", "races"),
+    "nfl": ("NFL_API_KEY", "https://v1.american-football.api-sports.io", "games"),
+    "rugby": ("RUGBY_API_KEY", "https://v1.rugby.api-sports.io", "games"),
+}
+_LOCK = threading.Lock()
+_CACHE: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
+_COUNTS: dict[tuple[str, str], int] = {}
+
+
+def status():
+    return [{"name": sport, "configured": bool(os.getenv(key, "").strip()),
+             "note": "Cuota gratuita independiente, cobertura según proveedor"}
+            for sport, (key, _, _) in SPORTS.items()]
+
+
+def games(sport: str, day: str):
+    if sport not in SPORTS:
+        raise ValueError("Deporte desconocido")
+    datetime.strptime(day, "%Y-%m-%d")
+    env, base, endpoint = SPORTS[sport]
+    key = os.getenv(env, "").strip()
+    if not key:
+        return {"configured": False, "games": [], "message": "Falta activar el plan Free y configurar su API Key"}
+    stamp = datetime.now(timezone.utc).date().isoformat()
+    cachekey = (sport, day)
+    with _LOCK:
+        cached = _CACHE.get(cachekey)
+        if cached and cached[0] > time.monotonic():
+            return cached[1]
+        countkey = (sport, stamp)
+        if _COUNTS.get(countkey, 0) >= 20:
+            return {"configured": True, "games": [], "message": "Límite conservador de consultas de prueba alcanzado"}
+        _COUNTS[countkey] = _COUNTS.get(countkey, 0) + 1
+    params = {"season": day[:4]} if sport == "f1" else {"date": day}
+    # La NBA usa filtros de liga/temporada para algunas consultas del plan.
+    if sport == "nba":
+        params.update({"league": "standard", "season": day[:4]})
+    try:
+        with httpx.Client(timeout=9, follow_redirects=False) as client:
+            response = client.get(f"{base}/{endpoint}", params=params,
+                                  headers={"x-apisports-key": key})
+            response.raise_for_status()
+            payload = response.json()
+            if payload.get("errors"):
+                return {"configured": True, "games": [],
+                        "message": "El plan o los filtros no permiten esta consulta"}
+            rows = payload.get("response") or []
+            if not isinstance(rows, list):
+                rows = []
+            clean = [_game_summary(sport, x) for x in rows[:120]]
+            result = {"configured": True, "games": clean, "message": None}
+            with _LOCK:
+                _CACHE[cachekey] = (time.monotonic() + (21600 if sport == "f1" else 3600), result)
+            return result
+    except (httpx.HTTPError, ValueError, TypeError, KeyError):
+        return {"configured": True, "games": [], "message": "No se pudo consultar el proveedor. Reintentá más tarde"}
+
+
+def _game_summary(sport: str, item: dict):
+    if sport == "f1":
+        race = item.get("competition") or {}
+        return {"id": item.get("id"), "league": "Fórmula 1",
+                "date": (item.get("date") or ""), "home": race.get("name") or "Gran Premio",
+                "away": (item.get("circuit") or {}).get("name") or "",
+                "home_score": None, "away_score": None,
+                "status": (item.get("status") or {}).get("short") or "Programado"}
+    teams = item.get("teams") or {}
+    home, away = teams.get("home") or {}, teams.get("away") or {}
+    scores = item.get("scores") or {}
+    h, a = scores.get("home"), scores.get("away")
+    league = item.get("league") or {}
+    state = item.get("status") or {}
+    return {"id": item.get("id"), "league": league.get("name") if isinstance(league, dict) else str(league),
+            "date": item.get("date"), "home": home.get("name") or "Local",
+            "away": away.get("name") or "Visitante",
+            "home_score": h if isinstance(h, int) else (h or {}).get("total") if isinstance(h, dict) else None,
+            "away_score": a if isinstance(a, int) else (a or {}).get("total") if isinstance(a, dict) else None,
+            "status": (state.get("long") or state.get("short") or "") if isinstance(state, dict) else str(state)}
