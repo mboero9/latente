@@ -8,10 +8,10 @@ import threading
 import time
 from datetime import timedelta
 from zoneinfo import ZoneInfo
-from sqlalchemy import select, text, delete, or_, case, func
+from sqlalchemy import select, text, delete, update, or_, case, func
 from .config import settings
 from .db import engine, session_scope
-from .models import League, Fixture, FixtureStatistics, FixtureDetails, SyncJob, WorkerState, utcnow
+from .models import League, Fixture, FixtureStatistics, FixtureDetails, SyncJob, WorkerState, ApiUsage, utcnow
 from .ingest import (
     upsert,
     save_fixtures,
@@ -384,6 +384,18 @@ def run(once=False, max_seconds=120):
             if settings.mode == "api":
                 ensure_job(s, "catalog", "catalog", {})
                 ensure_job(s, "live", "live", {}, utcnow() + timedelta(seconds=60))
+                # Recuperación idempotente al activar Pro: reintentar trabajos
+                # bloqueados previamente por el plan Free sin aguardar 24 h.
+                if settings.profile == "live" and not s.get(WorkerState, "proboot"):
+                    now = utcnow()
+                    s.execute(update(SyncJob).where(
+                        SyncJob.message.ilike("%plan%")
+                    ).values(next_run=now, failures=0, message=None))
+                    s.execute(update(ApiUsage).where(
+                        ApiUsage.day == now.date(),
+                        ApiUsage.provider_remaining == 0,
+                    ).values(provider_remaining=None, blocked_until=None))
+                    s.add(WorkerState(source="proboot", heartbeat=now, message="Pro habilitado"))
                 # El plan gratuito solo consulta la ventana de días ya validada.
                 # Limpiar trabajos heredados del perfil de pago tras un cambio de modo.
                 if settings.all_leagues and settings.profile == "free":
