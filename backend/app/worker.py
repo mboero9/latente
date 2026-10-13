@@ -344,6 +344,12 @@ def tick(client):
                     (SyncJob.kind == "fixtures", 3),
                     else_=4,
                 ),
+                case(
+                    *[(SyncJob.params["league"].as_integer() == league_id, rank)
+                      for rank, league_id in enumerate(settings.league_ids)],
+                    else_=len(settings.league_ids) + 1,
+                ),
+                SyncJob.params["season"].as_integer().desc(),
                 SyncJob.next_run, SyncJob.key,
             )
             .limit(1)
@@ -408,6 +414,19 @@ def run(once=False, max_seconds=120):
                         if catalog:
                             catalog.next_run = utcnow()
                         log.info("pro_backfill_catalog_required: no season jobs queued")
+                # Una única recuperación adicional: también adelantar tareas
+                # por temporada que quedaron programadas para el día siguiente
+                # cuando aún se usaba el perfil Free.
+                if settings.profile == "live" and not s.get(WorkerState, "pro_season_recovery"):
+                    now = utcnow()
+                    pending = s.execute(update(SyncJob).where(
+                        SyncJob.kind.in_(("standings", "scorers", "teams", "fixtures"))
+                    ).values(next_run=now, failures=0, message=None))
+                    s.add(WorkerState(
+                        source="pro_season_recovery", heartbeat=now,
+                        message="Importaciones Pro reprogramadas una sola vez"
+                    ))
+                    log.info("pro_season_recovery_jobs=%s", pending.rowcount)
                 # Recuperación idempotente al activar Pro: reintentar trabajos
                 # bloqueados previamente por el plan Free sin aguardar 24 h.
                 if settings.profile == "live" and not s.get(WorkerState, "proboot"):
