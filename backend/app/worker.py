@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select, text, delete, or_, case, func
 from .config import settings
 from .db import engine, session_scope
-from .models import League, Fixture, FixtureStatistics, SyncJob, WorkerState, utcnow
+from .models import League, Fixture, FixtureStatistics, FixtureDetails, SyncJob, WorkerState, utcnow
 from .ingest import (
     upsert,
     save_fixtures,
@@ -23,6 +23,7 @@ from .ingest import (
     FINISHED,
 )
 from .provider import FootballClient, Deferred, ProviderError, aware
+from .match_details import store_details
 
 log = logging.getLogger("latente.worker")
 stop = threading.Event()
@@ -119,11 +120,42 @@ def save_catalog(s, rows):
 
 def sync_fixture_rows(s, rows):
     save_fixtures(s, rows, settings.allowed_leagues)
-    # La cuota Free se reserva para marcadores; los snapshots ya guardados
-    # se mantienen, pero no se programan nuevas solicitudes por partido.
+    # Máximo dos fichas enriquecidas nuevas por día en Free (hasta 4 requests),
+    # para reservar cuota a los resultados. En planes amplios refrescar vivo.
+    now = utcnow()
+    start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    already_done = s.scalar(select(func.count()).select_from(FixtureDetails).where(
+        FixtureDetails.source == "api", FixtureDetails.updated_at >= start_of_day
+    )) or 0
+    queued = s.scalar(select(func.count()).select_from(SyncJob).where(
+        SyncJob.kind == "details"
+    )) or 0
+    capacity = max(0, (2 if settings.profile == "free" else 12) - already_done - queued)
+    selected = sorted(
+        (r for r in rows if r["fixture"]["status"]["short"] in LIVE | FINISHED),
+        key=lambda r: (
+            0 if r["league"]["id"] in settings.league_ids else 1,
+            0 if r["fixture"]["status"]["short"] in LIVE else 1,
+            r["fixture"]["id"],
+        ),
+    )
+    for raw in selected:
+        if capacity <= 0:
+            break
+        fixture_id = raw["fixture"]["id"]
+        fixture = s.get(Fixture, ("api", fixture_id))
+        if not fixture or not settings.accepts_league(fixture.league_id):
+            continue
+        old = s.get(FixtureDetails, ("api", fixture_id))
+        if old and (settings.profile == "free" or fixture.status in FINISHED):
+            continue
+        key = f"details:{fixture_id}"
+        if s.get(SyncJob, key):
+            continue
+        ensure_job(s, key, "details", {"fixture": fixture_id})
+        capacity -= 1
     if settings.profile == "free":
         return
-    now = utcnow()
     for raw in rows:
         if not settings.accepts_league(raw["league"]["id"]):
             continue
@@ -164,6 +196,24 @@ def live_ids(s, now, stale_before=None):
 
 
 def execute_job(client, kind, params):
+    if kind == "details":
+        with session_scope() as s:
+            fixture = s.get(Fixture, ("api", params["fixture"]))
+            if not fixture or not settings.accepts_league(fixture.league_id):
+                return None
+            if settings.profile == "free" and s.get(FixtureDetails, ("api", fixture.id)):
+                return None
+            completed = fixture.status in FINISHED
+        # Dos endpoints básicos, uno adicional de ratings solo en perfil amplio.
+        events = client.get("/fixtures/events", {"fixture": params["fixture"]})
+        lineups = client.get("/fixtures/lineups", {"fixture": params["fixture"]})
+        ratings = (
+            client.get("/fixtures/players", {"fixture": params["fixture"]})
+            if settings.profile == "live" and completed else None
+        )
+        with session_scope() as s:
+            store_details(s, params["fixture"], events, lineups, ratings)
+        return None if settings.profile == "free" or completed else 600
     if kind == "statistics":
         with session_scope() as s:
             fixture = s.get(Fixture, ("api", params["fixture"]))
