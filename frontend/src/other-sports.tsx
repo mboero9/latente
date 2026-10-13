@@ -30,7 +30,11 @@ export function SportPage({ slug }: { slug: string }) {
   const selected = tab === "past" ? past : tab === "today" ? today : future;
   const state = selected.result?.data;
   const all = [...(past.result?.data.games || []), ...(today.result?.data.games || []), ...(future.result?.data.games || [])];
-  const clubNames = Array.from(new Set(all.flatMap(game => [game.home, game.away]).filter(name => name && name !== "Local" && name !== "Visitante")));
+  const clubs = new Map<string, string | null>();
+  for (const game of all) {
+    if (game.home && game.home !== "Local") clubs.set(game.home, game.home_logo || clubs.get(game.home) || null);
+    if (game.away && game.away !== "Visitante") clubs.set(game.away, game.away_logo || clubs.get(game.away) || null);
+  }
   if (!sport) return <p>Deporte no disponible.</p>;
   return <section class="sport-landing">
     <div class="view-heading"><div><span class="eyebrow">LATENTE · DEPORTES</span>
@@ -58,8 +62,8 @@ export function SportPage({ slug }: { slug: string }) {
       </article>)}</div> : <article class="panel sport-intro"><h2>No hay encuentros para esta fecha</h2>
         <p>Podés elegir ayer u otra fecha. La cobertura y las competiciones disponibles dependen del proveedor.</p>
       </article>}
-      <h2 class="sport-section-title">Equipos encontrados ({clubNames.length})</h2>
-      {clubNames.length ? <div class="sports-clubs">{clubNames.map(name => <span class="sports-club" key={name}>{name}</span>)}</div> :
+      <h2 class="sport-section-title">Equipos encontrados ({clubs.size})</h2>
+      {clubs.size ? <div class="sports-clubs">{Array.from(clubs.entries()).map(([name, logo]) => <span class="sports-club" key={name}>{logo && <img src={logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{name}</span>)}</div> :
       <p class="match-details-unavailable">Los equipos aparecerán cuando haya encuentros verificados.</p>}
       <p class="coverage-notice">Cobertura de prueba: ayer, hoy y mañana. Las estadísticas detalladas, planteles y tablas oficiales necesitan validar los endpoints específicos de cada disciplina.</p>
     </>}
