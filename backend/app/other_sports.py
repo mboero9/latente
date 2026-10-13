@@ -74,12 +74,26 @@ def games(sport: str, day: str):
         return {"configured": True, "games": [], "message": "No se pudo consultar el proveedor. Reintentá más tarde"}
 
 
+def _trusted_logo(value):
+    """Allow only known team-logo CDN hosts; never expose arbitrary image URLs."""
+    from urllib.parse import urlparse
+    if not isinstance(value, str):
+        return None
+    parsed = urlparse(value)
+    if parsed.scheme != "https" or parsed.hostname not in {
+        "media.api-sports.io", "upload.wikimedia.org", "cdn.nba.com",
+    }:
+        return None
+    return value
+
+
 def _game_summary(sport: str, item: dict):
     if sport == "f1":
         race = item.get("competition") or {}
         return {"id": item.get("id"), "league": "Fórmula 1",
                 "date": (item.get("date") or ""), "home": race.get("name") or "Gran Premio",
                 "away": (item.get("circuit") or {}).get("name") or "",
+                "home_logo": None, "away_logo": None, "league_logo": None,
                 "home_score": None, "away_score": None,
                 "status": ((item.get("status") or {}).get("short") if isinstance(item.get("status"), dict) else str(item.get("status") or "Programado"))}
     teams = item.get("teams") or {}
@@ -91,6 +105,9 @@ def _game_summary(sport: str, item: dict):
     return {"id": item.get("id"), "league": league.get("name") if isinstance(league, dict) else str(league),
             "date": item.get("date"), "home": home.get("name") or "Local",
             "away": away.get("name") or "Visitante",
+            "home_logo": _trusted_logo(home.get("logo")),
+            "away_logo": _trusted_logo(away.get("logo")),
+            "league_logo": _trusted_logo(league.get("logo") if isinstance(league, dict) else None),
             "home_score": h if isinstance(h, int) else (h or {}).get("total") if isinstance(h, dict) else None,
             "away_score": a if isinstance(a, int) else (a or {}).get("total") if isinstance(a, dict) else None,
             "status": (state.get("long") or state.get("short") or "") if isinstance(state, dict) else str(state)}
