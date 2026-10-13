@@ -447,6 +447,16 @@ def scorers(league_id: int, season: int | None = Query(None, ge=1900, le=2200)):
                 .order_by(Scorer.rank, Scorer.player_id)
             )
         )
+        if not rows and settings.mode == "api":
+            from .scorer_fallback import partial_scorers
+            provisional, checked = partial_scorers(
+                s, settings.mode, league_id, (season or league.season), public
+            )
+            if provisional:
+                return {
+                    "data": provisional,
+                    "meta": meta([], coverage=False, provisional=True, matches_used=checked),
+                }
         teams = {
             t.id: public(t)
             for t in s.scalars(
@@ -457,7 +467,7 @@ def scorers(league_id: int, season: int | None = Query(None, ge=1900, le=2200)):
         }
         return {
             "data": [{**public(r), "team": teams[r.team_id]} for r in rows],
-            "meta": meta(rows, coverage=league.coverage.get("top_scorers")),
+            "meta": meta(rows, coverage=league.coverage.get("top_scorers"), provisional=False),
         }
 
 
