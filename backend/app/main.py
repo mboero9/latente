@@ -249,11 +249,11 @@ def fixtures(
 ):
     start, end = date_window(day, tz)
     with session_scope() as s:
-        q = select(Fixture).where(
-            Fixture.source == settings.mode,
-            Fixture.kickoff >= start,
-            Fixture.kickoff < end,
-        )
+        # El filtro «En vivo» muestra encuentros activos de cualquier zona
+        # horaria, aunque su fecha local sea ayer o mañana.
+        q = select(Fixture).where(Fixture.source == settings.mode)
+        if not live:
+            q = q.where(Fixture.kickoff >= start, Fixture.kickoff < end)
         if settings.mode == "api" and not settings.all_leagues:
             q = q.where(Fixture.league_id.in_(settings.league_ids))
         if league_id:
