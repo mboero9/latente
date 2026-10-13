@@ -518,6 +518,17 @@ def run(once=False, max_seconds=120):
             if settings.mode == "api":
                 ensure_job(s, "catalog", "catalog", {})
                 ensure_job(s, "live", "live", {}, utcnow() + timedelta(seconds=60))
+                # La cola de goles debe existir incluso si el fixture completo
+                # se importó horas antes de activar la nueva versión.
+                if settings.profile == "live":
+                    for league_id in settings.league_ids:
+                        league_row = s.get(League, ("api", league_id))
+                        if not league_row:
+                            continue
+                        enqueue_hydration(s, league_id, league_row.season)
+                        if league_row.season > 2024:
+                            enqueue_hydration(s, league_id, league_row.season - 1,
+                                              limit_batches=1)
                 # Si el catálogo se creó antes del upgrade Free→Pro y aún no
                 # existen trabajos por temporada, forzar su reconstrucción.
                 # Es idempotente: al crear los trabajos deja de activarse.
