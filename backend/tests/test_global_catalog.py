@@ -168,3 +168,28 @@ def test_pro_recovery_ids_fit_database_source_column():
     keys += re.findall(r's\.get\(WorkerState, ["\']([^"\']+)["\']', source)
     assert keys
     assert all(len(key) <= limit for key in keys), (keys, limit)
+
+
+def test_current_league_season_beats_historical_jobs(monkeypatch):
+    all_settings(monkeypatch)
+    monkeypatch.setattr(worker, "background_turn", 0)
+    with session_scope() as s:
+        worker.save_catalog(s, [
+            catalog_row(128),
+            catalog_row(129),
+        ])
+        # Es importante que el job histórico de la liga 128 no desplace
+        # goleadores de la temporada actual de la liga 129.
+        current = utcnow() - timedelta(minutes=1)
+        s.add(SyncJob(key="standings:128:2025", kind="standings",
+                      params={"league": 128, "season": 2025},
+                      next_run=current - timedelta(days=10)))
+        s.get(SyncJob, "standings:128:2026").next_run = current
+        s.get(SyncJob, "standings:129:2026").next_run = current
+    picked = []
+    monkeypatch.setattr(worker, "execute_job",
+                        lambda _client, kind, params: picked.append(params.copy()) or None)
+    worker.tick(None)
+    worker.tick(None)
+    assert picked[0]["season"] == 2026
+    assert picked[1]["season"] == 2026
