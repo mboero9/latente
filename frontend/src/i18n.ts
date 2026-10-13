@@ -99,8 +99,13 @@ const dictionary: Record<string, string> = {
   "Diferencia": "Difference",
   "Ligas disponibles": "Available leagues",
   "Ver tabla": "View standings",
+  "Todos los derechos reservados.": "All rights reserved.",
+  "Algunas fechas o temporadas no están disponibles": "Some dates or seasons are unavailable",
+  "Algunos datos están restringidos por el plan de cobertura contratado.": "Some data is restricted by the current coverage plan.",
+  "Las ligas están disponibles, pero todavía no hay partidos recibidos para esta fecha.": "Leagues are available, but no matches have been received for this date yet.",
   "Último dato": "Last update"
 };
+// Brand copyright refers to the Latente website, not ownership of third-party club marks.
 const originals = new WeakMap<Text, { original: string; translated: string }>();
 const placeholders = new WeakMap<Element, string>();
 const translate = (value: string) => {
