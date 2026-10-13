@@ -2035,3 +2035,14 @@
   .goal-author small { color:var(--muted);font-variant-numeric:tabular-nums; }
   @media(max-width:580px) { .goal-authors { grid-template-columns:1fr; } }
 }
+
+@layer components {
+  .promedios-view { display:grid; gap:18px; max-width:920px; }
+  .promedios-card { display:grid; gap:16px; padding:clamp(18px,3vw,28px); line-height:1.65; }
+  .promedios-card h2 { font-size:1.25rem; }
+  .promedios-card p { color:var(--muted); }
+  .promedios-card p strong { color:var(--ink); }
+  .promedios-card small { color:var(--muted); }
+  .official-standings-link { display:inline-flex; width:fit-content; max-width:100%; border:1px solid var(--line); border-radius:9px; padding:10px 15px; color:var(--green); font-weight:800; }
+  .official-standings-link:hover { background:var(--surface-secondary); }
+}
