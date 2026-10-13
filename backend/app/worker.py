@@ -115,7 +115,7 @@ def save_catalog(s, rows):
             ensure_job(s, key, kind, params, utcnow() + timedelta(microseconds=matched))
     if not matched:
         raise ValueError("El catálogo no contiene las ligas configuradas")
-    s.execute(delete(SyncJob).where(SyncJob.key.not_in(active_keys), SyncJob.kind != "statistics"))
+    s.execute(delete(SyncJob).where(SyncJob.key.not_in(active_keys), SyncJob.kind.not_in(("statistics", "details"))))
 
 
 def sync_fixture_rows(s, rows):
