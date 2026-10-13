@@ -92,7 +92,7 @@ def upsert_no_replace(db, sport, day):
                .on_conflict_do_nothing(index_elements=["sport", "day"]))
 
 
-def persist_snapshot(sport, kind, ref, normalized, count):
+def persist_snapshot(sport, kind, ref, normalized, count, country=""):
     now = utcnow()
     with session_scope() as db:
         previous = db.get(SportSnapshot, (sport, kind, ref))
@@ -102,7 +102,7 @@ def persist_snapshot(sport, kind, ref, normalized, count):
         upsert(db, SportSnapshot, {
             "sport": sport, "dataset": kind, "ref": ref, "provider": "api_sports",
             "data": normalized, "source_count": count, "updated_at": now,
-            "note": "Dato del proveedor. Cobertura sujeta a competición/temporada.",
+            "note": ("País: " + country + ". " if country else "") + "Cobertura según competición y temporada.",
         })
     return True
 
@@ -152,7 +152,8 @@ def sync_once(max_calls=3, fetch=extract):
                 normalized = normalize_standings(rows, sport=sport)
             else:
                 normalized = rows[:200]  # F1 driver ranking, source-record format
-            stored = persist_snapshot(sport, kind, ref, normalized, len(rows))
+            stored = persist_snapshot(sport, kind, ref, normalized, len(rows),
+                                      config.get("country", "") if isinstance(config, dict) else "")
             if stored:
                 report["updated"].append({"sport": sport, "kind": kind,
                                           "ref": ref, "rows": len(normalized)})
