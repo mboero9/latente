@@ -46,7 +46,7 @@ def save_catalog(s, rows):
         ensure_job(s, "settle", "settle", {}, utcnow() + timedelta(minutes=2))
         # Ventana móvil global: dos días previos y siete próximos. Una llamada
         # por fecha sustituye miles de consultas de fixtures por liga.
-        for offset in (0, -1, 1, -2, 2, 3, 4, 5, 6, 7):
+        for offset in ((0, -1, 1) if settings.profile == "free" else (0, -1, 1, -2, 2, 3, 4, 5, 6, 7)):
             key = f"day:{offset}"
             active_keys.add(key)
             ensure_job(s, key, "day", {"offset": offset})
@@ -278,7 +278,7 @@ def tick(client):
             job.next_run, job.message = exc.until, exc.message
         heartbeat(exc.message)
     except Exception as exc:
-        delay = min(3600, 60 * 2 ** min(failures, 6))
+        # Restricciones de temporada/plan no se resuelven reintentando cada minuto.\n        plan_blocked = isinstance(exc, ProviderError) and ": plan" in str(exc)\n        delay = 86400 if plan_blocked else min(3600, 60 * 2 ** min(failures, 6))
         with session_scope() as s:
             job = s.get(SyncJob, key)
             job.failures += 1
@@ -304,7 +304,7 @@ def run(once=False, max_seconds=120):
         with session_scope() as s:
             if settings.mode == "api":
                 ensure_job(s, "catalog", "catalog", {})
-                ensure_job(s, "live", "live", {}, utcnow() + timedelta(seconds=60))
+                ensure_job(s, "live", "live", {}, utcnow() + timedelta(seconds=60))\n                # El plan gratuito solo consulta la ventana de días ya validada.\n                # Limpiar trabajos heredados del perfil de pago tras un cambio de modo.\n                if settings.all_leagues and settings.profile == "free":\n                    s.execute(delete(SyncJob).where(\n                        SyncJob.kind == "day",\n                        SyncJob.key.not_in(("day:0", "day:-1", "day:1")),\n                    ))
         client = FootballClient()
         try:
             if once and settings.mode == "api" and not settings.api_key:
