@@ -1231,7 +1231,7 @@ function App() {
         <div class="header-inner">
           <a href="#/" class="brand" aria-label="Latente, inicio">
             <img src="/latente-mark.png?v=3" width="43" height="43" alt="" />
-            <span class="brand-wordmark">latente<span class="brand-dot">.</span></span>
+            <span class="brand-wordmark"><span class="brand-late">LATE</span><span class="brand-nte">NTE</span><span class="brand-dot">.</span></span>
           </a>
           <nav class="top-nav" aria-label="Navegación principal">
             {[
@@ -1332,7 +1332,7 @@ function App() {
         </aside>
         <main id="main" tabIndex={-1}>
           <div class="utility-bar">
-            <span>latente.cfd - Clubes, Fútbol y Deportes</span>
+            <span>LATENTE.CFD - Clubes, Fútbol y Deportes</span>
             <label class="timezone">
               Horarios
               <select
