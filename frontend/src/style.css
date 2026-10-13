@@ -2179,3 +2179,17 @@
     .brand > img { width: 34px; height: 34px; }
   }
 }
+
+@layer components {
+  /* Marca original: solo el punto celeste, sin el sufijo .cfd. */
+  .brand .brand-wordmark {
+    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 850;
+    font-size: 1.9rem;
+    letter-spacing: -1.5px;
+    font-style: normal;
+  }
+  .brand .brand-late { color: #69d5ff; }
+  .brand .brand-nte { color: #fff; }
+  .brand .brand-dot { color: #69d5ff; margin-left: 2px; font-size: 1em; letter-spacing: 0; }
+}
