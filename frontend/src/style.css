@@ -1931,3 +1931,8 @@
   .language-toggle { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 6px 9px; font-weight: 700; cursor: pointer; }
   .language-toggle:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 }
+
+@layer components {
+  .api-usage { font-size: .73rem; font-weight: 700; white-space: nowrap; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); }
+  @media(max-width: 860px) { .api-usage { display: none; } .header-actions { gap: 6px; } }
+}
