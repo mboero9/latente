@@ -19,6 +19,7 @@ SPORTS = {
     "f1": ("FORMULA1_API_KEY", "https://v1.formula-1.api-sports.io", "races"),
     "nfl": ("NFL_API_KEY", "https://v1.american-football.api-sports.io", "games"),
     "rugby": ("RUGBY_API_KEY", "https://v1.rugby.api-sports.io", "games"),
+    "afl": ("AFL_API_KEY", "https://v1.afl.api-sports.io", "games"),
 }
 _LOCK = threading.Lock()
 _CACHE: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
