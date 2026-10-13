@@ -1,5 +1,6 @@
 import { useState } from "preact/hooks";
 import { useApi } from "./api";
+import { SportsStandings } from "./sports-standings";
 import type { League, Team } from "./types";
 export const sports = [
   { slug: "nhl", name: "NHL · Hockey", emoji: "🏒" },
@@ -99,8 +100,7 @@ export function SportPage({ slug }: { slug: string }) {
           <strong>{name}</strong><span>{data.played}</span><span>{data.wins}</span><span>{data.scored}</span>
         </div>)}
       </div> : <p class="match-details-unavailable">No hay suficientes resultados finales en la ventana para calcular estadísticas fiables.</p>}
-      <h2 class="sport-section-title">Anotadores e históricos</h2>
-      <p class="coverage-notice">Los máximos anotadores, clasificaciones completas, récords de campeones e históricos de cada deporte requieren importar las temporadas y las estadísticas de jugadores desde sus endpoints oficiales. No calculamos goleadores individuales solo a partir de marcadores.</p>
+      <SportsStandings sport={sport.slug} />
     </>}
   </section>;
 }
