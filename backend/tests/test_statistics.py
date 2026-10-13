@@ -35,6 +35,17 @@ def statistics():
     ]
 
 
+def test_free_profile_keeps_live_scores_without_new_statistics_jobs(db, monkeypatch):
+    configure(monkeypatch)
+    free_settings = replace(worker.settings, profile="free")
+    monkeypatch.setattr(worker, "settings", free_settings)
+    monkeypatch.setattr(main, "settings", free_settings)
+    covered_catalog(db)
+    worker.sync_fixture_rows(db, [fixture(status="2H")])
+    db.flush()
+    assert not db.get(SyncJob, "statistics:1")
+
+
 def test_snapshot_keeps_null_zero_and_previous_data_on_empty(db, monkeypatch):
     configure(monkeypatch)
     covered_catalog(db)
