@@ -328,19 +328,19 @@ def fixture_statistics(fixture_id: int):
 
 @app.get("/api/sports/status")
 def sports_status():
-    """No compartir claves entre productos API-Sports: cada plan es independiente."""
-    import os
-    sports = {
-        "nhl": "HOCKEY_API_KEY", "mlb": "BASEBALL_API_KEY",
-        "nba": "NBA_API_KEY", "basketball": "BASKETBALL_API_KEY",
-        "f1": "FORMULA1_API_KEY", "nfl": "NFL_API_KEY",
-        "rugby": "RUGBY_API_KEY",
-    }
-    return {"data": [
-        {"name": name, "configured": bool(os.environ.get(env_var, "").strip()),
-         "note": "Se necesita una suscripción separada a este deporte"}
-        for name, env_var in sports.items()
-    ], "meta": meta([])}
+    from .other_sports import status
+    return {"data": status(), "meta": meta([])}
+
+
+@app.get("/api/sports/{sport}/games")
+def sport_games(sport: str, date: str = Query(..., pattern=r"^\\d{4}-\\d{2}-\\d{2}$")):
+    from .other_sports import SPORTS, games
+    if sport not in SPORTS:
+        raise HTTPException(404, "Deporte no disponible")
+    try:
+        return {"data": games(sport, date), "meta": meta([])}
+    except ValueError:
+        raise HTTPException(422, "Fecha inválida")
 
 
 @app.get("/api/leagues/{league_id}/history")
