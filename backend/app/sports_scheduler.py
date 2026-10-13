@@ -127,6 +127,13 @@ def sync_once(max_calls=3, fetch=extract):
             if previous and aware(previous.updated_at) + period > now:
                 continue
             candidates.append((sport, kind, ref, config))
+    # Repartir equitativamente los turnos entre deportes de 100 requests/día.
+    # Sin esto, los primeros 3 deportes monopolizan todos los cron.
+    with session_scope() as db:
+        used = {q.sport: q.requests for q in db.scalars(
+            select(SportQuota).where(SportQuota.day == utcnow().date())
+        )}
+    candidates.sort(key=lambda item: used.get(item[0], 0))
     report = {"updated": [], "unavailable": [], "attempts": 0}
     for sport, kind, ref, config in candidates:
         if report["attempts"] >= max_calls:
