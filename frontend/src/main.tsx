@@ -1230,7 +1230,7 @@ function App() {
               ["/leagues", "Ligas"],
               [`/table/${first}`, "Posiciones"],
               [`/scorers/${first}`, "Goleadores"],
-              ...sports.map(sport => [`/sport/${sport.slug}`, sport.name]),
+              ...sports.map(sport => [`/sport/${sport.slug}`, `${sport.emoji} ${sport.name}`]),
             ].map(([path, label]) => (
               <a
                 class={
