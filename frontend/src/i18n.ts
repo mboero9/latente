@@ -14,7 +14,7 @@ const dictionary: Record<string, string> = {
   "Buscar una liga o un país": "Search for a league or country",
   "Buscar equipo": "Search teams",
   "Explorar todas las ligas": "Explore all leagues",
-  "FÚTBOL, DE ACÁ Y DEL MUNDO": "FOOTBALL, HERE AND WORLDWIDE",
+  ".cfd - Clubes, Fútbol y Deportes": ".cfd - Clubs, Football & Sports",
   "LA JORNADA": "MATCHDAY",
   "EN FOCO": "SPOTLIGHT",
   "En juego": "Live",
