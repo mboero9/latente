@@ -1990,3 +1990,18 @@
   .sport-landing h2 { font-size: 1.2rem; }
   .sport-landing .eyebrow { font-weight: 700; }
 }
+
+@layer components {
+  .sports-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+  .sports-tabs button { padding: 9px 18px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--surface); font-weight: 700; cursor: pointer; }
+  .sports-tabs button.active { background: var(--green); color: white; }
+  .sports-games { display: grid; gap: 10px; }
+  .sport-game { padding: 15px 19px; display: grid; gap: 12px; }
+  .sport-game > small { color: var(--muted); }
+  .sport-game-teams { display: grid; grid-template-columns: minmax(0,1fr) 90px minmax(0,1fr); gap: 12px; align-items: center; }
+  .sport-game-teams strong:last-child { text-align: right; }
+  .sport-game-teams span { text-align: center; font-weight: 900; font-size: 1.3rem; color: var(--green); }
+  .sport-section-title { font-size: 1.15rem; margin-top: 18px; }
+  .sports-clubs { display: flex; flex-wrap: wrap; gap: 9px; }
+  .sports-club { padding: 8px 13px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-weight: 650; font-size: .84rem; }
+}
