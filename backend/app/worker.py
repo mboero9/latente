@@ -424,6 +424,13 @@ def tick(client):
     heartbeat("Actualización automática activa")
     realtime = ["live", "settle", "day"]
     bulk = ["standings", "scorers", "teams", "fixtures"]
+    current_year = (
+        select(League.season)
+        .where(League.source == "api",
+               League.id == SyncJob.params["league"].as_integer())
+        .correlate(SyncJob)
+        .scalar_subquery()
+    )
     with session_scope() as s:
         job = s.scalar(
             select(SyncJob)
@@ -436,10 +443,13 @@ def tick(client):
                     (SyncJob.kind.in_(["statistics", "details"]), 1 if background_turn == 2 else 4),
                     else_=5,
                 ),
-                # Primero la competición prioritaria y la temporada actual;
-                # después standings, goleadores, clubes y resultados.
-                # Evita traer tablas de 2024 de decenas de ligas mientras
-                # Champions 2026 sigue sin goleadores.
+                # Primero todas las temporadas ACTUALES de ligas relevantes,
+                # luego los archivos 2025/2024. No exigir 2026: las ligas
+                # internacionales pueden tener otra temporada vigente.
+                case(
+                    (SyncJob.params["season"].as_integer() == current_year, 0),
+                    else_=1,
+                ),
                 case(
                     *[(SyncJob.params["league"].as_integer() == league_id, rank)
                       for rank, league_id in enumerate(settings.league_ids)],
