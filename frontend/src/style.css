@@ -2005,3 +2005,11 @@
   .sports-clubs { display: flex; flex-wrap: wrap; gap: 9px; }
   .sports-club { padding: 8px 13px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-weight: 650; font-size: .84rem; }
 }
+
+@layer components {
+  .sport-game-league { display:flex;align-items:center;gap:8px; }
+  .sport-game-league img { width:24px;height:24px;object-fit:contain; }
+  .sport-team { display:flex;align-items:center;gap:8px;min-width:0; }
+  .sport-team img { width:32px;height:32px;object-fit:contain;flex-shrink:0; }
+  .sport-team-away { justify-content:flex-end; }
+}
