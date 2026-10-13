@@ -18,7 +18,7 @@ from .other_sports import SPORTS
 from .sports_sources import extract, normalize_games, normalize_standings, SourceUnavailable
 
 logger = logging.getLogger("latente.multisport")
-DONE_TTL = {"games": timedelta(hours=6), "standings": timedelta(days=1),
+DONE_TTL = {"games": timedelta(hours=6), "leagues": timedelta(days=1), "standings": timedelta(days=1),
             "drivers": timedelta(days=1)}
 
 
@@ -58,6 +58,10 @@ def due_jobs(today=None):
     jobs = []
     targets = configured_targets()
     for sport in enabled:
+        # Una consulta de catálogo diaria como máximo: las competiciones
+        # argentinas (UAR/URBA) se identifican por sus IDs reales.
+        if sport == "rugby":
+            jobs.append((sport, "leagues", "catalog", {"country": "Argentina"}))
         # One date per sport and request. Archives remain unchanged.
         jobs.append((sport, "games", today.isoformat(), today))
         jobs.append((sport, "games", (today - timedelta(days=1)).isoformat(),
@@ -148,6 +152,13 @@ def sync_once(max_calls=3, fetch=extract):
             rows = fetch(sport, endpoint, params)
             if kind == "games":
                 normalized = normalize_games(sport, rows)
+            elif kind == "leagues":
+                normalized = [
+                    {"id": row["id"], "name": row.get("name") or "",
+                     "country": ((row.get("country") or {}).get("name") if isinstance(row.get("country"), dict) else row.get("country")) or "",
+                     "type": row.get("type") or ""}
+                    for row in rows if isinstance(row, dict) and isinstance(row.get("id"), int)
+                ]
             elif kind == "standings":
                 normalized = normalize_standings(rows, sport=sport)
             else:
