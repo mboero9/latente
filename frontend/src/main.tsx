@@ -1205,7 +1205,7 @@ function App() {
       <header class="header">
         <div class="header-inner">
           <a href="#/" class="brand" aria-label="Latente, inicio">
-            <img src="/favicon.svg?v=2" width="43" height="43" alt="" />
+            <img src="/latente-mark.png?v=3" width="43" height="43" alt="" />
             <span>latente<span class="brand-dot">.</span></span>
           </a>
           <nav class="top-nav" aria-label="Navegación principal">
@@ -1284,7 +1284,7 @@ function App() {
             Explorar todas las ligas ({leagues.length})
           </a>
           <div class="sidebar-bottom">
-            <span class="source-mark">L</span>
+            <img class="source-logo" src="/latente-mark.png?v=3" width="40" height="40" alt="" />
             <div>
               <strong>Datos con contexto</strong>
               <p>Fuente: {mode === "demo" ? "demostración" : "API-Football"}</p>
