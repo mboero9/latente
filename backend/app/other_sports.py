@@ -115,6 +115,29 @@ def _game_summary(sport: str, item: dict):
                 "home_score": None, "away_score": None,
                 "status": ((item.get("status") or {}).get("short") if isinstance(item.get("status"), dict) else str(item.get("status") or "Programado"))}
     teams = item.get("teams") or {}
+    # API-NBA uses 'visitors' instead of 'away' and scores.*.points;
+    # numeric status.short 3 means finished, 2 live, 1 scheduled.
+    if sport == "nba":
+        home, away = teams.get("home") or {}, teams.get("visitors") or {}
+        raw_scores = item.get("scores") or {}
+        home_score = (raw_scores.get("home") or {}).get("points")
+        away_score = (raw_scores.get("visitors") or {}).get("points")
+        status = item.get("status") or {}
+        short = str(status.get("short") or "")
+        label = {"1": "NS", "2": "Live", "3": "FT"}.get(short, status.get("long") or short)
+        return {
+            "id": item.get("id"), "league": "NBA",
+            "league_id": "standard", "country": "USA",
+            "date": item.get("date"), "home": home.get("name") or "Local",
+            "away": away.get("name") or "Visitante",
+            "home_id": home.get("id"), "away_id": away.get("id"),
+            "home_logo": _trusted_logo(home.get("logo")),
+            "away_logo": _trusted_logo(away.get("logo")),
+            "league_logo": None,
+            "home_score": home_score if type(home_score) is int else None,
+            "away_score": away_score if type(away_score) is int else None,
+            "status": label,
+        }
     home, away = teams.get("home") or {}, teams.get("away") or {}
     scores = item.get("scores") or {}
     h, a = scores.get("home"), scores.get("away")
