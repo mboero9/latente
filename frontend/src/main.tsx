@@ -1183,7 +1183,7 @@ function App() {
     id = Number(rawId),
     league = leagues.find((l) => l.id === id),
     first = leagues[0]?.id || 128;
-  const isLeagueView = ["league", "table", "scorers", "teams"].includes(view);
+  const isLeagueView = ["league", "table", "scorers", "teams", "history"].includes(view);
   useEffect(() => {
     document.title = `${league?.name || ({ leagues: "Ligas y copas", team: "Equipo", match: "Partido" } as Record<string, string>)[view] || "Resultados"} · Latente`;
   }, [route, league?.name]);
