@@ -275,6 +275,28 @@ def live_ids(s, now, stale_before=None):
 
 
 def execute_job(client, kind, params):
+    if kind == "hydrate":
+        # La API admite hasta 20 fixtures por pedido incluyendo eventos,
+        # formaciones y estadísticas donde estén disponibles.
+        ids = params["ids"]
+        if not ids or len(ids) > 20 or any(not isinstance(i, int) or i <= 0 for i in ids):
+            return None
+        with session_scope() as s:
+            valid = set(s.scalars(select(Fixture.id).where(
+                Fixture.source == "api", Fixture.id.in_(ids),
+                Fixture.league_id == params["league"],
+                Fixture.season == params["season"],
+            )))
+        if not valid:
+            return None
+        rows = client.get("/fixtures", {"ids": "-".join(str(i) for i in ids if i in valid)})
+        matched = [r for r in rows if (r.get("fixture") or {}).get("id") in valid]
+        with session_scope() as s:
+            save_fixtures(s, matched, settings.allowed_leagues)
+            stored = cache_extended_fixtures(s, matched, mark_checked=True)
+        log.info("hydrate_batch league=%s season=%s fixtures=%s details=%s",
+                 params["league"], params["season"], len(matched), stored)
+        return None
     if kind == "details":
         with session_scope() as s:
             fixture = s.get(Fixture, ("api", params["fixture"]))
@@ -336,6 +358,13 @@ def execute_job(client, kind, params):
         log.info("provider_live_rows=%s", len(rows))
         with session_scope() as s:
             sync_fixture_rows(s, rows)
+            # La primera división, Champions, copas y ligas prioritarias
+            # reciben eventos completos desde los primeros partidos en vivo.
+            relevant = {(r["league"]["id"], r["league"]["season"]) for r in rows
+                        if r["league"]["id"] in settings.league_ids}
+            for league_id, year in sorted(relevant,
+                                          key=lambda item: settings.league_ids.index(item[0]))[:3]:
+                enqueue_hydration(s, league_id, year)
         return settings.live_seconds
     if kind in {"live", "settle"}:
         with session_scope() as s:
@@ -346,6 +375,7 @@ def execute_job(client, kind, params):
         rows = client.get("/fixtures", {"ids": "-".join(map(str, ids))})
         with session_scope() as s:
             sync_fixture_rows(s, rows)
+            cache_extended_fixtures(s, rows)
         return settings.live_seconds
     endpoint = {
         "fixtures": "/fixtures",
@@ -357,6 +387,7 @@ def execute_job(client, kind, params):
     with session_scope() as s:
         if kind == "fixtures":
             sync_fixture_rows(s, rows)
+            enqueue_hydration(s, params["league"], params["season"])
         elif kind == "teams":
             save_teams(s, rows, params["league"], params["season"])
         elif kind == "standings":
@@ -438,6 +469,9 @@ def tick(client):
             elif job:
                 job.next_run = utcnow() + timedelta(seconds=seconds)
                 job.last_success, job.failures, job.message = utcnow(), 0, None
+            if kind == "hydrate" and seconds is None:
+                # El próximo lote se programa solo tras guardar el anterior.
+                enqueue_hydration(s, params["league"], params["season"])
         log.info("sync_ok kind=%s key=%s", kind, key)
     except Deferred as exc:
         with session_scope() as s:
