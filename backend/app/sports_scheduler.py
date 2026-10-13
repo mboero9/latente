@@ -146,7 +146,9 @@ def sync_once(max_calls=3, fetch=extract):
         report["attempts"] += 1
         endpoint = "races" if sport == "f1" and kind == "games" else (
             "rankings/drivers" if kind == "drivers" else kind)
-        if kind == "games":
+        if kind == "leagues":
+            params = {}
+        elif kind == "games":
             params = ({"season": config.year} if sport == "f1"
                       else {"date": ref})
             if sport == "nba":
