@@ -15,6 +15,7 @@ import type {
 import "./style.css";
 import { observeLanguage } from "./i18n";
 import { MatchExtras } from "./match-extras";
+import { sports, SportPage, HistoryPage } from "./other-sports";
 
 const LIVE = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT"]);
 const labels: Record<string, string> = {
@@ -257,6 +258,7 @@ function LeagueTabs({ league, view }: { league: League; view: string }) {
         ["table", "Posiciones"],
         ["scorers", "Goleadores"],
         ["teams", "Equipos"],
+        ["history", "Históricos"],
       ].map(([key, label]) => (
         <a
           class={view === key ? "active" : ""}
@@ -1228,6 +1230,7 @@ function App() {
               ["/leagues", "Ligas"],
               [`/table/${first}`, "Posiciones"],
               [`/scorers/${first}`, "Goleadores"],
+              ...sports.map(sport => [`/sport/${sport.slug}`, sport.name]),
             ].map(([path, label]) => (
               <a
                 class={
@@ -1396,6 +1399,8 @@ function App() {
                   />
                 ) : view === "table" ? (
                   <TableView league={league} />
+                ) : view === "history" ? (
+                  <HistoryPage league={league} />
                 ) : view === "scorers" ? (
                   <ScorersView league={league} />
                 ) : (
@@ -1407,6 +1412,8 @@ function App() {
                 La primera sincronización puede tardar varios minutos.
               </Empty>
             )
+          ) : view === "sport" ? (
+            <SportPage slug={rawId} />
           ) : view === "leagues" ? (
             <LeaguesView leagues={leagues} />
           ) : view === "team" ? (
