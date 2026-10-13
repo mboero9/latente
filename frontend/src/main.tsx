@@ -1234,7 +1234,7 @@ function App() {
             ].map(([path, label]) => (
               <a
                 class={
-                  path.startsWith("/sport/") ? route === path : ((view === "" && path === "/") || path.split("/")[1] === view)
+                  (path.startsWith("/sport/") ? route === path : ((view === "" && path === "/") || path.split("/")[1] === view))
                     ? "active"
                     : ""
                 }
