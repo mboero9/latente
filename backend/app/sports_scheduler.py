@@ -95,11 +95,16 @@ def upsert_no_replace(db, sport, day):
 def persist_snapshot(sport, kind, ref, normalized, count):
     now = utcnow()
     with session_scope() as db:
+        previous = db.get(SportSnapshot, (sport, kind, ref))
+        if previous and previous.source_count > 0 and not normalized:
+            # A transient empty response must not erase a verified nonempty one.
+            return False
         upsert(db, SportSnapshot, {
             "sport": sport, "dataset": kind, "ref": ref, "provider": "api_sports",
             "data": normalized, "source_count": count, "updated_at": now,
             "note": "Dato del proveedor. Cobertura sujeta a competición/temporada.",
         })
+    return True
 
 
 def sync_once(max_calls=3, fetch=extract):
@@ -109,7 +114,13 @@ def sync_once(max_calls=3, fetch=extract):
     with session_scope() as db:
         for sport, kind, ref, config in due_jobs():
             previous = db.get(SportSnapshot, (sport, kind, ref))
-            if previous and aware(previous.updated_at) + DONE_TTL[kind] > now:
+            offseason = {v.strip() for v in os.getenv("SPORTS_OFFSEASON", "").split(",")}
+            period = timedelta(days=7) if sport in offseason else (
+                timedelta(days=1) if kind == "games" and ref != now.astimezone(
+                    ZoneInfo("America/Argentina/Buenos_Aires")).date().isoformat()
+                else DONE_TTL[kind]
+            )
+            if previous and aware(previous.updated_at) + period > now:
                 continue
             candidates.append((sport, kind, ref, config))
     report = {"updated": [], "unavailable": [], "attempts": 0}
@@ -141,9 +152,10 @@ def sync_once(max_calls=3, fetch=extract):
                 normalized = normalize_standings(rows)
             else:
                 normalized = rows[:200]  # F1 driver ranking, source-record format
-            persist_snapshot(sport, kind, ref, normalized, len(rows))
-            report["updated"].append({"sport": sport, "kind": kind,
-                                      "ref": ref, "rows": len(normalized)})
+            stored = persist_snapshot(sport, kind, ref, normalized, len(rows))
+            if stored:
+                report["updated"].append({"sport": sport, "kind": kind,
+                                          "ref": ref, "rows": len(normalized)})
         except (SourceUnavailable, ValueError, TypeError):
             # Preserve last good snapshot; errors must not erase prior data.
             report["unavailable"].append({"sport": sport, "kind": kind,
