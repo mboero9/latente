@@ -26,7 +26,7 @@ _COUNTS: dict[tuple[str, str], int] = {}
 
 
 def status():
-    return [{"name": sport, "configured": bool(os.getenv(key, "").strip()),
+    return [{"name": sport, "configured": bool((os.getenv(key) or os.getenv("API_FOOTBALL_KEY", "")).strip()),
              "note": "Cuota gratuita independiente, cobertura según proveedor"}
             for sport, (key, _, _) in SPORTS.items()]
 
@@ -36,7 +36,7 @@ def games(sport: str, day: str):
         raise ValueError("Deporte desconocido")
     datetime.strptime(day, "%Y-%m-%d")
     env, base, endpoint = SPORTS[sport]
-    key = os.getenv(env, "").strip()
+    key = (os.getenv(env) or os.getenv("API_FOOTBALL_KEY", "")).strip()
     if not key:
         return {"configured": False, "games": [], "message": "Falta activar el plan Free y configurar su API Key"}
     stamp = datetime.now(timezone.utc).date().isoformat()
