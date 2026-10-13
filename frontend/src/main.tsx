@@ -124,20 +124,23 @@ function Icon({ name }: { name: string }) {
   );
 }
 function Badge({ team, large = false }: { team: Team; large?: boolean }) {
+  const [failed, setFailed] = useState(false);
+  const fallback = team.code || team.name.split(" ").filter((x) => x.length > 2).map((x) => x[0]).slice(0, 3).join("").toUpperCase() || team.name.slice(0, 2);
   return (
-    <span
-      aria-hidden="true"
-      class={`team-badge tone-${team.id % 8} ${large ? "large" : ""}`}
-    >
-      {team.code ||
-        team.name
-          .split(" ")
-          .filter((x) => x.length > 2)
-          .map((x) => x[0])
-          .slice(0, 3)
-          .join("")
-          .toUpperCase() ||
-        team.name.slice(0, 2)}
+    <span aria-hidden="true" class={`team-badge tone-${team.id % 8} ${large ? "large" : ""}`}>
+      {!failed && team.id > 0 ? (
+        <img loading="lazy" decoding="async" alt="" src={`https://media.api-sports.io/football/teams/${team.id}.png`} onError={() => setFailed(true)} />
+      ) : fallback}
+    </span>
+  );
+}
+function LeagueLogo({ league }: { league: League }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <span class="league-flag" aria-hidden="true">
+      {!failed && league.id > 0 ? (
+        <img loading="lazy" decoding="async" alt="" src={`https://media.api-sports.io/football/leagues/${league.id}.png`} onError={() => setFailed(true)} />
+      ) : flag(league.country)}
     </span>
   );
 }
@@ -281,7 +284,7 @@ function LeagueHeader({
       <div class="view-heading">
         <div>
           <span class="eyebrow">
-            {flag(league.country)} {cn(league.country)}
+            <LeagueLogo league={league} /> {cn(league.country)}
           </span>
           <h1>{league.name}</h1>
         </div>
@@ -546,7 +549,7 @@ function FixturesView({
           {sorted.map(([id, rows]) => (
             <article class="match-group panel">
               <header class="league-bar">
-                <span class="league-flag">{flag(rows[0].league.country)}</span>
+                <LeagueLogo league={rows[0].league} />
                 <a href={link(`/league/${id}`)}>
                   <strong>{rows[0].league.name}</strong>
                   <span>
@@ -1017,7 +1020,7 @@ function MatchView({ id, tz }: { id: number; tz: string }) {
           <>
             <article class="detail-score panel">
               <a class="eyebrow" href={link(`/league/${m.league_id}`)}>
-                {flag(m.league.country)} {m.league.name}
+                <LeagueLogo league={m.league} /> {m.league.name}
               </a>
               <p>
                 {m.round || "Partido"} · {shortDate(m.kickoff, tz)} ·{" "}
@@ -1121,7 +1124,7 @@ function LeaguesView({ leagues }: { leagues: League[] }) {
       <div class="leagues-grid">
         {list.slice(0, visible).map((l) => (
           <a class="league-card panel" href={link(`/league/${l.id}`)}>
-            <span class="league-flag">{flag(l.country)}</span>
+            <LeagueLogo league={l} />
             <div>
               <span class="eyebrow">{cn(l.country)}</span>
               <h2>{l.name}</h2>
@@ -1207,7 +1210,7 @@ function App() {
         <div class="header-inner">
           <a href="#/" class="brand" aria-label="Latente, inicio">
             <img src="/latente-mark.png?v=3" width="43" height="43" alt="" />
-            <span>latente<span class="brand-dot">.</span></span>
+            <span class="brand-wordmark">latente<span class="brand-dot">.</span></span>
           </a>
           <nav class="top-nav" aria-label="Navegación principal">
             {[
