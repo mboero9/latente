@@ -1,6 +1,6 @@
 # Latente
 
-**Sitio publicado: [Latente en Railway](https://nginx-production-c1c2.up.railway.app/).** Dominio previsto: `latente.cfd` y sus subdominios; DNS pendiente. No es necesario para usar la app.
+**Sitio publicado: [latente.cfd](https://latente.cfd/).** El dominio principal ya está asociado a Railway; [URL alternativa de Railway](https://nginx-production-c1c2.up.railway.app/).
 
 **Sin VPS:** [despliegue completo en Railway](docs/DEPLOY-RAILWAY.md), con PostgreSQL, Nginx, API y actualización programada. Cloudflare es opcional. La cuenta de alojamiento y la suscripción a los datos deportivos son independientes.
 
