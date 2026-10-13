@@ -432,6 +432,66 @@ def standings(league_id: int, season: int | None = Query(None, ge=1900, le=2200)
         }
 
 
+@app.get("/api/leagues/{league_id}/analytics")
+def league_analytics(league_id: int, season: int | None = Query(None, ge=1900, le=2200)):
+    """Métricas derivadas reproducibles de partidos realmente importados."""
+    from .analytics import summarize
+    with session_scope() as s:
+        league = league_or_404(s, league_id)
+        year = season or league.season
+        fixtures = list(s.scalars(select(Fixture).where(
+            Fixture.source == settings.mode,
+            Fixture.league_id == league_id, Fixture.season == year,
+        )))
+        standings_rows = list(s.scalars(select(Standing).where(
+            Standing.source == settings.mode, Standing.league_id == league_id,
+            Standing.season == year,
+        )))
+        scoring_rows = list(s.scalars(select(Scorer).where(
+            Scorer.source == settings.mode, Scorer.league_id == league_id,
+            Scorer.season == year,
+        )))
+        tids = {t for f in fixtures for t in (f.home_id, f.away_id)}
+        names = {t.id: t.name for t in s.scalars(select(Team).where(
+            Team.source == settings.mode, Team.id.in_(tids),
+        ))} if tids else {}
+        data = summarize(fixtures, names, standings_rows, scoring_rows, season=year)
+        return {"data": data, "meta": meta(fixtures, partial=not (
+            data["official_standings_loaded"] and data["official_scorers_loaded"]))}
+
+
+@app.get("/api/leagues/{league_id}/analytics/history")
+def league_analytics_history(league_id: int):
+    """Serie por año importado. No implica historia deportiva exhaustiva."""
+    from .analytics import summarize
+    with session_scope() as s:
+        league = league_or_404(s, league_id)
+        years = list(dict.fromkeys(sorted(league.seasons or [league.season], reverse=True)))
+        output = []
+        for year in years:
+            fixtures = list(s.scalars(select(Fixture).where(
+                Fixture.source == settings.mode, Fixture.league_id == league_id,
+                Fixture.season == year,
+            )))
+            score_count = s.scalar(select(func.count()).select_from(Scorer).where(
+                Scorer.source == settings.mode, Scorer.league_id == league_id,
+                Scorer.season == year,
+            )) or 0
+            output.append({
+                "season": year,
+                "final_matches_loaded": sum(1 for f in fixtures
+                    if f.status in {"FT", "AET", "PEN"} and f.home_goals is not None
+                    and f.away_goals is not None),
+                "official_scorer_records": score_count,
+                "champion": None,
+                "complete": False,
+            })
+        return {"data": {
+            "seasons": output, "scope": "solo datos importados",
+            "champions_note": "Los campeones históricos necesitan una fuente oficial; no se infieren del ranking."
+        }, "meta": meta([])}
+
+
 @app.get("/api/leagues/{league_id}/scorers")
 def scorers(league_id: int, season: int | None = Query(None, ge=1900, le=2200)):
     with session_scope() as s:
