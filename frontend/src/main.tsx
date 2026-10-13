@@ -1243,6 +1243,11 @@ function App() {
                 localStorage.setItem("latente-language", next);
                 setLanguage(next);
               }}>{language === "es" ? "EN" : "ES"}</button>
+            {status?.mode === "api" && (
+              <span class="api-usage" title="Solicitudes al proveedor utilizadas hoy. No incluye las consultas de los visitantes a Latente.">
+                API {status.requests_today}/{status.daily_budget}
+              </span>
+            )}
             {mode === "demo" && <span class="demo-badge">DEMO</span>}
             <button
               class="icon-button theme-button"
