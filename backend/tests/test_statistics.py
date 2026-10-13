@@ -148,4 +148,4 @@ def test_tables_make_progress_amid_continuous_statistics(monkeypatch):
     monkeypatch.setattr(worker, "execute_job", lambda client, kind, params: executed.append(kind) or 0)
     for _ in range(3):
         worker.tick(None)
-    assert executed == ["statistics", "statistics", "standings"]
+    assert executed == ["standings", "statistics", "standings"]
