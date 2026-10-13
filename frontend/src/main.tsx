@@ -14,6 +14,7 @@ import type {
 } from "./types";
 import "./style.css";
 import { observeLanguage } from "./i18n";
+import { MatchExtras } from "./match-extras";
 
 const LIVE = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT"]);
 const labels: Record<string, string> = {
@@ -1094,6 +1095,7 @@ function MatchView({ id, tz }: { id: number; tz: string }) {
                 ))}
               </article>
             )}
+            <MatchExtras id={m.id} teams={{home: m.home, away: m.away}} />
             <MatchStats match={m} />
           </>
         )
