@@ -149,7 +149,7 @@ def sync_once(max_calls=3, fetch=extract):
             if kind == "games":
                 normalized = normalize_games(sport, rows)
             elif kind == "standings":
-                normalized = normalize_standings(rows)
+                normalized = normalize_standings(rows, sport=sport)
             else:
                 normalized = rows[:200]  # F1 driver ranking, source-record format
             stored = persist_snapshot(sport, kind, ref, normalized, len(rows))
