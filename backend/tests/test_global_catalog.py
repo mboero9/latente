@@ -54,7 +54,7 @@ def test_global_catalog_coverage_and_bounded_fixture_jobs(db, monkeypatch):
     db.flush()
     assert db.get(League, ("api", 999))
     assert db.get(League, ("api", 1000))
-    assert db.get(SyncJob, "standings:999:2026")
+    assert not db.get(SyncJob, "standings:999:2026")
     assert not db.get(SyncJob, "standings:1000:2026")
     assert not db.get(SyncJob, "scorers:999:2026")
     assert not db.get(SyncJob, "fixtures:999:2026")
