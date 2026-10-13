@@ -2,6 +2,7 @@ from dataclasses import replace
 
 from fastapi.testclient import TestClient
 from app import main, worker
+from app.db import session_scope
 from app.ingest import save_fixtures
 from app.match_details import normalize_events, normalize_lineups, normalize_player_ratings, store_details
 from app.models import FixtureDetails
@@ -44,17 +45,16 @@ def test_ratings_do_not_imply_official_mvp():
     ]}]) == []
 
 
-def test_public_details_only_uses_cache(db, monkeypatch):
+def test_public_details_only_uses_cache(monkeypatch):
     fake = replace(main.settings, mode="api", league_scope="all", league_ids=(128,))
     monkeypatch.setattr(main, "settings", fake)
-    league(db)
-    save_fixtures(db, [fixture(status="FT", goals={"home": 1, "away": 0})], [128])
-    store_details(db, 1, [
-        {"time": {"elapsed": 21}, "team": {"id": 12800},
-         "player": {"name": "Autor"}, "type": "Goal", "detail": "Normal Goal"}
-    ], [], None)
-    db.commit()
-    assert db.get(FixtureDetails, ("api", 1))
+    with session_scope() as s:
+        league(s)
+        save_fixtures(s, [fixture(status="FT", goals={"home": 1, "away": 0})], [128])
+        store_details(s, 1, [
+            {"time": {"elapsed": 21}, "team": {"id": 1},
+             "player": {"name": "Autor"}, "type": "Goal", "detail": "Normal Goal"}
+        ], [], None)
     with TestClient(main.app) as client:
         response = client.get("/api/fixtures/1/details")
     assert response.status_code == 200
