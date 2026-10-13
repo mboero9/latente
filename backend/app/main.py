@@ -414,7 +414,7 @@ def sport_analytics(sport: str, league_id: str | None = Query(None, max_length=4
 
 
 @app.get("/api/sports/{sport}/dataset")
-def sport_dataset(sport: str, kind: str = Query(..., pattern="^(games|standings|drivers)$"),
+def sport_dataset(sport: str, kind: str = Query(..., pattern="^(games|standings|drivers|leagues)$"),
                   ref: str = Query(..., max_length=90)):
     """El cliente lee SOLO PostgreSQL, no consume cuota de API-Sports."""
     from .other_sports import SPORTS
