@@ -155,3 +155,16 @@ def test_undetermined_participants_do_not_abort_daily_snapshot(db, monkeypatch):
     save_fixtures(db, [unknown, match()], None)
     assert not db.get(Fixture, ("api", 501))
     assert db.get(Fixture, ("api", 500))
+
+
+def test_pro_recovery_ids_fit_database_source_column():
+    from app.models import WorkerState
+    import inspect
+    import re
+
+    limit = WorkerState.__table__.c.source.type.length
+    source = inspect.getsource(worker.run)
+    keys = re.findall(r'WorkerState\(source=["\']([^"\']+)["\']', source)
+    keys += re.findall(r's\.get\(WorkerState, ["\']([^"\']+)["\']', source)
+    assert keys
+    assert all(len(key) <= limit for key in keys), (keys, limit)
