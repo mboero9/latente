@@ -12,7 +12,7 @@ export const sports = [
 ] as const;
 type SportStatus = { name: string; configured: boolean; note: string };
 type Archive = { season: number; matches_loaded: number; official_leader: {team: Team;group: string}|null;leading_scorer:{name:string;goals:number;team:Team}|null;complete:boolean };
-type OtherGame = {id:number|null;league:string;date:string|{start?:string};home:string;away:string;home_score:number|null;away_score:number|null;status:string};
+type OtherGame = {id:number|null;league:string;date:string|{start?:string};home:string;away:string;home_logo?:string|null;away_logo?:string|null;league_logo?:string|null;home_score:number|null;away_score:number|null;status:string};
 type OtherGamesResponse = {configured:boolean;games:OtherGame[];message:string|null};
 export function SportPage({ slug }: { slug: string }) {
   const sport = sports.find(x => x.slug === slug);
@@ -48,8 +48,12 @@ export function SportPage({ slug }: { slug: string }) {
       {state.message && <p class="coverage-notice">{state.message}</p>}
       <h2 class="sport-section-title">Partidos · {tab === "past" ? yesterday : tab === "today" ? localToday : tomorrow}</h2>
       {state.games.length ? <div class="sports-games">{state.games.map((game, idx) => <article class="panel sport-game" key={game.id ?? idx}>
-        <small>{game.league || "Competición"}</small>
-        <div class="sport-game-teams"><strong>{game.home}</strong><span>{game.home_score ?? "—"} : {game.away_score ?? "—"}</span><strong>{game.away}</strong></div>
+        <small class="sport-game-league">{game.league_logo && <img src={game.league_logo} alt="" loading="lazy" onError={e => {e.currentTarget.style.display = "none";}}/>}{game.league || "Competición"}</small>
+        <div class="sport-game-teams">
+          <strong class="sport-team">{game.home_logo && <img src={game.home_logo} alt="" loading="lazy" onError={e => {e.currentTarget.style.display = "none";}}/>}{game.home}</strong>
+          <span>{game.home_score ?? "—"} : {game.away_score ?? "—"}</span>
+          <strong class="sport-team sport-team-away">{game.away_logo && <img src={game.away_logo} alt="" loading="lazy" onError={e => {e.currentTarget.style.display = "none";}}/>}{game.away}</strong>
+        </div>
         <small>{game.status || "Estado no informado"}</small>
       </article>)}</div> : <article class="panel sport-intro"><h2>No hay encuentros para esta fecha</h2>
         <p>Podés elegir ayer u otra fecha. La cobertura y las competiciones disponibles dependen del proveedor.</p>
