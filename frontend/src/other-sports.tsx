@@ -9,6 +9,7 @@ export const sports = [
   { slug: "f1", name: "Fórmula 1", emoji: "🏎️" },
   { slug: "nfl", name: "NFL", emoji: "🏈" },
   { slug: "rugby", name: "Rugby", emoji: "🏉" },
+  { slug: "afl", name: "AFL · Fútbol australiano", emoji: "🏉" },
 ] as const;
 type SportStatus = { name: string; configured: boolean; note: string };
 type Archive = { season: number; matches_loaded: number; official_leader: {team: Team;group: string}|null;leading_scorer:{name:string;goals:number;team:Team}|null;complete:boolean };
