@@ -391,6 +391,52 @@ def sport_datasets(sport: str):
         } for row in rows], "meta": meta(rows)}
 
 
+@app.get("/api/sports/{sport}/overview")
+def sport_overview(sport: str):
+    """Calendario de 15 días desde PostgreSQL, sin consultas por visitante."""
+    from .other_sports import SPORTS
+    from .models import SportSnapshot
+    from datetime import timedelta
+    from zoneinfo import ZoneInfo
+    if sport not in SPORTS:
+        raise HTTPException(404, "Deporte no disponible")
+    today = utcnow().astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date()
+    from_date = (today - timedelta(days=7)).isoformat()
+    to_date = (today + timedelta(days=7)).isoformat()
+    with session_scope() as s:
+        records = list(s.scalars(select(SportSnapshot).where(
+            SportSnapshot.sport == sport,
+            SportSnapshot.dataset == "games",
+            SportSnapshot.ref >= from_date,
+            SportSnapshot.ref <= to_date,
+        ).order_by(SportSnapshot.ref)))
+        # En F1 el calendario del año se consulta de una sola vez.
+        if sport == "f1":
+            records = list(s.scalars(select(SportSnapshot).where(
+                SportSnapshot.sport == sport,
+                SportSnapshot.dataset == "games",
+                SportSnapshot.ref.like(f"{today.year}%"),
+            ).order_by(SportSnapshot.ref)))
+        matches = []
+        seen = set()
+        for record in records:
+            for item in record.data or []:
+                if not isinstance(item, dict):
+                    continue
+                match_id = item.get("id")
+                identity = match_id if match_id is not None else (record.ref, item.get("home"), item.get("away"))
+                if identity in seen:
+                    continue
+                seen.add(identity)
+                matches.append({**item, "queried_date": record.ref})
+        return {"data": {
+            "matches": matches,
+            "dates_checked": [r.ref for r in records],
+            "snapshot_count": len(records),
+            "period": {"from": from_date, "to": to_date},
+        }, "meta": meta(records, coverage=bool(records))}
+
+
 @app.get("/api/sports/{sport}/analytics")
 def sport_analytics(sport: str, league_id: str | None = Query(None, max_length=40)):
     from .other_sports import SPORTS
