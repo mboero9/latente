@@ -417,13 +417,13 @@ def run(once=False, max_seconds=120):
                 # Una única recuperación adicional: también adelantar tareas
                 # por temporada que quedaron programadas para el día siguiente
                 # cuando aún se usaba el perfil Free.
-                if settings.profile == "live" and not s.get(WorkerState, "pro_season_recovery"):
+                if settings.profile == "live" and not s.get(WorkerState, "proback"):
                     now = utcnow()
                     pending = s.execute(update(SyncJob).where(
                         SyncJob.kind.in_(("standings", "scorers", "teams", "fixtures"))
                     ).values(next_run=now, failures=0, message=None))
                     s.add(WorkerState(
-                        source="pro_season_recovery", heartbeat=now,
+                        source="proback", heartbeat=now,
                         message="Importaciones Pro reprogramadas una sola vez"
                     ))
                     log.info("pro_season_recovery_jobs=%s", pending.rowcount)
