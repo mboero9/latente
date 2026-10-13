@@ -103,6 +103,7 @@ const dictionary: Record<string, string> = {
   "Algunas fechas o temporadas no están disponibles": "Some dates or seasons are unavailable",
   "Algunos datos están restringidos por el plan de cobertura contratado.": "Some data is restricted by the current coverage plan.",
   "Las ligas están disponibles, pero todavía no hay partidos recibidos para esta fecha.": "Leagues are available, but no matches have been received for this date yet.",
+  "Tabla parcial, no oficial.": "Partial, unofficial standings.",
   "Último dato": "Last update"
 };
 // Brand copyright refers to the Latente website, not ownership of third-party club marks.
