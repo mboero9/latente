@@ -32,7 +32,7 @@ const TYC: Service = {
 };
 const FIFA: Service = {
   name: "FIFA+ / DAZN",
-  url: "https://www.fifa.com/es/dazn",
+  url: "https://www.dazn.com/",
   access: "Gratis según evento",
   note: "FIFA+ ofrece ciertos encuentros gratuitos. Confirmá que este partido esté listado para Argentina.",
 };
