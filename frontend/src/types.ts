@@ -90,6 +90,10 @@ export type Status = {
   configured: boolean;
   quota_exhausted: boolean;
   failed_jobs: number;
+  leagues_loaded?: number;
+  fixtures_loaded?: number;
+  fixtures_today?: number;
+  restricted_jobs?: number;
   last_success: string | null;
   requests_today: number;
   daily_budget: number;
