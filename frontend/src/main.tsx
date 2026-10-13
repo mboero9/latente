@@ -1,9 +1,10 @@
 import { render, type ComponentChildren } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import { useApi } from "./api";
+import { DISPLAY_REFRESH_MS, useApi } from "./api";
 import type {
   League,
   Match,
+  MatchStatistics,
   Standing,
   Scorer,
   Team,
@@ -419,7 +420,7 @@ function Focus({ match: m, tz }: { match: Match; tz: string }) {
 function MiniTable({ league }: { league: League | undefined }) {
   const { result } = useApi<Standing[]>(
     league ? `/api/leagues/${league.id}/standings` : null,
-    120000,
+    DISPLAY_REFRESH_MS,
   );
   if (!league || !result?.data.length) return null;
   const group = result.data[0].group;
@@ -475,7 +476,7 @@ function FixturesView({
   }, [day, league?.id, live]);
   const { result, loading, error, retry } = useApi<Match[]>(
     `/api/fixtures?date=${day}&tz=${encodeURIComponent(tz)}&offset=${page * 150}${league ? `&league_id=${league.id}` : ""}${live ? "&live=true" : ""}`,
-    30000,
+    DISPLAY_REFRESH_MS,
   );
   const matches = result?.data || [],
     inPlay = matches.filter((m) => LIVE.has(m.status)),
@@ -632,7 +633,7 @@ function TableView({ league }: { league: League }) {
   const [season, setSeason] = useState(league.season);
   const { result, loading, error, retry } = useApi<Standing[]>(
     `/api/leagues/${league.id}/standings?season=${season}`,
-    120000,
+    DISPLAY_REFRESH_MS,
   );
   const groups = [...new Set(result?.data.map((r) => r.group) || [])];
   return (
@@ -738,7 +739,7 @@ function ScorersView({ league }: { league: League }) {
   const [season, setSeason] = useState(league.season);
   const { result, loading, error, retry } = useApi<Scorer[]>(
     `/api/leagues/${league.id}/scorers?season=${season}`,
-    120000,
+    DISPLAY_REFRESH_MS,
   );
   return (
     <>
@@ -883,7 +884,7 @@ function TeamsView({ league }: { league: League }) {
 function TeamView({ id, tz }: { id: number; tz: string }) {
   const { result, loading, error, retry } = useApi<TeamDetail>(
     `/api/teams/${id}`,
-    60000,
+    DISPLAY_REFRESH_MS,
   );
   const t = result?.data;
   return (
@@ -947,10 +948,59 @@ function TeamView({ id, tz }: { id: number; tz: string }) {
   );
 }
 
+const statisticLabels: Record<string, string> = {
+  "Shots on Goal": "Tiros al arco", "Shots off Goal": "Tiros afuera",
+  "Total Shots": "Tiros totales", "Blocked Shots": "Tiros bloqueados",
+  "Shots insidebox": "Tiros dentro del área", "Shots outsidebox": "Tiros fuera del área",
+  "Fouls": "Faltas", "Corner Kicks": "Córners", "Offsides": "Fuera de juego",
+  "Ball Possession": "Posesión", "Yellow Cards": "Tarjetas amarillas",
+  "Red Cards": "Tarjetas rojas", "Goalkeeper Saves": "Atajadas",
+  "Total passes": "Pases", "Passes accurate": "Pases precisos",
+  "Passes %": "Precisión de pases", "expected_goals": "Goles esperados (xG)",
+  "goals_prevented": "Goles evitados",
+};
+
+function MatchStats({ match }: { match: Match }) {
+  const { result, loading, error, retry } = useApi<MatchStatistics[]>(
+    `/api/fixtures/${match.id}/statistics`,
+  );
+  const home = result?.data.find((row) => row.team.id === match.home.id)?.statistics || [];
+  const away = result?.data.find((row) => row.team.id === match.away.id)?.statistics || [];
+  const types = [...new Set([...home, ...away].map((row) => row.type))];
+  return (
+    <article class="panel match-statistics">
+      <h2>Estadísticas del partido</h2>
+      <p class="updated">Vista actualizada cada 5 s · disponibilidad según el proveedor</p>
+      {error && <ErrorBox error={error} retry={retry} />}
+      {loading ? <Loading /> : types.length ? (
+        <>
+          <table>
+            <caption class="sr-only">Comparación de estadísticas entre los dos equipos</caption>
+            <thead><tr><th scope="col">{match.home.name}</th><th scope="col">Estadística</th><th scope="col">{match.away.name}</th></tr></thead>
+            <tbody>{types.map((type) => (
+              <tr key={type}>
+                <td>{home.find((row) => row.type === type)?.value ?? "—"}</td>
+                <th scope="row">{statisticLabels[type] || type}</th>
+                <td>{away.find((row) => row.type === type)?.value ?? "—"}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+          {result?.meta.stale && <p class="stale">Las estadísticas están demoradas. Conservamos el último dato recibido.</p>}
+          <Updated meta={result?.meta} />
+        </>
+      ) : !error && (
+        <Empty title={result?.meta.coverage === false ? "Sin cobertura estadística" : "Todavía no hay estadísticas"}>
+          {result?.meta.mode === "demo" ? "Las estadísticas reales se habilitarán al conectar el proveedor." : "Aparecerán cuando el proveedor publique datos de este partido. Los valores ausentes no se cuentan como cero."}
+        </Empty>
+      )}
+    </article>
+  );
+}
+
 function MatchView({ id, tz }: { id: number; tz: string }) {
   const { result, loading, error, retry } = useApi<Match>(
     `/api/fixtures/${id}`,
-    30000,
+    DISPLAY_REFRESH_MS,
   );
   const m = result?.data;
   return (
@@ -1035,6 +1085,7 @@ function MatchView({ id, tz }: { id: number; tz: string }) {
                 ))}
               </article>
             )}
+            <MatchStats match={m} />
           </>
         )
       )}
@@ -1110,8 +1161,8 @@ function App() {
     window.addEventListener("hashchange", changed);
     return () => window.removeEventListener("hashchange", changed);
   }, []);
-  const leaguesApi = useApi<League[]>("/api/leagues", 60000),
-    statusApi = useApi<Status>("/api/status", 30000);
+  const leaguesApi = useApi<League[]>("/api/leagues", DISPLAY_REFRESH_MS),
+    statusApi = useApi<Status>("/api/status", DISPLAY_REFRESH_MS);
   const leagues = leaguesApi.result?.data || [],
     status = statusApi.result?.data;
   const mode = status?.mode || leaguesApi.result?.meta.mode;

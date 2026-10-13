@@ -5,6 +5,7 @@ export type Meta = {
   provider: string;
   total?: number;
   coverage?: boolean;
+  stale?: boolean;
 };
 export type Result<T> = { data: T; meta: Meta };
 export type Team = {
@@ -61,6 +62,10 @@ export type Standing = {
   form: string | null;
   description: string | null;
   updated_at: string;
+};
+export type MatchStatistics = {
+  team: Team;
+  statistics: { type: string; value: number | string | null }[];
 };
 export type Scorer = {
   player_id: number;

@@ -47,6 +47,17 @@ class Team(Base):
     capacity: Mapped[int | None] = mapped_column(Integer)
 
 
+class FixtureStatistics(Base):
+    __tablename__ = "fixture_statistics"
+    source: Mapped[str] = mapped_column(String(8), primary_key=True)
+    fixture_id: Mapped[int] = mapped_column(primary_key=True)
+    data: Mapped[list] = mapped_column(JSON, default=list)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    __table_args__ = (
+        ForeignKeyConstraint(["source", "fixture_id"], ["fixtures.source", "fixtures.id"]),
+    )
+
+
 class Membership(Base):
     __tablename__ = "memberships"
     source: Mapped[str] = mapped_column(String(8), primary_key=True)

@@ -2,7 +2,7 @@
 
 ## Estado y activación
 
-Latente se aloja íntegramente en Railway. El DNS propio queda para cuando se registre `latente.com.ar`. **Railway Hobby paga infraestructura, no datos deportivos.** Hasta incorporar una clave válida, el modo de demostración sigue indicando que sus resultados son ficticios.
+Latente se aloja íntegramente en Railway. El DNS de `latente.cfd` y sus subdominios queda para la siguiente etapa. **Railway Hobby paga infraestructura, no datos deportivos.** Hasta incorporar una clave válida, el modo de demostración sigue indicando que sus resultados son ficticios.
 
 1. Crear o abrir una cuenta de acceso directo en [API-Football](https://dashboard.api-football.com/register). En **Account → My Access** se encuentra la clave. El adaptador usa `x-apisports-key`, no las cabeceras de RapidAPI.
 2. En el Live Tester del proveedor consultar `/leagues` y `/fixtures` para la fecha actual. Comprobar que el plan permite la temporada actual, especialmente Argentina. El catálogo no garantiza acceso a todos los datos enumerados.
@@ -49,9 +49,21 @@ En `ingest`, quitar **Cron Schedule**, usar `python -m app.hosted worker`, una r
 - La primera sincronización es gradual. El planificador prioriza catálogo, jornadas y vivo; tablas y goleadores se completan según la cuota. No hay una llamada al proveedor por cada visitante.
 - El modo `selected` conserva la selección original y permite `SEASON_OVERRIDES` para temporadas históricas. En modo global, los overrides afectan tablas y tareas de esas ligas; los partidos globales siguen siendo de fechas actuales.
 
+## Estadísticas de partido y refresco de cinco segundos
+
+La pantalla consulta la API propia cada **5 segundos**, incluyendo resultados, posiciones, goleadores y estadísticas. Las peticiones se suspenden al ocultar la pestaña y nunca se superponen. Esto no multiplica las consultas del servidor al proveedor.
+
+La [guía oficial de API-Football](https://www.api-football.com/news/post/how-to-get-started-with-api-football-the-complete-beginners-guide) indica aproximadamente **15 s para marcadores**, **60 s para estadísticas de partido** y **1 h para posiciones**. Son frecuencias orientativas, sujetas a cobertura y demora. No existe una garantía de datos nuevos cada cinco segundos para todos los torneos.
+
+`/api/fixtures/{id}/statistics` sirve snapshots de PostgreSQL: posesión, tiros, córners, faltas, tarjetas, pases y otras métricas publicadas. Los valores `null` se muestran como ausentes, nunca como cero. La migración `0002` crea `fixture_statistics` sin modificar los resultados existentes. El worker genera trabajos solo para partidos con cobertura de estadísticas, en juego o finalizados recientemente. Tras la captura de cierre deja de consultarlos de forma recurrente. La cola alterna estadísticas con tablas para que ninguna monopolice los trabajos.
+
+`STATISTICS_INTERVAL_SECONDS=60` es el mínimo útil documentado del proveedor. Para marcadores, `LIVE_INTERVAL_SECONDS=15` sigue la frecuencia del origen; `5` está permitido si se elige expresamente y existe cuota, pero no produce datos adicionales cuando la API aún no cambió. Solo un poll global cada 5 s durante 24 h representa **17.280 consultas diarias**, antes de tablas o estadísticas. A 15 s son 5.760. Las estadísticas cuestan una consulta por partido y refresco: 100 partidos simultáneos a 60 s necesitan unas 100 consultas por minuto adicionales. El intervalo mínimo global y la cuota pueden retrasar trabajos; no se promete un SLA.
+
+Mantener presupuesto 90/pausa 7 s hasta validar la clave y el plan. Para cobertura amplia y estadísticas en vivo hay que dimensionar el plan deportivo; los ejemplos de presupuesto no garantizan que alcance para todas las ligas en todas las jornadas. No aumentar límites ni contratar planes automáticamente.
+
 ## Otros deportes: siguiente etapa
 
-La ampliación propuesta incluye básquet/NBA, rugby, vóley, tenis y automovilismo, cada uno con su pantalla de resultados, calendario y estadísticas apropiadas. Esta versión implementa **fútbol**; no muestra pestañas que prometan datos inexistentes.
+La ampliación propuesta incluye básquet, NBA, WNBA, MLB, NHL y luego otros deportes, cada uno con su pantalla de resultados, calendario y estadísticas apropiadas. Esta versión implementa **fútbol**; no muestra pestañas que prometan datos inexistentes. Ver la [comparación de APIs verificada](APIS-MULTIDEPORTE.md).
 
 [API-SPORTS](https://api-sports.io/) publica APIs separadas para básquet/NBA, rugby, vóley, Fórmula 1 y otros deportes. Comprobar plan y cobertura de cada API antes de activarla. Para tenis hay que seleccionar otro proveedor legítimo si sigue fuera de ese catálogo; no simularlo mediante la API de fútbol.
 

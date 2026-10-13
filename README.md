@@ -1,6 +1,6 @@
 # Latente
 
-**Sitio publicado: [Latente en Railway](https://nginx-production-c1c2.up.railway.app/).** El dominio `latente.com.ar` está pendiente de registro y configuración; no es necesario para usar la app.
+**Sitio publicado: [Latente en Railway](https://nginx-production-c1c2.up.railway.app/).** Dominio previsto: `latente.cfd` y sus subdominios; DNS pendiente. No es necesario para usar la app.
 
 **Sin VPS:** [despliegue completo en Railway](docs/DEPLOY-RAILWAY.md), con PostgreSQL, Nginx, API y actualización programada. Cloudflare es opcional. La cuenta de alojamiento y la suscripción a los datos deportivos son independientes.
 
@@ -125,7 +125,7 @@ Para el despliegue Hobby existente y el catálogo global, seguí [Datos reales, 
 
 ### Cuota gratuita y vivo
 
-Al verificar el proveedor, el plan gratuito anunciaba **100 consultas por día**, con limitaciones en las temporadas disponibles. No alcanza para mantener un servicio de muchas ligas con actualizaciones cada 30 segundos durante todo el día. Revisá las condiciones vigentes de tu cuenta antes de elegir un plan.
+Al verificar el proveedor, el plan gratuito anunciaba **100 consultas por día**, con limitaciones en las temporadas disponibles. No alcanza para mantener un servicio de muchas ligas con actualizaciones cada 15 segundos durante todo el día. Revisá las condiciones vigentes de tu cuenta antes de elegir un plan.
 
 | Trabajo | Perfil `free` | Perfil `live` |
 | --- | --- | --- |
@@ -134,8 +134,8 @@ Al verificar el proveedor, el plan gratuito anunciaba **100 consultas por día**
 | Equipos y estadio | Cada 7 días por liga | Cada 7 días por liga |
 | Posiciones | Cada 24 h por liga | Cada 1 h por liga |
 | Goleadores | Cada 24 h por liga | Cada 6 h por liga |
-| Partidos en ventana de juego | Cada 30 minutos, hasta 20 IDs por llamada | Cada 30 segundos, hasta 20 IDs por llamada |
-| Navegador → API propia | Cada 30 s para marcadores | Cada 30 s para marcadores |
+| Partidos en ventana de juego | Cada 30 minutos, hasta 20 IDs por llamada | Cada 15 segundos, hasta 20 IDs por llamada |
+| Navegador → API propia | Cada 5 s para las vistas abiertas | Cada 5 s para las vistas abiertas |
 
 Con 12 ligas, el mantenimiento diario de referencia puede consumir aproximadamente 37 consultas (1 + 12 + 12 + 12), más equipos cuando corresponde y llamadas de vivo. El primer arranque requiere más consultas. `API_DAILY_BUDGET=90` reserva un margen y detiene la ingesta al alcanzarlo; **no garantiza que todos los trabajos completen ese día**. La cantidad de usuarios del sitio no multiplica el consumo del proveedor.
 
@@ -147,7 +147,7 @@ API_DAILY_BUDGET=7000
 API_MIN_GAP_SECONDS=7
 ```
 
-**No configures 7000 con una cuenta de 100 consultas.** Usá un presupuesto inferior al contratado y revisá el límite por minuto. A modo de dimensionamiento, un único lote cada 30 s durante 12 h consume 1440 consultas, además de las de referencia. Más de 20 partidos concurrentes se refrescan en lotes rotativos; el intervalo efectivo por partido aumenta. La demora final incluye al proveedor, al scheduler y hasta 30 s del navegador: no se promete tiempo real instantáneo.
+**No configures 7000 con una cuenta de 100 consultas.** Usá un presupuesto inferior al contratado y revisá el límite por minuto. A modo de dimensionamiento, un único lote cada 30 s durante 12 h consume 1440 consultas, además de las de referencia. Más de 20 partidos concurrentes se refrescan en lotes rotativos; el intervalo efectivo por partido aumenta. La demora final incluye al proveedor, al scheduler y hasta 5 s del navegador: no se promete tiempo real instantáneo.
 
 El worker redescubre encuentros cada vez que refresca el fixture de temporada y atiende partidos conocidos desde 5 minutos antes del inicio. Consulta por ID también al finalizar, para capturar `FT`, `AET` y `PEN`, aunque el partido desaparezca del endpoint de vivo. La sincronización de temporada corrige posteriormente reprogramaciones y resultados.
 
@@ -175,19 +175,21 @@ Los nombres efectivos se leen del catálogo, porque pueden cambiar. `LEAGUE_IDS`
 | Variable | Valor / uso |
 | --- | --- |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Credenciales internas. Cambiá `latente_local_only` antes del primer arranque productivo |
-| `DATA_MODE` | `demo` o `api` |
+| `DATA_MODE` | `demo`, `api` o `auto` (real al incorporar clave) |
 | `API_FOOTBALL_KEY` | `TU_CLAVE_API_FOOTBALL`, solo backend |
 | `SYNC_PROFILE` | `free` o `live` |
 | `API_DAILY_BUDGET` | Tope persistido de intentos/día UTC |
 | `API_MIN_GAP_SECONDS` | Separación global entre consultas; 7 s por defecto |
-| `LEAGUE_IDS` | Competiciones que se sincronizan y publican |
+| `LEAGUE_SCOPE` | `selected` o `all`: catálogo global |
+| `LEAGUE_IDS` | Selección o prioridad dentro del catálogo global |
 | `SEASON_OVERRIDES` | Opcional: `ID:AÑO,ID:AÑO`; vacío usa `current` del catálogo |
-| `LIVE_INTERVAL_SECONDS` | Opcional; mínimo 15 s |
+| `LIVE_INTERVAL_SECONDS` | Mínimo 5 s; origen aproximadamente cada 15 s |
+| `STATISTICS_INTERVAL_SECONDS` | Mínimo 60 s; estadísticas del partido |
 | `FIXTURES_INTERVAL_SECONDS` | Opcional; mínimo 60 s |
 | `TABLES_INTERVAL_SECONDS`, `SCORERS_INTERVAL_SECONDS` | Opcional; mínimo 3600 s |
 | `HTTP_BIND`, `HTTP_PORT` | Por defecto `127.0.0.1:8080` |
 | `CORS_ORIGINS` | Orígenes completos separados por comas, sin barra final ni comodines |
-| `VITE_API_BASE_URL` | Vacío en un único origen; `https://api.latente.com.ar` en Pages, **sin `/api`** |
+| `VITE_API_BASE_URL` | Vacío en un único origen; `https://api.latente.cfd` en Pages, **sin `/api`** |
 | `CLOUDFLARE_TUNNEL_TOKEN` | Token secreto del túnel, solo en `.env` del VPS |
 | `DATABASE_URL` | Opcional para PostgreSQL externo: URL SQLAlchemy `postgresql+psycopg://...`; si no existe, se construye con `POSTGRES_*` |
 
@@ -229,7 +231,7 @@ Cumple PostgreSQL y Nginx sin forzarlos dentro de Workers. Para una aplicación 
 
 ### A. DNS y cuenta
 
-1. Agregá `latente.com.ar` a tu cuenta Cloudflare y reemplazá los nameservers en tu registrador por los asignados. Esperá a que la zona figure activa.
+1. Agregá `latente.cfd` a tu cuenta Cloudflare y reemplazá los nameservers en tu registrador por los asignados. Esperá a que la zona figure activa.
 2. En **SSL/TLS → Edge Certificates**, verificá Universal SSL y activá **Always Use HTTPS**. La emisión del certificado puede demorar.
 3. Conservá el modo de zona **Full (strict)** para los orígenes HTTPS convencionales. Con Tunnel, el transporte Cloudflare ↔ `cloudflared` ya va cifrado; el servicio configurado abajo es HTTP dentro de la red local de Docker. No uses Flexible ni desactives verificaciones de TLS.
 
@@ -251,7 +253,7 @@ API_FOOTBALL_KEY=TU_CLAVE_API_FOOTBALL
 SYNC_PROFILE=free
 API_DAILY_BUDGET=90
 HTTP_BIND=127.0.0.1
-CORS_ORIGINS=https://latente.com.ar
+CORS_ORIGINS=https://latente.cfd
 VITE_API_BASE_URL=
 ```
 
@@ -275,8 +277,8 @@ VITE_API_BASE_URL=
 
    | Campo | Valor |
    | --- | --- |
-   | Hostname público | `latente.com.ar` |
-   | Domain | `latente.com.ar` |
+   | Hostname público | `latente.cfd` |
+   | Domain | `latente.cfd` |
    | Subdomain | Vacío (dominio raíz) |
    | Service / tipo | `HTTP` |
    | Service URL | `nginx:8080` (URL completa: `http://nginx:8080`) |
@@ -284,9 +286,9 @@ VITE_API_BASE_URL=
 
    Dentro del contenedor del túnel, **`localhost` no es Nginx**. Usá el nombre de servicio `nginx`.
 
-5. El panel crea el CNAME proxied del hostname al túnel (nombre `@` para `latente.com.ar`). Si lo configurás manualmente, el destino es `ID_DEL_TUNEL.cfargotunnel.com`, con proxy activado. No agregues además un registro A/AAAA para el mismo nombre.
-6. Esperá el estado Healthy del túnel y abrí [https://latente.com.ar](https://latente.com.ar). Probá `/api/health` y `/api/status` por HTTPS.
-7. Opcional: agregá también `www.latente.com.ar` al túnel y una Redirect Rule de Cloudflare que redirija permanentemente `www.latente.com.ar` a `https://latente.com.ar`, conservando la ruta y los parámetros de consulta.
+5. El panel crea el CNAME proxied del hostname al túnel (nombre `@` para `latente.cfd`). Si lo configurás manualmente, el destino es `ID_DEL_TUNEL.cfargotunnel.com`, con proxy activado. No agregues además un registro A/AAAA para el mismo nombre.
+6. Esperá el estado Healthy del túnel y abrí [https://latente.cfd](https://latente.cfd). Probá `/api/health` y `/api/status` por HTTPS.
+7. Opcional: agregá también `www.latente.cfd` al túnel y una Redirect Rule de Cloudflare que redirija permanentemente `www.latente.cfd` a `https://latente.cfd`, conservando la ruta y los parámetros de consulta.
 
 No abras PostgreSQL, FastAPI ni 8080 a Internet. Permití únicamente tu acceso administrativo al VPS y la salida de `cloudflared` requerida por Cloudflare (puerto 7844); el túnel no necesita puertos de entrada web. Si agregás Cloudflare Access, afectará a los visitantes: omitilo para un sitio público.
 
@@ -303,7 +305,7 @@ No abras PostgreSQL, FastAPI ni 8080 a Internet. Permití únicamente tu acceso 
 git pull --ff-only
 bash scripts/backup.sh
 docker compose -f docker-compose.yml -f deploy/compose.tunnel.yml up -d --build
-bash scripts/smoke.sh https://latente.com.ar
+bash scripts/smoke.sh https://latente.cfd
 ```
 
 La migración corre antes de iniciar la API nueva. El despliegue por Compose es sencillo, pero no promete cero interrupciones. El volumen de estáticos conserva assets anteriores con hash para permitir que pestañas abiertas terminen de cargarlos; puede limpiarse durante una ventana de mantenimiento si crece mucho. En producción fijá las imágenes a digest después de verificarlas, especialmente `cloudflare/cloudflared:latest`, y actualizalas de forma controlada.
@@ -312,7 +314,7 @@ La migración corre antes de iniciar la API nueva. El despliegue por Compose es 
 
 Reutiliza el backend anterior y sirve JS/CSS desde Pages. Separa despliegues y descarga estáticos del VPS, a cambio de configurar un segundo dominio, CORS y la URL de API en cada build.
 
-1. En el mismo túnel, agregá `api.latente.com.ar` → `http://nginx:8080`. Nginx sigue siendo el proxy de FastAPI y puede seguir sirviendo los estáticos como origen alternativo.
+1. En el mismo túnel, agregá `api.latente.cfd` → `http://nginx:8080`. Nginx sigue siendo el proxy de FastAPI y puede seguir sirviendo los estáticos como origen alternativo.
 2. En Cloudflare **Workers & Pages → Create application → Pages → Connect to Git**, conectá tu repositorio `mboero9/latente` y elegí la rama `main`.
 3. Configurá el build:
 
@@ -323,27 +325,27 @@ Reutiliza el backend anterior y sirve JS/CSS desde Pages. Separa despliegues y d
    | Build command | `npm run build` |
    | Build output directory | `dist` |
    | Variable `NODE_VERSION` | `24` |
-   | Variable `VITE_API_BASE_URL` | `https://api.latente.com.ar` |
+   | Variable `VITE_API_BASE_URL` | `https://api.latente.cfd` |
 
-4. Publicá y anotá la URL `TU_PROYECTO.pages.dev`. En Pages → **Custom domains**, agregá `latente.com.ar`. Si ese hostname estaba en el túnel de la alternativa anterior, quitá primero su ruta/registro del túnel. Pages y Tunnel no deben competir por el mismo nombre.
-5. Completá la validación DNS desde el panel de Pages. Para el dominio raíz `latente.com.ar`, la zona debe estar activa en la misma cuenta Cloudflare, con sus nameservers delegados. Pages configura el CNAME `@` hacia `TU_PROYECTO.pages.dev`; Cloudflare resuelve el registro raíz mediante CNAME flattening. Agregá primero el dominio al proyecto, no solo un CNAME. Cloudflare provisiona su certificado HTTPS. Si querés admitir `www.latente.com.ar`, agregalo también como dominio personalizado y configurá la redirección al dominio raíz.
+4. Publicá y anotá la URL `TU_PROYECTO.pages.dev`. En Pages → **Custom domains**, agregá `latente.cfd`. Si ese hostname estaba en el túnel de la alternativa anterior, quitá primero su ruta/registro del túnel. Pages y Tunnel no deben competir por el mismo nombre.
+5. Completá la validación DNS desde el panel de Pages. Para el dominio raíz `latente.cfd`, la zona debe estar activa en la misma cuenta Cloudflare, con sus nameservers delegados. Pages configura el CNAME `@` hacia `TU_PROYECTO.pages.dev`; Cloudflare resuelve el registro raíz mediante CNAME flattening. Agregá primero el dominio al proyecto, no solo un CNAME. Cloudflare provisiona su certificado HTTPS. Si querés admitir `www.latente.cfd`, agregalo también como dominio personalizado y configurá la redirección al dominio raíz.
 6. Cambiá en el VPS:
 
    ```dotenv
-   CORS_ORIGINS=https://latente.com.ar,https://www.latente.com.ar,https://TU_PROYECTO.pages.dev
+   CORS_ORIGINS=https://latente.cfd,https://www.latente.cfd,https://TU_PROYECTO.pages.dev
    ```
 
    ```bash
    docker compose up -d --force-recreate api
    ```
 
-7. Probá la página desde ambos orígenes y revisá Network: consultas a `https://api.latente.com.ar/api/...`, sin errores CORS ni contenido mixto. Si usás previews de PR, agregá sus orígenes exactos de forma deliberada; no habilites `*` automáticamente.
+7. Probá la página desde ambos orígenes y revisá Network: consultas a `https://api.latente.cfd/api/...`, sin errores CORS ni contenido mixto. Si usás previews de PR, agregá sus orígenes exactos de forma deliberada; no habilites `*` automáticamente.
 
 **No pongas** `API_FOOTBALL_KEY`, `POSTGRES_PASSWORD` ni `CLOUDFLARE_TUNNEL_TOKEN` en las variables de Pages. Solo necesita la URL pública de la API. La ingesta sigue funcionando en el VPS aunque nadie abra la página.
 
 ### Origen público con HTTPS, sin Tunnel
 
-También es posible usar un A/AAAA proxied `api.latente.com.ar` hacia un VPS con Nginx en 443, certificado válido (Let's Encrypt u Origin CA), firewall que acepte HTTP(S) solo desde los rangos de Cloudflare y **Full (strict)**. Requiere mantener certificado, lista de IP y puertos. El Compose entregado usa Tunnel y no incluye ese terminador TLS; no expongas su listener HTTP creyendo que Full (strict) lo convierte en HTTPS.
+También es posible usar un A/AAAA proxied `api.latente.cfd` hacia un VPS con Nginx en 443, certificado válido (Let's Encrypt u Origin CA), firewall que acepte HTTP(S) solo desde los rangos de Cloudflare y **Full (strict)**. Requiere mantener certificado, lista de IP y puertos. El Compose entregado usa Tunnel y no incluye ese terminador TLS; no expongas su listener HTTP creyendo que Full (strict) lo convierte en HTTPS.
 
 ### ¿Todo dentro de Cloudflare?
 
@@ -438,4 +440,4 @@ Documentación consultada el 7–8 de octubre de 2026:
 
 La cuenta de datos, la autorización de uso/redistribución según el plan, el dominio, el VPS y las credenciales de publicación son del operador. Se evita reutilizar logos, imágenes o contenido editorial de terceros. La aplicación está inspirada en el tipo de información de sitios de resultados, con diseño y código propios. La cobertura y la exactitud final dependen del proveedor.
 
-El dominio definido para este proyecto es `latente.com.ar`; la variante Pages utiliza además `api.latente.com.ar`. No se modificaron DNS ni se desplegó infraestructura desde esta entrega. La cuenta Cloudflare, el VPS, la clave de fútbol y los demás secretos se completan siguiendo esta secuencia.
+El dominio previsto es `latente.cfd`. El stack se aloja en Railway; el DNS propio sigue pendiente. Las alternativas de Cloudflare/VPS de esta guía son opcionales. La clave deportiva se configura siguiendo DATOS-REALES.md.

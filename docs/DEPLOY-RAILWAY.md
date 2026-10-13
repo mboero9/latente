@@ -2,7 +2,7 @@
 
 ## Alojamiento y costo
 
-Esta arquitectura de cuatro servicios funciona en Railway Hobby, que el titular indicó haber activado. Al 12/10/2026 tiene un mínimo de USD 5 mensuales aplicado a consumo; el uso adicional se factura aparte. No confundirlo con la suscripción de la API deportiva. El despliegue publicado es https://nginx-production-c1c2.up.railway.app/ y no requiere Cloudflare. El dominio propio está pendiente de registro.
+Esta arquitectura de cuatro servicios funciona en Railway Hobby, que el titular indicó haber activado. Al 12/10/2026 tiene un mínimo de USD 5 mensuales aplicado a consumo; el uso adicional se factura aparte. No confundirlo con la suscripción de la API deportiva. El despliegue publicado es https://nginx-production-c1c2.up.railway.app/ y no requiere Cloudflare. El dominio previsto es `latente.cfd`; su configuración de DNS queda para la siguiente etapa.
 
 Para pruebas nuevas, Railway ofrece Trial de hasta 30 días con USD 5. Después, Free incluye USD 1 mensual, solo tres servicios y sin cron: **la configuración de cuatro servicios con cron de esta guía requiere Hobby fuera del Trial**. La base, memoria, CPU, disco y tráfico consumen saldo. Revisar consumo y copias de respaldo.
 
@@ -38,7 +38,7 @@ API_MIN_GAP_SECONDS=7
 DB_POOL_MODE=none
 WORKER_EXPECTED_INTERVAL_SECONDS=1800
 LEAGUE_IDS=128,129,130,13,11,2,39,140,135,78,61,71
-CORS_ORIGINS=https://latente.dimebag.workers.dev,https://latente.com.ar,https://www.latente.com.ar
+CORS_ORIGINS=https://latente.dimebag.workers.dev,https://latente.cfd,https://www.latente.cfd
 ```
 
 La referencia `${{Postgres.DATABASE_URL}}` se pega literalmente en Railway. No la reemplaces por una contraseña en GitHub. El backend admite las URLs `postgresql://`, `postgres://` y `postgresql+psycopg://` sin modificar manualmente la clave. Para habilitar el catálogo global y la activación mediante clave compartida, seguir [DATOS-REALES.md](DATOS-REALES.md).
@@ -108,7 +108,7 @@ Volvé a compilar y desplegar. No agregues `/api` al final. El dominio de Railwa
 
 Para subir archivos manualmente desde GitHub Actions, ejecutá **Compilar frontend para Cloudflare** e indicá esa URL pública en `api_base_url`. Descargá el artifact `latente-cloudflare` de **esa ejecución**, extraelo y publicá todos sus archivos. El artifact del CI ordinario usa la API del mismo origen y no conoce tu dominio Railway.
 
-Cuando `latente.com.ar` esté en tu cuenta de Cloudflare, añadilo como Custom Domain del Worker y conservá HTTPS. El backend puede seguir usando su dominio `up.railway.app`; no es obligatorio crear `api.latente.com.ar`. Para un dominio propio del backend, seguí los registros que Railway indique, esperá el certificado y usá SSL/TLS **Full (strict)** en Cloudflare antes de activar el proxy.
+Cuando `latente.cfd` esté en tu cuenta de Cloudflare, añadilo como Custom Domain del Worker y conservá HTTPS. El backend puede seguir usando su dominio `up.railway.app`; no es obligatorio crear `api.latente.cfd`. Para un dominio propio del backend, seguí los registros que Railway indique, esperá el certificado y usá SSL/TLS **Full (strict)** en Cloudflare antes de activar el proxy.
 
 ## 6. Qué está validado y qué depende de la cuenta
 

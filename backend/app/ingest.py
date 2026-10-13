@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
-from .models import League, Team, Membership, Fixture, Standing, Scorer, utcnow
+from .models import League, Team, Membership, Fixture, FixtureStatistics, Standing, Scorer, utcnow
 
 LIVE = {"1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT"}
 FINISHED = {"FT", "AET", "PEN", "AWD", "WO"}
@@ -91,6 +91,30 @@ def save_teams(s, rows, league, season, source="api"):
             capacity=venue.get("capacity"),
         )
         membership(s, source, league, season, row["team"]["id"])
+
+
+def save_statistics(s, rows, fixture_id, source="api"):
+    fixture = s.get(Fixture, (source, fixture_id))
+    if not fixture:
+        return
+    data = []
+    seen = set()
+    for row in rows:
+        team_id = (row.get("team") or {}).get("id")
+        if team_id not in {fixture.home_id, fixture.away_id} or team_id in seen:
+            continue
+        statistics = [
+            {"type": item["type"][:120], "value": item.get("value")}
+            for item in (row.get("statistics") or [])[:100]
+            if isinstance(item, dict) and isinstance(item.get("type"), str)
+            and (item.get("value") is None or isinstance(item["value"], (str, int, float)))
+        ]
+        if statistics:
+            data.append({"team_id": team_id, "statistics": statistics})
+            seen.add(team_id)
+    # Una respuesta vacía no borra el último snapshot válido.
+    if data:
+        upsert(s, FixtureStatistics, dict(source=source, fixture_id=fixture_id, data=data, updated_at=utcnow()))
 
 
 def save_standings(s, rows, league, season, source="api"):

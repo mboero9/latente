@@ -9,6 +9,7 @@ from .db import session_scope
 from .models import (
     League,
     Fixture,
+    FixtureStatistics,
     Team,
     Standing,
     Scorer,
@@ -178,6 +179,8 @@ def status():
                     )
                 ),
                 "live_interval_seconds": settings.live_seconds,
+                "statistics_interval_seconds": settings.statistics_seconds,
+                "display_refresh_seconds": 5,
                 "profile": settings.profile,
                 "configured": settings.mode == "demo" or bool(settings.api_key),
                 "provider_configured": bool(settings.api_key),
@@ -258,6 +261,25 @@ def fixture(fixture_id: int):
             raise HTTPException(404, "Partido no encontrado")
         league_or_404(s, row.league_id)
         return {"data": match_payload(s, [row])[0], "meta": meta([row])}
+
+
+@app.get("/api/fixtures/{fixture_id}/statistics")
+def fixture_statistics(fixture_id: int):
+    with session_scope() as s:
+        fixture = s.get(Fixture, (settings.mode, fixture_id))
+        if not fixture:
+            raise HTTPException(404, "Partido no encontrado")
+        league = league_or_404(s, fixture.league_id)
+        snapshot = s.get(FixtureStatistics, (settings.mode, fixture_id))
+        coverage = (league.coverage.get("fixtures") or {}).get("statistics_fixtures")
+        teams = {t.id: public(t) for t in s.scalars(select(Team).where(
+            Team.source == settings.mode, Team.id.in_([fixture.home_id, fixture.away_id])
+        ))}
+        data = [{"team": teams[r["team_id"]], "statistics": r["statistics"]}
+                for r in (snapshot.data if snapshot else []) if r["team_id"] in teams]
+        stale = bool(snapshot and fixture.status in LIVE and
+                     (utcnow() - aware(snapshot.updated_at)).total_seconds() > max(120, settings.statistics_seconds * 2))
+        return {"data": data, "meta": meta([snapshot] if snapshot else [], coverage=coverage, stale=stale)}
 
 
 @app.get("/api/leagues/{league_id}/standings")

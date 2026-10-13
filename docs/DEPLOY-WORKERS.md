@@ -1,6 +1,6 @@
 # Latente en Cloudflare Workers
 
-Frontend previsto: `https://latente.dimebag.workers.dev/`. Dominio final: `https://latente.com.ar/`.
+Frontend previsto: `https://latente.dimebag.workers.dev/`. Dominio final: `https://latente.cfd/`.
 
 ## 1. Corregir la pantalla en blanco
 
@@ -19,7 +19,7 @@ En la configuración de build del Worker existente `latente`, conectá `mboero9/
 | Build command | Vacío: el archivo `wrangler.jsonc` ejecuta la instalación y el build |
 | Deploy command | `npx wrangler deploy` |
 | Variable de build `NODE_VERSION` | `24` |
-| Variable de build `VITE_API_BASE_URL` | `https://api.latente.com.ar`, cuando esa API ya esté disponible |
+| Variable de build `VITE_API_BASE_URL` | `https://api.latente.cfd`, cuando esa API ya esté disponible |
 
 El `wrangler.jsonc` incluido compila con Vite y publica únicamente `frontend/dist`. Quitá argumentos anteriores como `--assets .` o `--assets frontend`, porque reemplazan el directorio correcto. Volvé a desplegar el último commit.
 
@@ -67,7 +67,7 @@ Antes del primer arranque, configurá una contraseña de PostgreSQL propia y lar
 La variable del backend debe incluir el origen actual:
 
 ```dotenv
-CORS_ORIGINS=https://latente.dimebag.workers.dev,https://latente.com.ar,https://www.latente.com.ar
+CORS_ORIGINS=https://latente.dimebag.workers.dev,https://latente.cfd,https://www.latente.cfd
 ```
 
 Arrancá el stack y verificá la base y la API:
@@ -84,23 +84,23 @@ Compose crea PostgreSQL y aplica las migraciones automáticamente. `migrate` y `
 
 ## 3. Publicar la API y conectar el frontend
 
-Seguí la sección **VPS + Cloudflare Tunnel** del README. Creá la ruta pública `api.latente.com.ar` hacia `http://nginx:8080`, con el token del túnel solo en `.env` del VPS, y levantá:
+Seguí la sección **VPS + Cloudflare Tunnel** del README. Creá la ruta pública `api.latente.cfd` hacia `http://nginx:8080`, con el token del túnel solo en `.env` del VPS, y levantá:
 
 ```bash
 docker compose -f docker-compose.yml -f deploy/compose.tunnel.yml up -d --build
 ```
 
-`https://api.latente.com.ar/api/health` debe responder JSON por HTTPS antes de conectar el frontend. El Worker estático no reemplaza esta API.
+`https://api.latente.cfd/api/health` debe responder JSON por HTTPS antes de conectar el frontend. El Worker estático no reemplaza esta API.
 
-Después agregá **la variable de build** `VITE_API_BASE_URL=https://api.latente.com.ar` al Worker de Cloudflare y ejecutá un nuevo build y deploy. Una variable agregada solo en tiempo de ejecución no modifica el JavaScript ya compilado.
+Después agregá **la variable de build** `VITE_API_BASE_URL=https://api.latente.cfd` al Worker de Cloudflare y ejecutá un nuevo build y deploy. Una variable agregada solo en tiempo de ejecución no modifica el JavaScript ya compilado.
 
 Para compilar y publicar desde una terminal Bash:
 
 ```bash
-VITE_API_BASE_URL=https://api.latente.com.ar npx wrangler deploy
+VITE_API_BASE_URL=https://api.latente.cfd npx wrangler deploy
 ```
 
-No agregues `/api` al final de esa variable: el frontend ya incluye ese prefijo en cada consulta. Si usás otro dominio para el backend, reemplazá la URL y configurá sus DNS/HTTPS. Conservá `api.latente.com.ar` en el túnel cuando agregues `latente.com.ar` al Worker del frontend.
+No agregues `/api` al final de esa variable: el frontend ya incluye ese prefijo en cada consulta. Si usás otro dominio para el backend, reemplazá la URL y configurá sus DNS/HTTPS. Conservá `api.latente.cfd` en el túnel cuando agregues `latente.cfd` al Worker del frontend.
 
 ## Fuentes oficiales
 

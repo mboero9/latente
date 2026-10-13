@@ -72,8 +72,12 @@ class Settings:
     @property
     def live_seconds(self):
         return integer(
-            "LIVE_INTERVAL_SECONDS", 1800 if self.profile == "free" else 30, 15
+            "LIVE_INTERVAL_SECONDS", 1800 if self.profile == "free" else 15, 5
         )
+
+    @property
+    def statistics_seconds(self):
+        return integer("STATISTICS_INTERVAL_SECONDS", 1800 if self.profile == "free" else 60, 60)
 
     @property
     def fixtures_seconds(self):

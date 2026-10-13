@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import type { Result } from "./types";
 
 const base = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
-export function useApi<T>(path: string | null, interval = 0) {
+export const DISPLAY_REFRESH_MS = 5000;
+export function useApi<T>(path: string | null, interval = DISPLAY_REFRESH_MS) {
   const [result, setResult] = useState<Result<T> | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);

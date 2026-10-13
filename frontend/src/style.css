@@ -1889,6 +1889,16 @@
       font-size: 1.25rem;
     }
   }
+  .match-statistics {
+    margin-top: 20px;
+    padding: clamp(16px, 3vw, 28px);
+  }
+  .match-statistics h2 { font-size: 1.125rem; margin-bottom: 8px; }
+  .match-statistics table { width: 100%; border-collapse: collapse; margin: 20px 0; table-layout: fixed; }
+  .match-statistics th, .match-statistics td { text-align: center; padding: 12px 5px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+  .match-statistics th { font-size: .8125rem; color: var(--muted); }
+  .match-statistics td { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .match-statistics th:nth-child(2) { width: 46%; }
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

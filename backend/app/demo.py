@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from sqlalchemy import delete
-from .models import League, Fixture, Standing, Scorer, Team, utcnow
+from .models import League, Fixture, FixtureStatistics, Standing, Scorer, Team, utcnow
 from .ingest import upsert, team, membership
 
 DEMO_LEAGUES = [
@@ -87,6 +87,7 @@ def seed_demo(s):
         and s.get(Fixture, ("demo", 12800))
     ):
         return
+    s.execute(delete(FixtureStatistics).where(FixtureStatistics.source == "demo"))
     s.execute(delete(Fixture).where(Fixture.source == "demo"))
     for li, (league_id, name, country, names) in enumerate(DEMO_LEAGUES):
         upsert(

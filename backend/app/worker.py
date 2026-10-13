@@ -11,19 +11,22 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select, text, delete, or_, case
 from .config import settings
 from .db import engine, session_scope
-from .models import League, Fixture, SyncJob, WorkerState, utcnow
+from .models import League, Fixture, FixtureStatistics, SyncJob, WorkerState, utcnow
 from .ingest import (
     upsert,
     save_fixtures,
     save_teams,
     save_standings,
     save_scorers,
+    save_statistics,
     LIVE,
+    FINISHED,
 )
-from .provider import FootballClient, Deferred, ProviderError
+from .provider import FootballClient, Deferred, ProviderError, aware
 
 log = logging.getLogger("latente.worker")
 stop = threading.Event()
+background_turn = 0
 
 
 def ensure_job(s, key, kind, params, at=None):
@@ -106,7 +109,30 @@ def save_catalog(s, rows):
             ensure_job(s, key, kind, params, utcnow() + timedelta(microseconds=matched))
     if not matched:
         raise ValueError("El catálogo no contiene las ligas configuradas")
-    s.execute(delete(SyncJob).where(SyncJob.key.not_in(active_keys)))
+    s.execute(delete(SyncJob).where(SyncJob.key.not_in(active_keys), SyncJob.kind != "statistics"))
+
+
+def sync_fixture_rows(s, rows):
+    save_fixtures(s, rows, settings.allowed_leagues)
+    now = utcnow()
+    for raw in rows:
+        if not settings.accepts_league(raw["league"]["id"]):
+            continue
+        fixture = s.get(Fixture, ("api", raw["fixture"]["id"]))
+        if not fixture or fixture.status not in LIVE | FINISHED:
+            continue
+        # No generar miles de trabajos históricos al importar una temporada.
+        if aware(fixture.kickoff) < now - timedelta(days=2):
+            continue
+        league = s.get(League, ("api", fixture.league_id))
+        coverage = (league.coverage.get("fixtures") or {}) if league else {}
+        if coverage.get("statistics_fixtures") is not True:
+            continue
+        previous = s.get(FixtureStatistics, ("api", fixture.id))
+        # Tras el cierre y una captura final no recrear tareas ya completadas.
+        if fixture.status in FINISHED and previous and aware(previous.updated_at) >= aware(fixture.kickoff) + timedelta(hours=4):
+            continue
+        ensure_job(s, f"statistics:{fixture.id}", "statistics", {"fixture": fixture.id})
 
 
 def live_ids(s, now, stale_before=None):
@@ -129,6 +155,24 @@ def live_ids(s, now, stale_before=None):
 
 
 def execute_job(client, kind, params):
+    if kind == "statistics":
+        with session_scope() as s:
+            fixture = s.get(Fixture, ("api", params["fixture"]))
+            if not fixture or not settings.accepts_league(fixture.league_id):
+                return None
+            league = s.get(League, ("api", fixture.league_id))
+            if not league or (league.coverage.get("fixtures") or {}).get("statistics_fixtures") is not True:
+                return None
+            if aware(fixture.kickoff) < utcnow() - timedelta(days=2):
+                return None
+            terminal = fixture.status in FINISHED
+            if fixture.status not in LIVE | FINISHED:
+                return None
+            close_snapshot = terminal and utcnow() >= aware(fixture.kickoff) + timedelta(hours=4)
+        rows = client.get("/fixtures/statistics", {"fixture": params["fixture"]})
+        with session_scope() as s:
+            save_statistics(s, rows, params["fixture"])
+        return None if close_snapshot else (3600 if terminal else settings.statistics_seconds)
     if kind == "catalog":
         rows = client.get("/leagues", {})
         with session_scope() as s:
@@ -139,14 +183,14 @@ def execute_job(client, kind, params):
         day = utcnow().astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date() + timedelta(days=offset)
         rows = client.get("/fixtures", {"date": day.isoformat(), "timezone": "America/Argentina/Buenos_Aires"})
         with session_scope() as s:
-            save_fixtures(s, rows, settings.allowed_leagues)
+            sync_fixture_rows(s, rows)
         if settings.profile == "free":
             return 86400
         return 900 if offset == 0 else (3600 if abs(offset) == 1 else 86400)
     if kind == "live" and settings.all_leagues:
         rows = client.get("/fixtures", {"live": "all"})
         with session_scope() as s:
-            save_fixtures(s, rows, settings.allowed_leagues)
+            sync_fixture_rows(s, rows)
         return settings.live_seconds
     if kind in {"live", "settle"}:
         with session_scope() as s:
@@ -156,7 +200,7 @@ def execute_job(client, kind, params):
             return min(settings.live_seconds, 300)
         rows = client.get("/fixtures", {"ids": "-".join(map(str, ids))})
         with session_scope() as s:
-            save_fixtures(s, rows, settings.allowed_leagues)
+            sync_fixture_rows(s, rows)
         return settings.live_seconds
     endpoint = {
         "fixtures": "/fixtures",
@@ -167,7 +211,7 @@ def execute_job(client, kind, params):
     rows = client.get(endpoint, params)
     with session_scope() as s:
         if kind == "fixtures":
-            save_fixtures(s, rows, settings.allowed_leagues)
+            sync_fixture_rows(s, rows)
         elif kind == "teams":
             save_teams(s, rows, params["league"], params["season"])
         elif kind == "standings":
@@ -196,13 +240,21 @@ def heartbeat(message):
 
 
 def tick(client):
+    global background_turn
+    # Dos turnos para estadísticas y uno para tablas/perfiles. La primera
+    # carga del catálogo no bloquea el vivo ni monopoliza la cola para siempre.
+    background_turn = (background_turn + 1) % 3
     heartbeat("Actualización automática activa")
     with session_scope() as s:
         job = s.scalar(
             select(SyncJob)
             .where(SyncJob.next_run <= utcnow())
             .order_by(
-                case((SyncJob.kind.in_(["catalog", "day", "live", "settle"]), 0), else_=1),
+                case(
+                    (SyncJob.kind.in_(["catalog", "day", "live", "settle"]), 0),
+                    (SyncJob.kind == "statistics", 1 if background_turn else 2),
+                    else_=2 if background_turn else 1,
+                ),
                 SyncJob.next_run, SyncJob.key,
             )
             .limit(1)
@@ -214,7 +266,9 @@ def tick(client):
         seconds = execute_job(client, kind, params)
         with session_scope() as s:
             job = s.get(SyncJob, key)
-            if job:
+            if job and seconds is None:
+                s.delete(job)
+            elif job:
                 job.next_run = utcnow() + timedelta(seconds=seconds)
                 job.last_success, job.failures, job.message = utcnow(), 0, None
         log.info("sync_ok kind=%s key=%s", kind, key)
