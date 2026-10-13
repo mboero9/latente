@@ -649,6 +649,11 @@ function TableView({ league }: { league: League }) {
         setSeason={setSeason}
       />
       {error && <ErrorBox error={error} retry={retry} />}
+      {result?.meta.provisional && (
+        <div class="coverage-notice" role="note">
+          <strong>Tabla parcial, no oficial.</strong> Calculada con {result.meta.matches_used ?? 0} partidos terminados disponibles en Latente. Puede faltar gran parte de la temporada, equipos y descuentos de puntos.
+        </div>
+      )}
       {loading ? (
         <Loading />
       ) : !result?.data.length ? (
