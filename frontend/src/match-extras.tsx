@@ -100,10 +100,26 @@ export function MatchExtras({ id, teams }: { id: number; teams: MatchNames }) {
   const { result, loading, error, retry } = useApi<Detail>(`/api/fixtures/${id}/details`, 30_000);
   const data = result?.data;
   const events = [...(data?.events || [])].sort((a,b) => (a.minute ?? 0) - (b.minute ?? 0));
+  const goals = events.filter(e => e.type.toLowerCase() === "goal");
   const lineup = data?.lineups || [];
   const best = data?.best_rated_player;
   return (
     <section class="match-extras" aria-label="Detalles del partido">
+      <article class="panel match-detail-panel">
+        <h2>Autores de los goles</h2>
+        {goals.length ? <div class="goal-authors">
+          {[teams.home, teams.away].map(team => <div key={team.id} class="goal-team">
+            <strong>{team.name}</strong>
+            {goals.filter(g => g.team_id === team.id).map((goal, index) => <div class="goal-author" key={index}>
+              <span aria-hidden="true">⚽</span>
+              <span>{goal.player || "Autor no informado"}</span>
+              <small>{goal.minute ?? "—"}′{goal.extra ? `+${goal.extra}` : ""}
+                {goal.detail.toLowerCase().includes("own goal") ? " · En contra" : ""}
+                {goal.detail.toLowerCase().includes("penalty") ? " · Penal" : ""}</small>
+            </div>)}
+          </div>)}
+        </div> : <p class="match-details-unavailable">Los autores se mostrarán cuando el proveedor informe los eventos del encuentro.</p>}
+      </article>
       <article class="panel match-detail-panel">
         <h2>Goles, tarjetas y jugadas</h2>
         {loading ? <p>Cargando incidencias…</p> : error ? <p>{error} <button onClick={retry}>Reintentar</button></p>
