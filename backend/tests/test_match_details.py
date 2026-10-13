@@ -53,7 +53,7 @@ def test_public_details_only_uses_cache(db, monkeypatch):
         {"time": {"elapsed": 21}, "team": {"id": 12800},
          "player": {"name": "Autor"}, "type": "Goal", "detail": "Normal Goal"}
     ], [], None)
-    db.flush()
+    db.commit()
     assert db.get(FixtureDetails, ("api", 1))
     with TestClient(main.app) as client:
         response = client.get("/api/fixtures/1/details")
