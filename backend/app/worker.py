@@ -337,6 +337,16 @@ def tick(client):
                     (SyncJob.kind.in_(["statistics", "details"]), 1 if background_turn == 2 else 4),
                     else_=5,
                 ),
+                # Primero la competición prioritaria y la temporada actual;
+                # después standings, goleadores, clubes y resultados.
+                # Evita traer tablas de 2024 de decenas de ligas mientras
+                # Champions 2026 sigue sin goleadores.
+                case(
+                    *[(SyncJob.params["league"].as_integer() == league_id, rank)
+                      for rank, league_id in enumerate(settings.league_ids)],
+                    else_=len(settings.league_ids) + 1,
+                ),
+                SyncJob.params["season"].as_integer().desc(),
                 case(
                     (SyncJob.kind == "standings", 0),
                     (SyncJob.kind == "scorers", 1),
@@ -344,12 +354,6 @@ def tick(client):
                     (SyncJob.kind == "fixtures", 3),
                     else_=4,
                 ),
-                case(
-                    *[(SyncJob.params["league"].as_integer() == league_id, rank)
-                      for rank, league_id in enumerate(settings.league_ids)],
-                    else_=len(settings.league_ids) + 1,
-                ),
-                SyncJob.params["season"].as_integer().desc(),
                 SyncJob.next_run, SyncJob.key,
             )
             .limit(1)
