@@ -16,6 +16,7 @@ import "./style.css";
 import { observeLanguage } from "./i18n";
 import { MatchExtras } from "./match-extras";
 import { PromediosPage } from "./argentina-promedios";
+import { FootballAnalytics } from "./football-analytics";
 import { sports, SportPage, HistoryPage } from "./other-sports";
 
 const LIVE = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT"]);
@@ -260,6 +261,7 @@ function LeagueTabs({ league, view }: { league: League; view: string }) {
         ["scorers", "Goleadores"],
         ["teams", "Equipos"],
         ["history", "Históricos"],
+        ["analytics", "Estadísticas"],
         ...(league.id === 128 ? [["promedios", "Promedios"]] : []),
       ].map(([key, label]) => (
         <a
@@ -1192,7 +1194,7 @@ function App() {
     id = Number(rawId),
     league = leagues.find((l) => l.id === id),
     first = leagues[0]?.id || 128;
-  const isLeagueView = ["league", "table", "scorers", "teams", "history", "promedios"].includes(view);
+  const isLeagueView = ["league", "table", "scorers", "teams", "history", "promedios", "analytics"].includes(view);
   useEffect(() => {
     document.title = `${league?.name || ({ leagues: "Ligas y copas", team: "Equipo", match: "Partido" } as Record<string, string>)[view] || "Resultados"} · Latente`;
   }, [route, league?.name]);
@@ -1406,6 +1408,8 @@ function App() {
                   />
                 ) : view === "table" ? (
                   <TableView league={league} />
+                ) : view === "analytics" ? (
+                  <FootballAnalytics league={league} />
                 ) : view === "history" ? (
                   <HistoryPage league={league} />
                 ) : view === "promedios" && league.id === 128 ? (
