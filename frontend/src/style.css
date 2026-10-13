@@ -2046,3 +2046,19 @@
   .official-standings-link { display:inline-flex; width:fit-content; max-width:100%; border:1px solid var(--line); border-radius:9px; padding:10px 15px; color:var(--green); font-weight:800; }
   .official-standings-link:hover { background:var(--surface-secondary); }
 }
+
+@layer components {
+  /* La mitad blanca necesita contraste en el header claro y en modo oscuro. */
+  .brand .brand-wordmark {
+    display: inline-flex;
+    align-items: baseline;
+    background: #102c42;
+    padding: 3px 11px 5px;
+    border-radius: 9px;
+    letter-spacing: -1.4px;
+    line-height: 1.2;
+  }
+  .brand .brand-late { color: #6ed7ff; }
+  .brand .brand-nte { color: #ffffff; }
+  .brand .brand-dot { color: #6ed7ff; margin-left: 2px; }
+}
