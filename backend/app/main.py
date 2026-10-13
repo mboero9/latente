@@ -10,6 +10,7 @@ from .models import (
     League,
     Fixture,
     FixtureStatistics,
+    FixtureDetails,
     Team,
     Standing,
     Scorer,
@@ -281,6 +282,29 @@ def fixture(fixture_id: int):
             raise HTTPException(404, "Partido no encontrado")
         league_or_404(s, row.league_id)
         return {"data": match_payload(s, [row])[0], "meta": meta([row])}
+
+
+@app.get("/api/fixtures/{fixture_id}/details")
+def fixture_details(fixture_id: int):
+    """Lectura exclusiva de PostgreSQL: abrir la ficha no gasta cuota."""
+    with session_scope() as s:
+        fixture = s.get(Fixture, (settings.mode, fixture_id))
+        if not fixture:
+            raise HTTPException(404, "Partido no encontrado")
+        league_or_404(s, fixture.league_id)
+        snapshot = s.get(FixtureDetails, (settings.mode, fixture_id))
+        players = snapshot.player_ratings if snapshot else []
+        # "Mejor calificado" solo con valor comunicado por proveedor;
+        # nunca confundirlo con un premio MVP oficialmente adjudicado.
+        best = max(players, key=lambda x: x.get("rating", 0)) if players else None
+        return {
+            "data": {
+                "events": snapshot.events if snapshot else [],
+                "lineups": snapshot.lineups if snapshot else [],
+                "best_rated_player": best,
+            },
+            "meta": meta([snapshot] if snapshot else [], available=bool(snapshot), source="provider_cache"),
+        }
 
 
 @app.get("/api/fixtures/{fixture_id}/statistics")
