@@ -194,3 +194,24 @@ class WorkerState(Base):
     source: Mapped[str] = mapped_column(String(8), primary_key=True)
     heartbeat: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     message: Mapped[str] = mapped_column(String(200), default="Iniciando")
+
+
+class SportSnapshot(Base):
+    """Dataset normalizado por disciplina, endpoint y temporada/fecha."""
+    __tablename__ = "sport_snapshots"
+    sport: Mapped[str] = mapped_column(String(20), primary_key=True)
+    dataset: Mapped[str] = mapped_column(String(20), primary_key=True)
+    ref: Mapped[str] = mapped_column(String(90), primary_key=True)
+    provider: Mapped[str] = mapped_column(String(30), default="api_sports")
+    data: Mapped[list] = mapped_column(JSON, default=list)
+    source_count: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    note: Mapped[str | None] = mapped_column(String(250))
+
+
+class SportQuota(Base):
+    """Cuota persistente entre ejecuciones Railway: nunca se reinicia por despliegue."""
+    __tablename__ = "sport_quotas"
+    sport: Mapped[str] = mapped_column(String(20), primary_key=True)
+    day: Mapped[date] = mapped_column(Date, primary_key=True)
+    requests: Mapped[int] = mapped_column(Integer, default=0)
