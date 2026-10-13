@@ -121,8 +121,11 @@ def _game_summary(sport: str, item: dict):
     league = item.get("league") or {}
     state = item.get("status") or {}
     return {"id": item.get("id"), "league": league.get("name") if isinstance(league, dict) else str(league),
+            "league_id": league.get("id") if isinstance(league, dict) else None,
+            "country": (item.get("country") or {}).get("name") if isinstance(item.get("country"), dict) else None,
             "date": item.get("date"), "home": home.get("name") or "Local",
             "away": away.get("name") or "Visitante",
+            "home_id": home.get("id"), "away_id": away.get("id"),
             "home_logo": _trusted_logo(home.get("logo")),
             "away_logo": _trusted_logo(away.get("logo")),
             "league_logo": _trusted_logo(league.get("logo") if isinstance(league, dict) else None),
