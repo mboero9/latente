@@ -1332,7 +1332,7 @@ function App() {
         </aside>
         <main id="main" tabIndex={-1}>
           <div class="utility-bar">
-            <span>.cfd - Clubes, Fútbol y Deportes</span>
+            <span>latente.cfd - Clubes, Fútbol y Deportes</span>
             <label class="timezone">
               Horarios
               <select
