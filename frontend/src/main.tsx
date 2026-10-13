@@ -13,6 +13,7 @@ import type {
   Meta,
 } from "./types";
 import "./style.css";
+import { observeLanguage } from "./i18n";
 
 const LIVE = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT"]);
 const labels: Record<string, string> = {
@@ -1155,7 +1156,9 @@ function App() {
     ),
     [tz, setTz] = useState(argentina),
     [day, setDay] = useState(formatDay(new Date())),
-    [leagueSearch, setLeagueSearch] = useState("");
+    [leagueSearch, setLeagueSearch] = useState(""),
+    [language, setLanguage] = useState<"es" | "en">(() => localStorage.getItem("latente-language") === "en" ? "en" : "es");
+  useEffect(() => observeLanguage(language), [language]);
   useEffect(() => {
     const changed = () => {
       setRoute(location.hash.slice(1) || "/");
@@ -1232,6 +1235,14 @@ function App() {
             ))}
           </nav>
           <div class="header-actions">
+            <button class="language-toggle" type="button"
+              aria-label={language === "es" ? "Switch to English" : "Cambiar a español"}
+              title={language === "es" ? "English" : "Español"}
+              onClick={() => {
+                const next = language === "es" ? "en" : "es";
+                localStorage.setItem("latente-language", next);
+                setLanguage(next);
+              }}>{language === "es" ? "EN" : "ES"}</button>
             {mode === "demo" && <span class="demo-badge">DEMO</span>}
             <button
               class="icon-button theme-button"
