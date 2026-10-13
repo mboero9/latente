@@ -396,6 +396,18 @@ def run(once=False, max_seconds=120):
             if settings.mode == "api":
                 ensure_job(s, "catalog", "catalog", {})
                 ensure_job(s, "live", "live", {}, utcnow() + timedelta(seconds=60))
+                # Si el catálogo se creó antes del upgrade Free→Pro y aún no
+                # existen trabajos por temporada, forzar su reconstrucción.
+                # Es idempotente: al crear los trabajos deja de activarse.
+                if settings.profile == "live":
+                    bulk_count = s.scalar(select(func.count()).select_from(SyncJob).where(
+                        SyncJob.kind.in_(("standings", "scorers", "teams", "fixtures"))
+                    )) or 0
+                    if bulk_count == 0:
+                        catalog = s.get(SyncJob, "catalog")
+                        if catalog:
+                            catalog.next_run = utcnow()
+                        log.info("pro_backfill_catalog_required: no season jobs queued")
                 # Recuperación idempotente al activar Pro: reintentar trabajos
                 # bloqueados previamente por el plan Free sin aguardar 24 h.
                 if settings.profile == "live" and not s.get(WorkerState, "proboot"):
