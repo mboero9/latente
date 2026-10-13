@@ -576,6 +576,16 @@ def run(once=False, max_seconds=120):
                     s.execute(delete(SyncJob).where(
                         SyncJob.kind.in_(("fixtures", "teams", "standings", "scorers", "statistics"))
                     ))
+        if settings.mode == "api":
+            # Otros deportes: presupuestos separados, snapshots persistidos.
+            # Un fallo o plan no cubierto jamás detiene la ingesta de fútbol.
+            try:
+                from .sports_scheduler import sync_once
+                audit = sync_once(max_calls=3)
+                log.info("multisport_update_count=%s failed_or_uncovered=%s",
+                         len(audit["updated"]), len(audit["unavailable"]))
+            except Exception as exc:
+                log.warning("multisport_sync_error_type=%s", type(exc).__name__)
         client = FootballClient()
         try:
             if once and settings.mode == "api" and not settings.api_key:
