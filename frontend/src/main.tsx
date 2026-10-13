@@ -1206,7 +1206,7 @@ function App() {
         <div class="header-inner">
           <a href="#/" class="brand" aria-label="Latente, inicio">
             <img src="/favicon.svg" width="34" height="34" alt="" />
-            latente<span class="brand-dot">.</span>
+            <span class="brand-monogram" aria-hidden="true">L</span><span>latente<span class="brand-dot">.</span></span>
           </a>
           <nav class="top-nav" aria-label="Navegación principal">
             {[
