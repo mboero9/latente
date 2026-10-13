@@ -1914,3 +1914,8 @@
   .brand img { width: 43px; height: 43px; border-radius: 10px; }
   .brand > span { display: inline-flex; align-items: baseline; }
 }
+
+@layer components {
+  .source-logo { width: 40px; height: 40px; object-fit: contain; flex-shrink: 0; }
+  .brand img { object-fit: contain; }
+}
