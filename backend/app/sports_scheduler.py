@@ -62,10 +62,17 @@ def due_jobs(today=None):
         # argentinas (UAR/URBA) se identifican por sus IDs reales.
         if sport == "rugby":
             jobs.append((sport, "leagues", "catalog", {"country": "Argentina"}))
-        # One date per sport and request. Archives remain unchanged.
-        jobs.append((sport, "games", today.isoformat(), today))
-        jobs.append((sport, "games", (today - timedelta(days=1)).isoformat(),
-                     today - timedelta(days=1)))
+        # Una ventana de cobertura real, no solo ayer/hoy.
+        # Dentro de 20 solicitudes diarias por deporte, recorrer jornadas
+        # pasadas y futuras que el plan gratuito realmente permita consultar.
+        # Para F1, /races?season=AAAA devuelve el calendario anual: basta un
+        # único snapshot por temporada, no 15 consultas idénticas.
+        offsets = (0,) if sport == "f1" else (
+            0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7,
+        )
+        for offset in offsets:
+            target = today + timedelta(days=offset)
+            jobs.append((sport, "games", target.isoformat(), target))
         for config in targets.get(sport, []):
             ref = f"{config['league']}:{config['season']}"
             kind = "drivers" if sport == "f1" else "standings"
@@ -133,7 +140,15 @@ def sync_once(max_calls=3, fetch=extract):
         used = {q.sport: q.requests for q in db.scalars(
             select(SportQuota).where(SportQuota.day == utcnow().date())
         )}
-    candidates.sort(key=lambda item: used.get(item[0], 0))
+    # Los campeonatos con partidos programados en días aislados necesitan
+    # varios días. Mantener prioridad de deporte con menor consumo y día más
+    # cercano, sin superar la cuota de 20 consultas por disciplina.
+    candidates.sort(key=lambda item: (
+        used.get(item[0], 0),
+        0 if item[1] == "leagues" else 1,
+        abs((item[3] - now.astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date()).days)
+            if item[1] == "games" else 99,
+    ))
     report = {"updated": [], "unavailable": [], "attempts": 0}
     for sport, kind, ref, config in candidates:
         if report["attempts"] >= max_calls:
