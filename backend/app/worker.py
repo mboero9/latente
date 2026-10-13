@@ -129,6 +129,74 @@ def save_catalog(s, rows):
     s.execute(delete(SyncJob).where(SyncJob.key.not_in(active_keys), SyncJob.kind.not_in(("statistics", "details"))))
 
 
+
+def enqueue_hydration(s, league_id, season, limit_batches=2):
+    """Importar eventos y planteles por lotes de 20 partidos, sin cuota por visitante.
+
+    Los pendientes de cada liga se rellenan progresivamente al terminar un
+    lote; nunca se programa una temporada entera de golpe.
+    """
+    if settings.profile != "live" or league_id not in settings.league_ids:
+        return
+    active = s.scalar(select(func.count()).select_from(SyncJob).where(
+        SyncJob.kind == "hydrate",
+        SyncJob.params["league"].as_integer() == league_id,
+        SyncJob.params["season"].as_integer() == season,
+    )) or 0
+    if active >= limit_batches:
+        return
+    from sqlalchemy import and_
+    now = utcnow()
+    candidates = list(s.scalars(
+        select(Fixture).outerjoin(
+            FixtureDetails,
+            and_(FixtureDetails.source == Fixture.source,
+                 FixtureDetails.fixture_id == Fixture.id),
+        ).where(
+            Fixture.source == "api",
+            Fixture.league_id == league_id,
+            Fixture.season == season,
+            Fixture.kickoff <= now,
+            Fixture.status.in_(LIVE | {"FT", "AET", "PEN"}),
+            or_(
+                FixtureDetails.events_checked_at.is_(None),
+                and_(Fixture.status.in_(LIVE),
+                     FixtureDetails.events_checked_at <= now - timedelta(minutes=5)),
+            ),
+        ).order_by(
+            case((Fixture.status.in_(LIVE), 0), else_=1),
+            Fixture.kickoff.desc(),
+            Fixture.id.desc(),
+        ).limit(20 * (limit_batches - active))
+    ))
+    for index in range(0, len(candidates), 20):
+        ids = [f.id for f in candidates[index:index + 20]]
+        key = f"hydrate:{league_id}:{season}:{ids[0]}"
+        ensure_job(s, key, "hydrate", {
+            "league": league_id, "season": season, "ids": ids,
+        })
+
+
+def cache_extended_fixtures(s, rows, mark_checked=False):
+    """Leer campos opcionales de fixtures?ids y guardar eventos verificables."""
+    updated = 0
+    for raw in rows:
+        fixture_id = (raw.get("fixture") or {}).get("id")
+        if not fixture_id or not s.get(Fixture, ("api", fixture_id)):
+            continue
+        events = raw.get("events") if isinstance(raw.get("events"), list) else None
+        lineups = raw.get("lineups") if isinstance(raw.get("lineups"), list) else None
+        players = raw.get("players") if isinstance(raw.get("players"), list) else None
+        stats = raw.get("statistics") if isinstance(raw.get("statistics"), list) else None
+        if mark_checked or any(value is not None for value in (events, lineups, players)):
+            store_details(s, fixture_id, events, lineups, players,
+                          mark_events_checked=mark_checked)
+            updated += 1
+        if stats is not None:
+            save_statistics(s, stats, fixture_id)
+    return updated
+
+
 def sync_fixture_rows(s, rows):
     save_fixtures(s, rows, settings.allowed_leagues)
     # Máximo dos fichas enriquecidas nuevas por día en Free (hasta 4 requests),
