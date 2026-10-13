@@ -26,13 +26,23 @@ export function SportPage({ slug }: { slug: string }) {
     date.setUTCDate(date.getUTCDate() + days);
     return date.toISOString().slice(0, 10);
   };
-  const yesterday = shift(-1), tomorrow = shift(1);
-  const past = useApi<OtherGamesResponse>(sport ? `/api/sports/${sport.slug}/games?date=${yesterday}` : null, 120000);
-  const today = useApi<OtherGamesResponse>(sport ? `/api/sports/${sport.slug}/games?date=${localToday}` : null, 60000);
-  const future = useApi<OtherGamesResponse>(sport ? `/api/sports/${sport.slug}/games?date=${tomorrow}` : null, 120000);
-  const selected = tab === "past" ? past : tab === "today" ? today : future;
-  const state = selected.result?.data;
-  const all = [...(past.result?.data.games || []), ...(today.result?.data.games || []), ...(future.result?.data.games || [])];
+  const {result, loading, error, retry} = useApi<{
+    matches: OtherGame[]; dates_checked: string[]; snapshot_count: number;
+    period: {from:string;to:string};
+  }>(sport ? `/api/sports/${sport.slug}/overview` : null, 120000);
+  const all = result?.data.matches || [];
+  const dateOf = (game: OtherGame) =>
+    typeof game.date === "string"
+      ? game.date.slice(0,10)
+      : game.date?.start?.slice(0,10) || "";
+  const visible = all.filter(game => {
+    const day = dateOf(game);
+    if (tab === "past") return day < localToday;
+    if (tab === "future") return day > localToday;
+    return day === localToday;
+  }).sort((a,b) => tab === "past"
+    ? dateOf(b).localeCompare(dateOf(a))
+    : dateOf(a).localeCompare(dateOf(b)));
   const clubs = new Map<string, string | null>();
   for (const game of all) {
     if (game.home && game.home !== "Local") clubs.set(game.home, game.home_logo || clubs.get(game.home) || null);
@@ -69,17 +79,15 @@ export function SportPage({ slug }: { slug: string }) {
       <h1>{sport.emoji} {sport.name}</h1>
       <p>Partidos, equipos y resultados recientes con información real del proveedor.</p></div></div>
     <div class="sports-tabs" role="group" aria-label="Elegir fecha de partidos">
-      <button class={tab === "past" ? "active" : ""} onClick={() => setTab("past")}>Ayer</button>
+      <button class={tab === "past" ? "active" : ""} onClick={() => setTab("past")}>Resultados</button>
       <button class={tab === "today" ? "active" : ""} onClick={() => setTab("today")}>Hoy</button>
-      <button class={tab === "future" ? "active" : ""} onClick={() => setTab("future")}>Mañana</button>
+      <button class={tab === "future" ? "active" : ""} onClick={() => setTab("future")}>Próximos</button>
     </div>
-    {selected.loading ? <p>Cargando datos…</p> : selected.error ? <p>{selected.error} <button onClick={selected.retry}>Reintentar</button></p>
-    : !state?.configured ? <article class="panel sport-intro"><h2>Integración pendiente</h2>
-      <p>Verificando acceso Free. Los demás deportes usan la misma clave privada de la cuenta API-Sports, pero cada plan conserva su propia cuota y cobertura.</p>
-    </article> : <>
-      {state.message && <p class="coverage-notice">{state.message}</p>}
-      <h2 class="sport-section-title">Partidos · {tab === "past" ? yesterday : tab === "today" ? localToday : tomorrow}</h2>
-      {state.games.length ? <div class="sports-games">{state.games.map((game, idx) => <article class="panel sport-game" key={game.id ?? idx}>
+    {loading ? <p>Cargando partidos del archivo…</p> : error ? <p>{error} <button onClick={retry}>Reintentar</button></p>
+    : <>
+      <p class="updated">Partidos reales disponibles: {all.length} · fechas consultadas: {result?.data.dates_checked.length ?? 0}. La importación gratuita se completa progresivamente.</p>
+      <h2 class="sport-section-title">{tab === "past" ? "Últimos resultados" : tab === "today" ? "Partidos de hoy" : "Próximos encuentros"}</h2>
+      {visible.length ? <div class="sports-games">{visible.map((game, idx) => <article class="panel sport-game" key={game.id ?? idx}>
         <small class="sport-game-league">{game.league_logo && <img src={game.league_logo} alt="" loading="lazy" onError={e => {e.currentTarget.style.display = "none";}}/>}{game.league || "Competición"}</small>
         <div class="sport-game-teams">
           <strong class="sport-team">{game.home_logo && <img src={game.home_logo} alt="" loading="lazy" onError={e => {e.currentTarget.style.display = "none";}}/>}{game.home}</strong>
@@ -88,7 +96,7 @@ export function SportPage({ slug }: { slug: string }) {
         </div>
         <small>{game.status || "Estado no informado"}</small>
       </article>)}</div> : <article class="panel sport-intro"><h2>No hay encuentros para esta fecha</h2>
-        <p>Podés elegir ayer u otra fecha. La cobertura y las competiciones disponibles dependen del proveedor.</p>
+        <p>Probá Resultados o Próximos. El proveedor puede no cubrir esta competencia o temporada en el plan gratuito.</p>
       </article>}
       <h2 class="sport-section-title">Equipos encontrados ({clubs.size})</h2>
       {clubs.size ? <div class="sports-clubs">{Array.from(clubs.entries()).map(([name, logo]) => <span class="sports-club" key={name}>{logo && <img src={logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{name}</span>)}</div> :
