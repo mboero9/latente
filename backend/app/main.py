@@ -333,7 +333,7 @@ def sports_status():
 
 
 @app.get("/api/sports/{sport}/games")
-def sport_games(sport: str, date: str = Query(..., pattern=r"^\\d{4}-\\d{2}-\\d{2}$")):
+def sport_games(sport: str, date: str = Query(..., pattern=r"^\d{4}-\d{2}-\d{2}$")):
     from .other_sports import SPORTS, games
     if sport not in SPORTS:
         raise HTTPException(404, "Deporte no disponible")
