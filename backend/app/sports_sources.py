@@ -58,7 +58,7 @@ def normalize_games(sport, rows):
     return list(unique.values())
 
 
-def normalize_standings(rows):
+def normalize_standings(rows, sport=None):
     """Do not assume standings are comparable between sports/countries."""
     data = []
     def visit(items, label=None):
@@ -68,6 +68,22 @@ def normalize_standings(rows):
             elif isinstance(item, dict):
                 team = item.get("team") or {}
                 if isinstance(team, dict) and team.get("id") and team.get("name"):
+                    if sport == "nba":
+                        conference = item.get("conference") or {}
+                        division = item.get("division") or {}
+                        games = item.get("win") or {}
+                        defeats = item.get("loss") or {}
+                        rank = conference.get("rank") or division.get("rank")
+                        data.append({
+                            "group": str(conference.get("name") or division.get("name") or "NBA"),
+                            "stage": item.get("stage"), "rank": rank,
+                            "team_id": team["id"], "team": team["name"],
+                            "played": (games.get("total") or 0) + (defeats.get("total") or 0),
+                            "won": games.get("total"), "lost": defeats.get("total"),
+                            "points": None, "provider": "api_sports",
+                            "raw_stats": item,
+                        })
+                        continue
                     data.append({
                         "group": (item.get("group") or {}).get("name") if isinstance(item.get("group"), dict) else item.get("group") or label,
                         "stage": item.get("stage"),
