@@ -39,11 +39,11 @@ def configured_targets():
             if not isinstance(item, dict):
                 continue
             try:
-                league = int(item["league"]) if sport != "nba" else "standard"
+                league = "standard" if sport == "nba" else ("drivers" if sport == "f1" else int(item["league"]))
                 season = int(item["season"])
             except (ValueError, KeyError, TypeError):
                 continue
-            if 2000 <= season <= utcnow().year + 1 and (league == "standard" or league > 0):
+            if 2000 <= season <= utcnow().year + 1 and (league in ("standard", "drivers") or league > 0):
                 clean.append({"league": league, "season": season,
                               "country": str(item.get("country") or "")[:40]})
         allowed[sport] = clean
