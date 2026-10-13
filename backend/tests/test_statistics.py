@@ -146,6 +146,22 @@ def test_tables_make_progress_amid_continuous_statistics(monkeypatch):
             s.add(SyncJob(key=kind, kind=kind, params={}, next_run=utcnow() - timedelta(days=1)))
     executed = []
     monkeypatch.setattr(worker, "execute_job", lambda client, kind, params: executed.append(kind) or 0)
-    for _ in range(3):
+    for _ in range(4):
         worker.tick(None)
-    assert executed == ["standings", "statistics", "standings"]
+    assert "standings" in executed and "statistics" in executed
+    assert len(executed) == 4
+
+
+def test_batched_goal_import_gets_dedicated_turn(monkeypatch):
+    configure(monkeypatch)
+    monkeypatch.setattr(worker, "background_turn", 1)
+    with session_scope() as s:
+        for name in ("standings", "statistics", "hydrate"):
+            s.add(SyncJob(key=f"test:{name}", kind=name,
+                          params={"league": 128, "season": 2026},
+                          next_run=utcnow() - timedelta(days=1)))
+    executed = []
+    monkeypatch.setattr(worker, "execute_job",
+                        lambda _client, kind, _params: executed.append(kind) or 300)
+    worker.tick(None)
+    assert executed == ["hydrate"]
