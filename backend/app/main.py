@@ -326,6 +326,23 @@ def fixture_statistics(fixture_id: int):
         return {"data": data, "meta": meta([snapshot] if snapshot else [], coverage=coverage, stale=stale)}
 
 
+@app.get("/api/sports/status")
+def sports_status():
+    """No compartir claves entre productos API-Sports: cada plan es independiente."""
+    import os
+    sports = {
+        "nhl": "HOCKEY_API_KEY", "mlb": "BASEBALL_API_KEY",
+        "nba": "NBA_API_KEY", "basketball": "BASKETBALL_API_KEY",
+        "f1": "FORMULA1_API_KEY", "nfl": "NFL_API_KEY",
+        "rugby": "RUGBY_API_KEY",
+    }
+    return {"data": [
+        {"name": name, "configured": bool(os.environ.get(env_var, "").strip()),
+         "note": "Se necesita una suscripción separada a este deporte"}
+        for name, env_var in sports.items()
+    ], "meta": meta([])}
+
+
 @app.get("/api/leagues/{league_id}/history")
 def league_history(league_id: int):
     """Resumen histórico solo a partir de temporadas verificadas en DB."""
