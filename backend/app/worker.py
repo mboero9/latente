@@ -8,7 +8,7 @@ import threading
 import time
 from datetime import timedelta
 from zoneinfo import ZoneInfo
-from sqlalchemy import select, text, delete, or_, case
+from sqlalchemy import select, text, delete, or_, case, func
 from .config import settings
 from .db import engine, session_scope
 from .models import League, Fixture, FixtureStatistics, SyncJob, WorkerState, utcnow
@@ -175,15 +175,21 @@ def execute_job(client, kind, params):
         return None if close_snapshot else (3600 if terminal else settings.statistics_seconds)
     if kind == "catalog":
         rows = client.get("/leagues", {})
+        log.info("provider_catalog_rows=%s", len(rows))
         with session_scope() as s:
             save_catalog(s, rows)
+            count = s.scalar(select(func.count()).select_from(League).where(League.source == "api"))
+        log.info("catalog_leagues_saved=%s", count)
         return 86400
     if kind == "day":
         offset = params["offset"]
         day = utcnow().astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date() + timedelta(days=offset)
         rows = client.get("/fixtures", {"date": day.isoformat(), "timezone": "America/Argentina/Buenos_Aires"})
+        log.info("provider_day_rows offset=%s count=%s", offset, len(rows))
         with session_scope() as s:
             sync_fixture_rows(s, rows)
+            fixture_count = s.scalar(select(func.count()).select_from(Fixture).where(Fixture.source == "api"))
+        log.info("day_synced offset=%s total_fixtures=%s", offset, fixture_count)
         if settings.profile == "free":
             return 86400
         return 900 if offset == 0 else (3600 if abs(offset) == 1 else 86400)
@@ -278,7 +284,9 @@ def tick(client):
             job.next_run, job.message = exc.until, exc.message
         heartbeat(exc.message)
     except Exception as exc:
-        # Restricciones de temporada/plan no se resuelven reintentando cada minuto.\n        plan_blocked = isinstance(exc, ProviderError) and ": plan" in str(exc)\n        delay = 86400 if plan_blocked else min(3600, 60 * 2 ** min(failures, 6))
+        # Restricciones de temporada/plan no se resuelven reintentando cada minuto.
+        plan_blocked = isinstance(exc, ProviderError) and ": plan" in str(exc)
+        delay = 86400 if plan_blocked else min(3600, 60 * 2 ** min(failures, 6))
         with session_scope() as s:
             job = s.get(SyncJob, key)
             job.failures += 1
@@ -304,7 +312,14 @@ def run(once=False, max_seconds=120):
         with session_scope() as s:
             if settings.mode == "api":
                 ensure_job(s, "catalog", "catalog", {})
-                ensure_job(s, "live", "live", {}, utcnow() + timedelta(seconds=60))\n                # El plan gratuito solo consulta la ventana de días ya validada.\n                # Limpiar trabajos heredados del perfil de pago tras un cambio de modo.\n                if settings.all_leagues and settings.profile == "free":\n                    s.execute(delete(SyncJob).where(\n                        SyncJob.kind == "day",\n                        SyncJob.key.not_in(("day:0", "day:-1", "day:1")),\n                    ))
+                ensure_job(s, "live", "live", {}, utcnow() + timedelta(seconds=60))
+                # El plan gratuito solo consulta la ventana de días ya validada.
+                # Limpiar trabajos heredados del perfil de pago tras un cambio de modo.
+                if settings.all_leagues and settings.profile == "free":
+                    s.execute(delete(SyncJob).where(
+                        SyncJob.kind == "day",
+                        SyncJob.key.not_in(("day:0", "day:-1", "day:1")),
+                    ))
         client = FootballClient()
         try:
             if once and settings.mode == "api" and not settings.api_key:
