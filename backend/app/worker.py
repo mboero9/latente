@@ -93,9 +93,10 @@ def save_catalog(s, rows):
         params = {"league": league["id"], "season": season["year"]}
         matched += 1
         is_priority = league["id"] in settings.league_ids
-        # En Free mantener todo el catálogo visible, pero sincronizar solo
-        # las ligas prioritarias para no desperdiciar 100 solicitudes/día.
-        if settings.all_leagues and settings.profile == "free" and not is_priority:
+        # En Free el proveedor puede mostrar el catálogo completo pero
+        # bloquea los endpoints de temporada (tablas, planteles, goleadores).
+        # Usar solo los endpoints globales de fechas y partidos en vivo.
+        if settings.all_leagues and settings.profile == "free":
             continue
         if settings.all_leagues and not season.get("current") and not is_priority and str(league["id"]) not in overrides:
             continue
@@ -329,12 +330,9 @@ def run(once=False, max_seconds=120):
                         SyncJob.kind == "day",
                         SyncJob.key.not_in(("day:0", "day:-1", "day:1")),
                     ))
-                    for queued in s.scalars(select(SyncJob).where(
-                        SyncJob.kind.in_(("fixtures", "teams", "standings", "scorers"))
-                    )):
-                        if queued.params.get("league") not in settings.league_ids:
-                            s.delete(queued)
-                    s.execute(delete(SyncJob).where(SyncJob.kind == "statistics"))
+                    s.execute(delete(SyncJob).where(
+                        SyncJob.kind.in_(("fixtures", "teams", "standings", "scorers", "statistics"))
+                    ))
         client = FootballClient()
         try:
             if once and settings.mode == "api" and not settings.api_key:
