@@ -451,8 +451,23 @@ function focusPriority(m: Match): number {
   if (m.status === "2H" || m.status === "ET" || m.status === "P") score += 8;
   return score;
 }
-function selectSpotlight(matches: Match[]): Match | undefined {
-  return [...matches].filter(m => LIVE.has(m.status)).sort((a,b) =>
+// Primero buscar el partido en vivo más relevante. Si no existe, mostrar
+// el próximo encuentro importante de las próximas 36 horas, nunca uno
+// terminado ni uno de una fecha seleccionada en el pasado.
+function selectSpotlight(liveMatches: Match[], upcoming: Match[] = []): Match | undefined {
+  const active = liveMatches.filter(m => LIVE.has(m.status));
+  const highlyRelevant = active.filter(m => focusPriority(m) >= 900);
+  const now = Date.now();
+  const next = upcoming.filter(m =>
+    ["NS", "TBD"].includes(m.status) &&
+    Number.isFinite(new Date(m.kickoff).getTime()) &&
+    new Date(m.kickoff).getTime() >= now - 5 * 60000 &&
+    new Date(m.kickoff).getTime() <= now + 36 * 3600000 &&
+    focusPriority(m) >= 900
+  );
+  const selection = highlyRelevant.length ? highlyRelevant
+    : next.length ? next : active;
+  return [...selection].sort((a,b) =>
     focusPriority(b) - focusPriority(a) ||
     a.kickoff.localeCompare(b.kickoff) || a.id - b.id
   )[0];
@@ -463,7 +478,7 @@ function Focus({ match: m, tz }: { match: Match; tz: string }) {
     <article class="focus-card">
       <div class="focus-label">
         <span>EN FOCO</span>
-        <span class="live-pill">En juego</span>
+        <span class="live-pill">{LIVE.has(m.status) ? "En juego" : "Próximamente"}</span>
       </div>
       <p>{m.league.name}</p>
       <div class="focus-score">
@@ -482,7 +497,7 @@ function Focus({ match: m, tz }: { match: Match; tz: string }) {
         </div>
       </div>
       <div class="focus-footer">
-        <span>{labels[m.status] || `${m.elapsed ?? "—"} minutos`}</span>
+        <span>{LIVE.has(m.status) ? (labels[m.status] || `${m.elapsed ?? "—"} minutos`) : `Comienza ${shortDate(m.kickoff, tz)} · ${hour(m.kickoff, tz)}`}</span>
         <a href={link(`/match/${m.id}`)}>Ver partido</a>
       </div>
       {m.stale && <p>Datos demorados · {hour(m.updated_at, tz)}</p>}
@@ -556,9 +571,19 @@ function FixturesView({
     `/api/fixtures?date=${day}&live=true&limit=300`,
     DISPLAY_REFRESH_MS,
   );
+  // Las vistas de hoy y mañana son caché propio de Latente: no suman
+  // solicitudes al proveedor externo ni dependen del calendario elegido.
+  const currentDay = new Intl.DateTimeFormat("en-CA", { timeZone: argentina,
+    year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const nextDay = shiftDay(currentDay, 1);
+  const { result: todayForFocus } = useApi<Match[]>(
+    `/api/fixtures?date=${currentDay}&limit=300`, DISPLAY_REFRESH_MS);
+  const { result: tomorrowForFocus } = useApi<Match[]>(
+    `/api/fixtures?date=${nextDay}&limit=300`, DISPLAY_REFRESH_MS);
   const matches = result?.data || [],
     inPlay = matches.filter((m) => LIVE.has(m.status)),
-    spotlight = selectSpotlight(globalLive?.data || inPlay),
+    spotlight = selectSpotlight(globalLive?.data || inPlay,
+      [...(todayForFocus?.data || []), ...(tomorrowForFocus?.data || [])]),
     groups = new Map<number, Match[]>();
   for (const m of matches)
     groups.set(m.league_id, [...(groups.get(m.league_id) || []), m]);
