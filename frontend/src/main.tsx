@@ -263,7 +263,8 @@ function LeagueTabs({ league, view }: { league: League; view: string }) {
   return (
     <nav class="subnav" aria-label={`Secciones de ${league.name}`}>
       {[
-        ["league", "Partidos"],
+        ["league", league.kind?.toLowerCase() !== "league" ? "Playoffs" : "Partidos"],
+        ...(league.kind?.toLowerCase() !== "league" ? [["fixtures", "Todos los partidos"]] : []),
         ["table", "Posiciones"],
         ["scorers", "Goleadores"],
         ["teams", "Equipos"],
@@ -1205,7 +1206,7 @@ function App() {
     id = Number(rawId),
     league = leagues.find((l) => l.id === id),
     first = leagues[0]?.id || 128;
-  const isLeagueView = ["league", "table", "scorers", "teams", "bracket", "history", "promedios", "annual", "alltime", "analytics"].includes(view);
+  const isLeagueView = ["league", "table", "scorers", "teams", "fixtures", "bracket", "history", "promedios", "annual", "alltime", "analytics"].includes(view);
   useEffect(() => {
     document.title = `${league?.name || ({ leagues: "Ligas y copas", team: "Equipo", match: "Partido", watch: "Dónde ver el partido" } as Record<string, string>)[view] || "Resultados"} · Latente`;
   }, [route, league?.name]);
@@ -1410,7 +1411,9 @@ function App() {
           ) : isLeagueView ? (
             league ? (
               <div key={`${view}-${id}`}>
-                {view === "league" ? (
+                {view === "league" && league.kind?.toLowerCase() !== "league" ? (
+                  <CupBracket league={league} />
+                ) : view === "league" || view === "fixtures" ? (
                   <FixturesView
                     league={league}
                     leagues={leagues}
