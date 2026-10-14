@@ -761,3 +761,72 @@ def team_detail(team_id: int):
             },
             "meta": meta(),
         }
+
+
+@app.get("/api/reference/{sport}")
+def reference_sport(sport: str, season: int | None = Query(None, ge=1950, le=2100),
+                    competition: str = Query("ipl", max_length=32)):
+    """Cached reference rankings independent of paid API-Sports subscriptions."""
+    from .public_sports import formula_one, nba, cricket
+    try:
+        if sport == "f1":
+            data = formula_one(season)
+        elif sport == "nba":
+            data = nba(season)
+        elif sport == "cricket":
+            data = cricket(competition)
+        else:
+            raise HTTPException(404, "Deporte no disponible")
+    except ValueError:
+        raise HTTPException(422, "Temporada o competición inválida")
+    return {"data": data, "meta": meta([], provider="referencias deportivas", coverage=data.get("available", False))}
+
+
+@app.get("/api/leagues/128/alltime")
+def argentina_historic_table():
+    """Historical index from actually imported Argentine Primera fixtures only.
+
+    Uses uniform 3 points per win; never claims complete first division
+    history, official adjusted points or regulation-specific points.
+    """
+    from collections import defaultdict
+    from .ingest import FINISHED
+    with session_scope() as s:
+        matches = s.execute(select(
+            Fixture.home_id, Fixture.away_id, Fixture.home_goals,
+            Fixture.away_goals, Fixture.season,
+        ).where(
+            Fixture.source == settings.mode,
+            Fixture.league_id == 128,
+            Fixture.status.in_(FINISHED),
+            Fixture.home_goals.is_not(None),
+            Fixture.away_goals.is_not(None),
+        )).all()
+        ids = {club for match in matches for club in (match[0], match[1])}
+        teams = {team.id: team.name for team in s.scalars(select(Team).where(
+            Team.source == settings.mode, Team.id.in_(ids)))}
+    rows = defaultdict(lambda: dict(pj=0, pg=0, pe=0, pp=0, gf=0, gc=0))
+    seasons = set()
+    for home, away, gh, ga, season in matches:
+        if home not in teams or away not in teams:
+            continue
+        seasons.add(season)
+        for club, scored, conceded in ((home, gh, ga), (away, ga, gh)):
+            row = rows[club]
+            row["pj"] += 1
+            row["gf"] += scored
+            row["gc"] += conceded
+            row["pg" if scored > conceded else "pe" if scored == conceded else "pp"] += 1
+    ranking = sorted(({
+        "team": teams[id], "team_id": id,
+        **values, "points_3v": 3 * values["pg"] + values["pe"],
+        "difference": values["gf"] - values["gc"],
+        "win_pct": round(values["pg"] * 100 / values["pj"], 1),
+    } for id, values in rows.items()), key=lambda x:
+        (-x["points_3v"], -x["difference"], -x["gf"], x["team"]))
+    return {"data": {
+        "rows": ranking,
+        "seasons": sorted(seasons),
+        "matches": len(matches), "partial": True,
+        "note": "Tabla parcial construida solo con partidos importados en Latente; 3 puntos por victoria. No equivale a la tabla histórica completa desde 1891, ni aplica descuentos o puntajes antiguos.",
+    }, "meta": meta([], coverage=bool(ranking), provisional=True)}
