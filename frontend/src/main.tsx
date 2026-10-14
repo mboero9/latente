@@ -16,6 +16,7 @@ import "./style.css";
 import { observeLanguage } from "./i18n";
 import { MatchExtras } from "./match-extras";
 import { CupBracket } from "./cup-bracket";
+import { WatchGuide } from "./watch-guide";
 import { LeagueRecent } from "./league-recent";
 import { WatchView } from "./watch-options";
 import { PromediosPage } from "./argentina-promedios";
@@ -1115,6 +1116,7 @@ function MatchView({ id, tz }: { id: number; tz: string }) {
                 ))}
               </article>
             )}
+            <WatchGuide initialSport={/copa argentina|liga profesional/i.test(m.league.name) ? "argentina" : /libertadores|sudamericana/i.test(m.league.name) ? "libertadores" : /champions/i.test(m.league.name) ? "champions" : /la liga|laliga/i.test(m.league.name) ? "laliga" : "argentina"} />
             <MatchExtras id={m.id} teams={{home: m.home, away: m.away}} />
             <MatchStats match={m} />
           </>
@@ -1246,6 +1248,7 @@ function App() {
             {[
               ["/", "Partidos"],
               ["/leagues", "Ligas"],
+              ["/tv", "📺 Dónde ver"],
               [`/table/${first}`, "Posiciones"],
               [`/scorers/${first}`, "Goleadores"],
               ...sports.map(sport => [`/sport/${sport.slug}`, `${sport.emoji} ${sport.name}`]),
@@ -1442,6 +1445,8 @@ function App() {
             )
           ) : view === "sport" ? (
             <SportPage slug={rawId} />
+          ) : view === "tv" ? (
+            <WatchGuide />
           ) : view === "leagues" ? (
             <LeaguesView leagues={leagues} />
           ) : view === "team" ? (
