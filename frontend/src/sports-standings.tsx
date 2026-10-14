@@ -12,10 +12,17 @@ export function SportsStandings({ sport }: { sport: string }) {
   const options = (catalog?.data || []).filter(d =>
     d.kind === "standings" || d.kind === "drivers" || d.kind === "constructors");
   const [selected, setSelected] = useState("");
+  const [groupFilter, setGroupFilter] = useState("all");
   const current = options.find(d => d.ref === selected) || options[0];
   const { result, error } = useApi<(StandRow | Driver)[]>(
     current ? `/api/sports/${sport}/dataset?kind=${current.kind}&ref=${encodeURIComponent(current.ref)}` : null,
     360000);
+  const groups = Array.from(new Set(
+    (result?.data || []).filter(row => "team" in row).map(row => (row as StandRow).group || "General")
+  )).sort();
+  const shown = (result?.data || []).filter(row =>
+    groupFilter === "all" || (("team" in row) && ((row as StandRow).group || "General") === groupFilter)
+  );
   return <section class="sport-standings-block">
     <h2 class="sport-section-title">Posiciones oficiales y temporadas</h2>
     {loading ? <p>Cargando competiciones…</p> : !options.length ?
@@ -30,10 +37,16 @@ export function SportsStandings({ sport }: { sport: string }) {
             </option>)}
           </select>
         </label>
+        {groups.length > 1 && <label class="season-label">Grupo / conferencia
+          <select value={groups.includes(groupFilter) ? groupFilter : "all"} onChange={e => setGroupFilter(e.currentTarget.value)}>
+            <option value="all">Todos los grupos</option>
+            {groups.map(g => <option key={g} value={g}>{g}</option>)}
+          </select>
+        </label>}
         {error ? <p>{error}</p> : result && <div class="panel table-scroll">
           <table><thead><tr>
             <th>#</th><th>Equipo / piloto</th><th>Grupo</th><th>PJ</th><th>G</th><th>P</th><th>Puntos</th>
-          </tr></thead><tbody>{result.data.map((r, i) => {
+          </tr></thead><tbody>{shown.map((r, i) => {
             const isDriver = current?.kind === "drivers" || current?.kind === "constructors";
             const name = isDriver ? ((r as Driver).team?.name || (r as Driver).driver?.name || "Sin nombre informado") : (r as StandRow).team;
             return <tr key={i}><td>{isDriver ? (r as Driver).position ?? "—" : (r as StandRow).rank ?? "—"}</td>
