@@ -1,0 +1,30 @@
+# Actualizaciones automáticas de dependencias de Latente.
+# PRs deben pasar CI antes de fusionarse; Dependabot no publica en producción.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      frontend-security:
+        applies-to: "security-updates"
+        patterns: ["*"]
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      backend-security:
+        applies-to: "security-updates"
+        patterns: ["*"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 4
