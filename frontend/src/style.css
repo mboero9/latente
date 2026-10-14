@@ -2730,3 +2730,93 @@
     .header .top-nav { scroll-behavior: auto; }
   }
 }
+
+
+/* Full historical archive directly below the homepage matchday.
+ * Every ranking is its own full-width stacked table (not a sidebar teaser). */
+@layer components {
+  .home-historics, .world-scorers-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(24px, 3.8vw, 42px);
+    min-width: 0;
+  }
+  .home-historics { margin: clamp(40px, 6vw, 66px) 0 20px; }
+  .home-historics > .home-historics-heading { margin: 0; }
+  .home-historics-jumps {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: -20px;
+  }
+  .home-historics-jumps button {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 9px 13px;
+    color: var(--green);
+    background: var(--surface);
+    font-size: .81rem;
+    font-weight: 750;
+  }
+  .home-historics-jumps button:hover, .home-historics-jumps button:focus-visible {
+    border-color: var(--green);
+    outline-offset: 2px;
+  }
+  .home-historics > .world-scorers-section,
+  .home-historics > .historical-honours-section,
+  .world-scorers-page > .world-scorers-section,
+  .world-scorers-page > .historical-honours-section {
+    min-width: 0;
+    width: 100%;
+    display: grid;
+    gap: 14px;
+    align-content: start;
+    scroll-margin-top: 20px;
+    padding: clamp(16px, 2.3vw, 26px);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+  .home-historics .view-heading, .world-scorers-page .view-heading { margin: 0; }
+  .home-historics h2, .world-scorers-page h2 {
+    font-size: clamp(1.13rem, 2.25vw, 1.57rem);
+    margin: 0;
+    line-height: 1.3;
+  }
+  .home-historics .panel.table-scroll,
+  .world-scorers-page .panel.table-scroll {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .home-historics .scorers-table,
+  .world-scorers-page .scorers-table {
+    min-width: 670px;
+    font-variant-numeric: tabular-nums;
+  }
+  .home-historics .coverage-notice,
+  .world-scorers-page .coverage-notice,
+  .home-historics .updated,
+  .world-scorers-page .updated { overflow-wrap: anywhere; }
+}
+@layer responsive {
+  @media (max-width: 650px) {
+    .home-historics, .world-scorers-page { gap: 20px; }
+    .home-historics { margin-top: 32px; }
+    .home-historics-jumps { margin-top: -11px; }
+    .home-historics > .world-scorers-section,
+    .home-historics > .historical-honours-section,
+    .world-scorers-page > .world-scorers-section,
+    .world-scorers-page > .historical-honours-section {
+      padding: 13px 11px;
+    }
+    .home-historics .scorers-table,
+    .world-scorers-page .scorers-table { min-width: 620px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .home-historics { scroll-behavior: auto; }
+  }
+}
