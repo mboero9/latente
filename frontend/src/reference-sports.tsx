@@ -135,9 +135,23 @@ function NBAContent({data,sort,setSort}:{data:NBA;sort:"wins"|"pct";setSort:(sor
     <Notice>{data.note} Los datos dependen de la cobertura histórica de ESPN; si falta una temporada, no se reconstruye con estimaciones.</Notice>
   </>;
 }
+const TOP_CRICKET_T20_OCT2026 = [
+  ["Inglaterra",41,11021,269],["India",70,18802,269],["Australia",38,9868,260],
+  ["Nueva Zelanda",50,12348,247],["Sudáfrica",53,12881,243],
+  ["Pakistán",62,14883,240],["West Indies",59,13836,235],
+  ["Bangladesh",55,12220,222],["Sri Lanka",52,11489,221],
+  ["Afganistán",41,8925,218],
+] as const;
 function CricketContent({data}:{data?:Cricket}) {
   return <>
-    <h2 class="sport-section-title">Tabla de posiciones / equipos</h2>
+    <h2 class="sport-section-title">Ranking mundial ICC · T20 masculino</h2>
+    <p class="updated">Corte histórico verificado: 13 de octubre de 2026. Ranking de selecciones, no tabla de la IPL ni clasificación en vivo.</p>
+    <div class="panel table-scroll"><table><thead><tr><th>#</th><th>Selección</th><th>Partidos</th><th>Puntos</th><th>Rating</th></tr></thead>
+      <tbody>{TOP_CRICKET_T20_OCT2026.map(([name,played,points,rating],i)=><tr key={name}>
+        <td>{i+1}</td><th scope="row">{name}</th><td>{played}</td><td>{points}</td><td>{rating}</td></tr>)}</tbody>
+    </table></div>
+    <Source href="https://www.icc-cricket.com/rankings">Ranking ICC actualizado</Source>
+    <h2 class="sport-section-title">Tabla de posiciones por competición</h2>
     {data?.rows?.length ? <div class="panel table-scroll"><table>
       <thead><tr><th>#</th><th>Equipo</th><th>Grupo</th><th>G</th><th>P</th><th>%V</th></tr></thead><tbody>
       {data.rows.map((team,i)=><tr key={team.id||i}><td>{team.rank??i+1}</td><th scope="row">{team.name}</th>
