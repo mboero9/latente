@@ -20,6 +20,21 @@ def classify_round(label):
     return None
 
 
+def winner_id(match):
+    """No adjudicar empates ni llaves de ida/vuelta sin marcador definitorio."""
+    if match.get("status") not in ("FT", "AET", "PEN"):
+        return None
+    home, away = match.get("home_goals"), match.get("away_goals")
+    if home is None or away is None:
+        return None
+    if home == away:
+        penalties = (match.get("score") or {}).get("penalty") or {}
+        home, away = penalties.get("home"), penalties.get("away")
+        if home is None or away is None or home == away:
+            return None
+    return (match.get("home") or {}).get("id") if home > away else (match.get("away") or {}).get("id")
+
+
 def bracket_rows(fixtures):
     stages = {}
     for fixture in fixtures:
@@ -31,6 +46,18 @@ def bracket_rows(fixtures):
     ordered = [stages[k] for k in sorted(stages)]
     for stage in ordered:
         stage["matches"].sort(key=lambda x: (x["kickoff"], x["id"]))
-    # No automatic connections: without an official match-slot ID, pairing
-    # adjacent games by their order would show fictitious paths to the final.
+    # Dibujar solo enlaces con certeza: ganador comprobado, presente en
+    # exactamente un partido de la fase siguiente. Con empate/ida y vuelta
+    # ambiguo, no atribuir avance.
+    for index, stage in enumerate(ordered[:-1]):
+        next_stage = ordered[index + 1]
+        for match in stage["matches"]:
+            winner = winner_id(match)
+            candidates = [r for r in next_stage["matches"]
+                          if winner and winner in (
+                              (r.get("home") or {}).get("id"),
+                              (r.get("away") or {}).get("id"))]
+            if len(candidates) == 1:
+                match["next_match_id"] = candidates[0]["id"]
+                match["winner_id"] = winner
     return ordered
