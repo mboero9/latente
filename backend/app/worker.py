@@ -139,10 +139,12 @@ def save_catalog(s, rows):
             season_info = next((x for x in seasons if x["year"] == year), None)
             coverage = (season_info or {}).get("coverage") or {}
             params = {"league": league["id"], "season": year}
-            for kind in ("fixtures", "teams", "standings", "scorers"):
+            for kind in ("fixtures", "teams", "standings", "scorers", "assists"):
                 if kind == "standings" and coverage.get("standings") is False:
                     continue
                 if kind == "scorers" and coverage.get("top_scorers") is False:
+                    continue
+                if kind == "assists" and coverage.get("top_assists") is False:
                     continue
                 key = f"{kind}:{league['id']}:{year}"
                 active_keys.add(key)
@@ -406,6 +408,7 @@ def execute_job(client, kind, params):
         "teams": "/teams",
         "standings": "/standings",
         "scorers": "/players/topscorers",
+        "assists": "/players/topassists",
     }[kind]
     rows = client.get(endpoint, params)
     with session_scope() as s:
@@ -416,13 +419,17 @@ def execute_job(client, kind, params):
             save_teams(s, rows, params["league"], params["season"])
         elif kind == "standings":
             save_standings(s, rows, params["league"], params["season"])
-        else:
+        elif kind == "scorers":
             save_scorers(s, rows, params["league"], params["season"])
+        elif kind == "assists":
+            from .ingest import save_assists
+            save_assists(s, rows, params["league"], params["season"])
     interval = {
         "fixtures": settings.fixtures_seconds,
         "teams": 604800,
         "standings": settings.tables_seconds,
         "scorers": settings.scorers_seconds,
+        "assists": settings.scorers_seconds,
     }[kind]
     if settings.all_leagues and params["league"] not in settings.league_ids:
         # Miles de competiciones no deben multiplicar el refresco horario.
@@ -446,7 +453,7 @@ def tick(client):
     background_turn = (background_turn + 1) % 4
     heartbeat("Actualización automática activa")
     realtime = ["live", "settle", "day"]
-    bulk = ["standings", "scorers", "teams", "fixtures"]
+    bulk = ["standings", "scorers", "assists", "teams", "fixtures"]
     current_year = (
         select(League.season)
         .where(League.source == "api",
