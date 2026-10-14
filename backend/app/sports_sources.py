@@ -80,7 +80,7 @@ def normalize_standings(rows, sport=None):
                             "team_id": team["id"], "team": team["name"],
                             "played": (games.get("total") or 0) + (defeats.get("total") or 0),
                             "won": games.get("total"), "lost": defeats.get("total"),
-                            "points": None, "provider": "api_sports",
+                            "points": None, "provider": "api_sports", "logo": _trusted_team_logo(team.get("logo")),
                             "raw_stats": item,
                         })
                         continue
@@ -94,6 +94,7 @@ def normalize_standings(rows, sport=None):
                         "lost": item.get("games", {}).get("lose") if isinstance(item.get("games"), dict) else item.get("lost"),
                         "points": item.get("points"),
                         "provider": "api_sports",
+                        "logo": _trusted_team_logo(team.get("logo")),
                         "raw_stats": {k: v for k, v in item.items() if k not in ("team", "group")},
                     })
     visit(rows)
