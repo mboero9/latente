@@ -11,6 +11,7 @@ from .models import (
     Fixture,
     FixtureStatistics,
     FixtureDetails,
+    FixtureOdds,
     Team,
     Standing,
     Scorer,
@@ -325,6 +326,35 @@ def fixture(fixture_id: int):
             raise HTTPException(404, "Partido no encontrado")
         league_or_404(s, row.league_id)
         return {"data": match_payload(s, [row])[0], "meta": meta([row])}
+
+
+@app.get("/api/fixtures/{fixture_id}/odds")
+def fixture_odds(fixture_id: int):
+    """Comparación de cuotas reales, solo snapshots del cron, sin calls públicas."""
+    with session_scope() as s:
+        match = s.get(Fixture, (settings.mode, fixture_id))
+        if not match:
+            raise HTTPException(404, "Partido no encontrado")
+        league_or_404(s, match.league_id)
+        prematch = s.get(FixtureOdds, (settings.mode, fixture_id, "prematch"))
+        live = s.get(FixtureOdds, (settings.mode, fixture_id, "live"))
+        def pack(record, stale_seconds):
+            if not record:
+                return None
+            age = (utcnow() - aware(record.updated_at)).total_seconds()
+            return {
+                "quotes": record.quotations,
+                "updated_at": aware(record.updated_at).isoformat(),
+                "stale": age > stale_seconds,
+            }
+        return {
+            "data": {
+                "prematch": pack(prematch, 10800),
+                "live": pack(live, 1200) if match.status in LIVE else None,
+                "match_status": match.status,
+            },
+            "meta": meta([r for r in (prematch, live) if r], odds_kind="1X2"),
+        }
 
 
 @app.get("/api/fixtures/{fixture_id}/details")
