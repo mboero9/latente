@@ -890,18 +890,15 @@ def reference_scoreboard(sport: str, day: date | None = None):
 
 @app.get("/api/rugby/catalog")
 def rugby_reference_catalog():
-    from .espn_scores import RUGBY_LEAGUES
-    return {"data": [
-        {"slug": slug, "name": title}
-        for slug, (title, _) in RUGBY_LEAGUES.items()
-    ], "meta": meta([])}
+    from .rugby_api import public_catalog
+    return {"data": public_catalog(), "meta": meta([])}
 
 
 @app.get("/api/rugby/{competition}")
 def rugby_reference_feed(competition: str, season: int | None = Query(None, ge=2018, le=2100)):
-    from .espn_scores import rugby_feed
+    from .rugby_api import read_competition
     try:
-        data = rugby_feed(competition, season)
+        data = read_competition(competition, season)
     except ValueError:
         raise HTTPException(422, "Competición o temporada inválida")
     return {"data": data, "meta": meta([], coverage=data.get("available", False))}
