@@ -620,6 +620,13 @@ def run(once=False, max_seconds=120):
                          len(audit["updated"]), len(audit["unavailable"]))
             except Exception as exc:
                 log.warning("multisport_sync_error_type=%s", type(exc).__name__)
+            try:
+                from .rugby_api import sync_once as sync_rugby
+                report = sync_rugby(max_calls=3)
+                log.info("api_rugby_attempts=%s updated=%s unavailable=%s",
+                         len(report["attempted"]), len(report["updated"]), len(report["unavailable"]))
+            except Exception as exc:
+                log.warning("api_rugby_sync_error_type=%s", type(exc).__name__)
         client = FootballClient()
         try:
             if once and settings.mode == "api" and not settings.api_key:
