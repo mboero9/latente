@@ -69,7 +69,7 @@ export function LiveOddsMini({fixtureId,home,away,entry}:{
     Ver cuotas y probabilidades · datos sujetos a cobertura ↗
   </a>;
   return <div class="live-odds-mini">
-    <span class="live-odds-label">Mercado en vivo · API-Football (casa no identificada) · Capturado {new Date(entry.updated_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})} · 18+</span>
+    <span class="live-odds-label">Mercado en vivo · API-Football (sin casa identificada) · Capturado {new Date(entry.updated_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})} · 18+</span>
     <a href={`#/match/${fixtureId}`} aria-label={`Ver cuotas de ${home} contra ${away}`}>
       <span>1 <b>{entry.implied.home.toFixed(1)}%</b></span>
       <span>X <b>{entry.implied.draw.toFixed(1)}%</b></span>
