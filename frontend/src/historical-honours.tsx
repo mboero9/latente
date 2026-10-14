@@ -75,13 +75,9 @@ function ClubMark({club}:{club:ClubTitle}) {
     <span>{club.name}<small>{club.country}</small></span>
   </span>;
 }
-export function HistoricalHonours(){
-  const [region,setRegion]=useState<Region|"all">("all");
-  const [order,setOrder]=useState<"all"|"world">("all");
-  const nations=[...NATIONS].filter(n=>region==="all"||n.region===region)
-    .sort((a,b)=>order==="world" ? b.world-a.world || b.continental-a.continental :
-      (b.world+b.continental)-(a.world+a.continental) || b.world-a.world);
-  return <>
+/** Independent full-width table so the homepage can stack its rankings. */
+export function ClubHonours() {
+  return (
     <section class="historical-honours-section" id="copas-clubes">
       <div class="view-heading"><div><span class="eyebrow">PALMARÉS MUNDIAL · CLUBES</span>
         <h2>Clubes con más títulos internacionales</h2></div></div>
@@ -97,6 +93,17 @@ export function HistoricalHonours(){
       </div>
       <p class="updated">Para comprobar el desglose: <a href="https://es.uefa.com/uefachampionsleague/news/0254-0e97b2d74bea-89896c169762-1000--los-equipos-mas-laureados/" target="_blank" rel="noopener noreferrer">UEFA · Palmarés histórico ↗</a> · <a href="https://www.realmadrid.com/en-US/the-club/track-record/football" target="_blank" rel="noopener noreferrer">Real Madrid · palmarés oficial ↗</a> · <a href="https://www.sobrefutbol.com/torneos/equipos_mas_ganadores.htm" target="_blank" rel="noopener noreferrer">Comparación internacional ↗</a>. Algunos rankings alternativos añaden antiguas copas regionales y muestran cifras distintas.</p>
     </section>
+  );
+}
+
+/** National team filters and sorting belong only to this table. */
+export function NationalHonours() {
+  const [region,setRegion]=useState<Region|"all">("all");
+  const [order,setOrder]=useState<"all"|"world">("all");
+  const nations=[...NATIONS].filter(n=>region==="all"||n.region===region)
+    .sort((a,b)=>order==="world" ? b.world-a.world || b.continental-a.continental :
+      (b.world+b.continental)-(a.world+a.continental) || b.world-a.world);
+  return (
     <section class="historical-honours-section" id="copas-selecciones">
       <div class="view-heading"><div><span class="eyebrow">PALMARÉS MUNDIAL · SELECCIONES</span>
         <h2>Selecciones con más Mundiales y copas continentales</h2></div></div>
@@ -121,5 +128,10 @@ export function HistoricalHonours(){
       </div>
       <p class="updated">Fuentes: <a href="https://www.fifa.com/en/tournaments/mens/worldcup/articles/world-cup-champions-1982-2026-italy-argentina-germany-brazil-france-spain" target="_blank" rel="noopener noreferrer">FIFA · Mundiales hasta 2026 ↗</a> · <a href="https://copaamerica.com/es/novedades/titulos-argentina-campeon-copa-america" target="_blank" rel="noopener noreferrer">CONMEBOL · Copa América ↗</a> · <a href="https://es.uefa.com/uefaeuro/history/winners/" target="_blank" rel="noopener noreferrer">UEFA · Eurocopa ↗</a> · <a href="https://www.cafonline.com/afcon2025/news/totalenergies-caf-africa-cup-of-nations-afcon-finals-records/" target="_blank" rel="noopener noreferrer">CAF · Copa Africana ↗</a> · <a href="https://es.concacaf.com/competitions/gold-cup/news/jimenez-y-alvarez-guian-a-mexico-a-su-decimo-titulo-de-copa-oro" target="_blank" rel="noopener noreferrer">CONCACAF · Copa Oro ↗</a>.</p>
     </section>
-  </>;
+  );
+}
+
+/** Retained as the dedicated complete archive page. */
+export function HistoricalHonours() {
+  return <><ClubHonours/><NationalHonours/></>;
 }
