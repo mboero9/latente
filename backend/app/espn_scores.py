@@ -54,6 +54,8 @@ def normalize_games(data, league):
             "id": str(event.get("id") or ""), "league": league,
             "date": start, "home": (home.get("team") or {}).get("displayName") or "Local",
             "away": (away.get("team") or {}).get("displayName") or "Visitante",
+            "home_logo": (home.get("team") or {}).get("logo") or next((x.get("href") for x in (home.get("team") or {}).get("logos", []) if isinstance(x, dict) and x.get("href")), None),
+            "away_logo": (away.get("team") or {}).get("logo") or next((x.get("href") for x in (away.get("team") or {}).get("logos", []) if isinstance(x, dict) and x.get("href")), None),
             "home_score": _number(home.get("score")), "away_score": _number(away.get("score")),
             "status": status.get("description") or status.get("name") or "No informado",
             "completed": bool(status.get("completed")), "state": status.get("state") or "",
