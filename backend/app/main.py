@@ -779,7 +779,7 @@ def reference_sport(sport: str, season: int | None = Query(None, ge=1950, le=210
             raise HTTPException(404, "Deporte no disponible")
     except ValueError:
         raise HTTPException(422, "Temporada o competición inválida")
-    return {"data": data, "meta": meta([], provider="referencias deportivas", coverage=data.get("available", False))}
+    return {"data": data, "meta": meta([], coverage=data.get("available", False))}
 
 
 @app.get("/api/leagues/128/alltime")
