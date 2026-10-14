@@ -19,7 +19,7 @@ from .sports_sources import extract, normalize_games, normalize_standings, Sourc
 
 logger = logging.getLogger("latente.multisport")
 DONE_TTL = {"games": timedelta(hours=6), "leagues": timedelta(days=1), "standings": timedelta(days=1),
-            "drivers": timedelta(days=1)}
+            "drivers": timedelta(days=1), "constructors": timedelta(days=1)}
 
 
 def configured_targets():
@@ -57,6 +57,16 @@ def due_jobs(today=None):
     ).split(",") if s.strip() in SPORTS]
     jobs = []
     targets = configured_targets()
+    # Estas ligas tienen identificadores oficiales estables. Si el usuario no
+    # definió SPORTS_TARGETS_JSON, probar sus posiciones actuales una vez/día.
+    # Los errores de cobertura se preservan como no disponibles.
+    year = today.year
+    if "nba" in enabled and not targets.get("nba"):
+        targets["nba"] = [{"league": "standard", "season": year, "country": "USA"}]
+    if "nfl" in enabled and not targets.get("nfl"):
+        targets["nfl"] = [{"league": 1, "season": year, "country": "USA"}]
+    if "f1" in enabled and not targets.get("f1"):
+        targets["f1"] = [{"league": "drivers", "season": year, "country": "World"}]
     for sport in enabled:
         # Una consulta de catálogo diaria como máximo: las competiciones
         # argentinas (UAR/URBA) se identifican por sus IDs reales.
@@ -77,6 +87,8 @@ def due_jobs(today=None):
             ref = f"{config['league']}:{config['season']}"
             kind = "drivers" if sport == "f1" else "standings"
             jobs.append((sport, kind, ref, config))
+            if sport == "f1":
+                jobs.append((sport, "constructors", f"teams:{config['season']}", config))
     return jobs
 
 
@@ -160,7 +172,8 @@ def sync_once(max_calls=3, fetch=extract):
             continue
         report["attempts"] += 1
         endpoint = "races" if sport == "f1" and kind == "games" else (
-            "rankings/drivers" if kind == "drivers" else kind)
+            "rankings/drivers" if kind == "drivers" else (
+                "rankings/teams" if kind == "constructors" else kind))
         if kind == "leagues":
             params = {}
         elif kind == "games":
@@ -186,7 +199,7 @@ def sync_once(max_calls=3, fetch=extract):
             elif kind == "standings":
                 normalized = normalize_standings(rows, sport=sport)
             else:
-                normalized = rows[:200]  # F1 driver ranking, source-record format
+                normalized = rows[:200]  # F1 pilotos/constructores, registros originales
             stored = persist_snapshot(sport, kind, ref, normalized, len(rows),
                                       config.get("country", "") if isinstance(config, dict) else "")
             if stored:
