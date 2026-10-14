@@ -15,6 +15,7 @@ import type {
 import "./style.css";
 import { observeLanguage } from "./i18n";
 import { MatchExtras } from "./match-extras";
+import { MatchOdds, LiveOddsMini } from "./match-odds";
 import { CupBracket } from "./cup-bracket";
 import { WatchGuide } from "./watch-guide";
 import { LeagueRecent } from "./league-recent";
@@ -581,6 +582,8 @@ function FixturesView({
     `/api/fixtures?date=${currentDay}&limit=300`, DISPLAY_REFRESH_MS);
   const { result: tomorrowForFocus } = useApi<Match[]>(
     `/api/fixtures?date=${nextDay}&limit=300`, DISPLAY_REFRESH_MS);
+  const {result: liveOdds} = useApi<LiveOddsSummary[]>("/api/odds/live", 60000);
+  const oddsByFixture = new Map((liveOdds?.data || []).map(row => [row.fixture_id, row]));
   const matches = result?.data || [],
     inPlay = matches.filter((m) => LIVE.has(m.status)),
     spotlight = selectSpotlight(globalLive?.data || inPlay,
@@ -665,7 +668,10 @@ function FixturesView({
                 </a>
               </header>
               {rows.map((m) => (
-                <MatchRow key={m.id} match={m} tz={tz} />
+                <div key={m.id} class="match-row-container">
+                  <MatchRow match={m} tz={tz} />
+                  {LIVE.has(m.status) && <LiveOddsMini fixtureId={m.id} home={m.home.name} away={m.away.name} entry={oddsByFixture.get(m.id)} />}
+                </div>
               ))}
             </article>
           ))}
@@ -1203,6 +1209,7 @@ function MatchView({ id, tz }: { id: number; tz: string }) {
                 ))}
               </article>
             )}
+            <MatchOdds id={m.id} status={m.status} home={m.home.name} away={m.away.name} />
             <WatchGuide initialSport={/copa argentina|liga profesional/i.test(m.league.name) ? "argentina" : /libertadores|sudamericana/i.test(m.league.name) ? "libertadores" : /champions/i.test(m.league.name) ? "champions" : /la liga|laliga/i.test(m.league.name) ? "laliga" : "argentina"} />
             <MatchExtras id={m.id} teams={{home: m.home, away: m.away}} />
             <MatchStats match={m} />
