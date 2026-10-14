@@ -24,6 +24,7 @@ import { ArgentinaAnnual } from "./argentina-annual";
 import { ArgentinaAlltime } from "./reference-sports";
 import { FootballAnalytics } from "./football-analytics";
 import { sports, SportPage, HistoryPage } from "./other-sports";
+import { WorldScorersTeaser, WorldScorersPage } from "./world-scorers";
 
 const LIVE = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT"]);
 const labels: Record<string, string> = {
@@ -690,6 +691,7 @@ function FixturesView({
         <aside class="right-column" aria-label="Resumen de la jornada">
           {spotlight && <Focus match={spotlight} tz={tz} />}
           <MiniTable league={league || leagues[0]} />
+          {!league && <WorldScorersTeaser />}
           <div class="quiet-note">
             <Icon name="refresh" />
             <div>
@@ -1292,7 +1294,7 @@ function App() {
     first = leagues[0]?.id || 128;
   const isLeagueView = ["league", "table", "scorers", "teams", "fixtures", "bracket", "history", "promedios", "annual", "alltime", "analytics"].includes(view);
   useEffect(() => {
-    document.title = `${league?.name || ({ leagues: "Ligas y copas", team: "Equipo", match: "Partido", watch: "Dónde ver el partido" } as Record<string, string>)[view] || "Resultados"} · Latente`;
+    document.title = `${league?.name || ({ leagues: "Ligas y copas", team: "Equipo", match: "Partido", watch: "Dónde ver el partido", "world-scorers": "Goleadores históricos del mundo" } as Record<string, string>)[view] || "Resultados"} · Latente`;
   }, [route, league?.name]);
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
@@ -1534,6 +1536,8 @@ function App() {
             <SportPage slug={rawId} />
           ) : view === "tv" ? (
             <WatchGuide />
+          ) : view === "world-scorers" ? (
+            <WorldScorersPage />
           ) : view === "leagues" ? (
             <LeaguesView leagues={leagues} />
           ) : view === "team" ? (
