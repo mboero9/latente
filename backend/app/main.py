@@ -875,3 +875,33 @@ def argentina_historic_table():
         "matches": len(matches), "partial": True,
         "note": "Tabla parcial construida solo con partidos importados en Latente; 3 puntos por victoria. No equivale a la tabla histórica completa desde 1891, ni aplica descuentos o puntajes antiguos.",
     }, "meta": meta([], coverage=bool(ranking), provisional=True)}
+
+
+@app.get("/api/scoreboard/{sport}")
+def reference_scoreboard(sport: str, day: date | None = None):
+    """ESPN scores are cached server-side; no provider request per site refresh."""
+    from .espn_scores import us_scoreboard
+    try:
+        info = us_scoreboard(sport, day.isoformat() if day else None)
+    except ValueError:
+        raise HTTPException(422, "Deporte o fecha inválidos")
+    return {"data": info, "meta": meta([], coverage=info.get("available", False))}
+
+
+@app.get("/api/rugby/catalog")
+def rugby_reference_catalog():
+    from .espn_scores import RUGBY_LEAGUES
+    return {"data": [
+        {"slug": slug, "name": title}
+        for slug, (title, _) in RUGBY_LEAGUES.items()
+    ], "meta": meta([])}
+
+
+@app.get("/api/rugby/{competition}")
+def rugby_reference_feed(competition: str, season: int | None = Query(None, ge=2018, le=2100)):
+    from .espn_scores import rugby_feed
+    try:
+        data = rugby_feed(competition, season)
+    except ValueError:
+        raise HTTPException(422, "Competición o temporada inválida")
+    return {"data": data, "meta": meta([], coverage=data.get("available", False))}
