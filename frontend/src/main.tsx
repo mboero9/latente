@@ -405,6 +405,59 @@ function DatePicker({
   );
 }
 
+// Selección editorial: prioridad de competición + popularidad aproximada
+// de clubes reconocidos. No se interpreta como audiencia medida.
+const TOP_LEAGUES: Record<number, number> = {
+  2: 1150, 13: 1040, 11: 1000, 3: 960, 9: 880,
+  128: 1060, 129: 730, 130: 720, 39: 1010,
+  140: 1000, 135: 970, 78: 950, 61: 915,
+  71: 920, 1: 980, 4: 920, 45: 850,
+};
+const STAR_CLUBS = [
+  "real madrid", "barcelona", "bayern", "manchester united",
+  "manchester city", "liverpool", "arsenal", "chelsea", "tottenham",
+  "paris saint", "psg", "inter", "milan", "juventus", "napoli",
+  "boca", "river", "racing club", "independiente", "san lorenzo",
+  "rosario central", "newells", "estudiantes", "velez", "flamengo",
+  "palmeiras", "corinthians", "sao paulo", "santos", "gremio",
+  "atletico madrid", "borussia dortmund", "benfica", "porto",
+  "ajax", "al nassr", "al hilal",
+];
+const normalizeForFocus = (v: string) =>
+  v.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
+function focusPriority(m: Match): number {
+  const league = normalizeForFocus(m.league.name);
+  let score = TOP_LEAGUES[m.league_id] ?? (
+    /champions league/.test(league) ? 1150 :
+    /libertadores/.test(league) ? 1040 :
+    /liga profesional argentina|primera division.*argentina/.test(league) ? 1060 :
+    /premier league/.test(league) ? 1010 :
+    /la liga|laliga/.test(league) ? 1000 :
+    /serie a|bundesliga/.test(league) ? 960 :
+    /ligue 1/.test(league) ? 925 :
+    /europa league|sudamericana/.test(league) ? 900 :
+    /world cup|copa america|euro championship/.test(league) ? 1010 :
+    70
+  );
+  // Dos clubes conocidos vuelven el duelo más destacado, sin vencer una
+  // competición grande por un torneo marginal.
+  for (const team of [m.home, m.away]) {
+    const name = normalizeForFocus(team.name);
+    if (STAR_CLUBS.some(club => name === club || name.startsWith(club + " "))) score += 85;
+  }
+  // Fases decisivas y partido avanzado como desempate secundario.
+  const round = normalizeForFocus(m.round || "");
+  if (/final|semi.final|quarter.final|octavos|round of 16/.test(round)) score += 35;
+  if (m.status === "2H" || m.status === "ET" || m.status === "P") score += 8;
+  return score;
+}
+function selectSpotlight(matches: Match[]): Match | undefined {
+  return [...matches].filter(m => LIVE.has(m.status)).sort((a,b) =>
+    focusPriority(b) - focusPriority(a) ||
+    a.kickoff.localeCompare(b.kickoff) || a.id - b.id
+  )[0];
+}
+
 function Focus({ match: m, tz }: { match: Match; tz: string }) {
   return (
     <article class="focus-card">
@@ -498,8 +551,14 @@ function FixturesView({
     `/api/fixtures?date=${day}&tz=${encodeURIComponent(tz)}&offset=${page * 150}${league ? `&league_id=${league.id}` : ""}${live ? "&live=true" : ""}`,
     DISPLAY_REFRESH_MS,
   );
+  // Spotlight global independiente de fecha, liga elegida y paginación.
+  const { result: globalLive } = useApi<Match[]>(
+    `/api/fixtures?date=${day}&live=true&limit=300`,
+    DISPLAY_REFRESH_MS,
+  );
   const matches = result?.data || [],
     inPlay = matches.filter((m) => LIVE.has(m.status)),
+    spotlight = selectSpotlight(globalLive?.data || inPlay),
     groups = new Map<number, Match[]>();
   for (const m of matches)
     groups.set(m.league_id, [...(groups.get(m.league_id) || []), m]);
@@ -604,7 +663,7 @@ function FixturesView({
           <Updated meta={result?.meta} />
         </section>
         <aside class="right-column" aria-label="Resumen de la jornada">
-          {inPlay[0] && <Focus match={inPlay[0]} tz={tz} />}
+          {spotlight && <Focus match={spotlight} tz={tz} />}
           <MiniTable league={league || leagues[0]} />
           <div class="quiet-note">
             <Icon name="refresh" />
@@ -1243,7 +1302,7 @@ function App() {
         <div class="header-inner">
           <a href="#/" class="brand" aria-label="Latente, inicio">
             <img src="/latente-mark.png?v=3" width="43" height="43" alt="" />
-            <span class="brand-wordmark"><span class="brand-late">late</span><span class="brand-nte">nte</span><span class="brand-dot">.</span></span>
+            <span class="brand-wordmark"><span class="brand-late">late</span><span class="brand-nte">nte</span><span class="brand-dot">.CFD</span></span>
           </a>
           <nav class="top-nav" aria-label="Navegación principal">
             {[
