@@ -30,7 +30,7 @@ class Settings:
             dict.fromkeys(
                 int(v.strip())
                 for v in os.getenv(
-                    "LEAGUE_IDS", "128,129,130,13,11,2,39,140,135,78,61,71"
+                    "LEAGUE_IDS", "128,129,130,13,11,2,39,140,135,78,61,71,253,262"
                 ).split(",")
                 if v.strip()
             )
