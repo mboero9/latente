@@ -610,7 +610,7 @@ function FixturesView({
             <div class="view-heading">
               <div>
                 <span class="eyebrow">LA JORNADA</span>
-                <h1>Partidos</h1>
+                <h1>Resultados Deportivos en Vivo y Marcadores en Directo</h1>
               </div>
               <span class="today-label">
                 {shortDate(day + "T12:00:00Z", tz)}
@@ -1353,8 +1353,33 @@ function App() {
     first = leagues[0]?.id || 128;
   const isLeagueView = ["league", "table", "scorers", "assists", "teams", "fixtures", "bracket", "history", "promedios", "annual", "alltime", "analytics"].includes(view);
   useEffect(() => {
-    document.title = `${league?.name || ({ leagues: "Ligas y copas", team: "Equipo", match: "Partido", watch: "Dónde ver el partido", "world-scorers": "Goleadores históricos del mundo" } as Record<string, string>)[view] || "Resultados"} · Latente`;
-  }, [route, league?.name]);
+    // Per-section metadata improves sharing and browser navigation.
+    // Hash routes are not independent crawlable URLs: server-rendered routes
+    // are required before exposing them in a search engine sitemap.
+    const topics: Record<string,string> = {
+      league: "Resultados y fixture", table: "Tabla de posiciones",
+      scorers: "Goleadores", assists: "Máximos asistidores",
+      teams: "Clubes y equipos", match: "Resultado y estadísticas del partido",
+      sport: "Resultados y estadísticas deportivas",
+      "world-scorers": "Goleadores y títulos históricos del fútbol",
+      leagues: "Ligas y copas", tv: "Dónde ver deportes en vivo",
+    };
+    const subject = league?.name || (view === "sport" ? rawId.toUpperCase() : "Latente");
+    const title = view === "" ? "Latente | Resultados en Vivo y Estadísticas Deportivas"
+      : `${topics[view] || "Deportes"} de ${subject} | Latente`;
+    const description = view === ""
+      ? "Resultados en vivo, posiciones, goleadores y estadísticas de fútbol, MLS, NBA, rugby, vóley y más. Cuotas deportivas según cobertura disponible."
+      : `Consultá ${(topics[view] || "estadísticas deportivas").toLowerCase()} de ${subject} en Latente. Datos actualizados según disponibilidad de las ligas.`;
+    document.title = title;
+    const metaDescription = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    if (metaDescription) metaDescription.content = description.slice(0, 155);
+    const ogTitle = document.querySelector<HTMLMetaElement>('meta[property="og:title"]');
+    if (ogTitle) ogTitle.content = title;
+    const ogDesc = document.querySelector<HTMLMetaElement>('meta[property="og:description"]');
+    if (ogDesc) ogDesc.content = description.slice(0, 155);
+    const twitterTitle = document.querySelector<HTMLMetaElement>('meta[name="twitter:title"]');
+    if (twitterTitle) twitterTitle.content = title;
+  }, [route, league?.name, view, rawId]);
   const toggleTheme = () => {
     const next = theme === "light" ? "dark" : "light";
     setTheme(next);
