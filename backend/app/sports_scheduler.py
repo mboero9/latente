@@ -112,6 +112,9 @@ def due_jobs(today=None):
     enabled = [s.strip() for s in os.getenv(
         "SPORTS_AUTOSYNC", "nhl,mlb,nba,basketball,f1,nfl,handball,volleyball"
     ).split(",") if s.strip() in SPORTS and s.strip() != "rugby"]
+    # Always include the two newly requested disciplines, even if Railway
+    # still has an older SPORTS_AUTOSYNC value without them.
+    enabled = list(dict.fromkeys([*enabled, "handball", "volleyball"]))
     jobs = []
     targets = configured_targets()
     # Supplement explicit targets from catalogue snapshots discovered by the
