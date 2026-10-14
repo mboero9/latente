@@ -2578,3 +2578,155 @@
   .historical-filter-tabs { flex-wrap:wrap; }
   .historical-honours-section .updated a { color:var(--green);text-decoration:underline; }
 }
+
+
+/* Always-visible sports navigation controls; no more hidden activities.
+   The rail occupies the flexible middle column and never expands the header. */
+@layer components {
+  .header .header-inner { gap: clamp(10px,1.6vw,24px); max-width: none; }
+  .header .brand { flex: 0 0 auto; }
+  .header .header-actions { flex: 0 0 auto; margin-left: 0; }
+  .header .nav-rail {
+    min-width: 0;
+    flex: 1 1 0;
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 68px;
+    position: relative;
+  }
+  .header .nav-rail-row {
+    display:flex;
+    align-items: stretch;
+    gap: 4px;
+    min-width: 0;
+    width: 100%;
+    height: 50px;
+  }
+  .header .top-nav {
+    min-width: 0;
+    flex: 1 1 auto;
+    width: auto;
+    height: 100%;
+    margin: 0;
+    order: initial;
+    display: block;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    white-space: nowrap;
+    scroll-behavior: smooth;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+  }
+  .header .top-nav::-webkit-scrollbar { display: none; }
+  .header .top-nav-items {
+    width: max-content;
+    min-width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+    gap: clamp(12px,1.4vw,25px);
+  }
+  .header .top-nav-items > a {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items:center;
+    height: 100%;
+    padding: 0 3px;
+    white-space: nowrap;
+    scroll-snap-align: start;
+    font-weight: 650;
+  }
+  .header .nav-rail-arrow {
+    flex: 0 0 30px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--green);
+    border-radius: 8px;
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0;
+    display:grid;
+    place-items:center;
+    box-shadow: 0 2px 7px #00000007;
+  }
+  .header .nav-rail-arrow:focus-visible,
+  .header .nav-rail-slider input:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .header .nav-rail-arrow:disabled { opacity: .24; cursor:default; }
+  .header .nav-rail:not(.nav-rail-overflow) .nav-rail-arrow { display: none; }
+  .header .nav-rail-slider {
+    flex: 0 0 13px;
+    height: 13px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 0 36px;
+    margin-top: 0;
+  }
+  .header .nav-rail-slider input[type="range"] {
+    display: block;
+    width: 100%;
+    height: 12px;
+    margin: 0;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+  }
+  .header .nav-rail-slider input[type="range"]::-webkit-slider-runnable-track {
+    background: var(--line);
+    border-radius: 999px;
+    height: 4px;
+  }
+  .header .nav-rail-slider input[type="range"]::-moz-range-track {
+    background: var(--line);
+    border-radius: 999px;
+    height: 4px;
+  }
+  .header .nav-rail-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 36px;
+    height: 11px;
+    border-radius: 999px;
+    border: 0;
+    background: var(--green);
+    margin-top: -3.5px;
+    box-shadow: 0 0 0 3px var(--header);
+  }
+  .header .nav-rail-slider input[type="range"]::-moz-range-thumb {
+    width: 36px;
+    height: 11px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--green);
+  }
+  .header .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+}
+@layer responsive {
+  @media (max-width: 800px) {
+    .header .header-inner { gap: 0 8px; padding-bottom: 0; }
+    .header .nav-rail { order: 3; flex: 1 0 100%; width: 100%; height: 65px; margin-top: 8px; }
+    .header .nav-rail-row { height: 47px; }
+    .header .top-nav { height:100%; margin:0; width:auto; }
+    .header .top-nav-items { gap:18px; }
+    .header .header-actions { margin-left: auto; }
+  }
+  @media (max-width: 560px) {
+    .header .nav-rail { height: 61px; margin-top: 7px; }
+    .header .nav-rail-row { height: 44px; }
+    .header .nav-rail-arrow { flex-basis: 26px; font-size:1.55rem; }
+    .header .nav-rail-slider { padding:0 30px; }
+    .header .top-nav-items { gap: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .header .top-nav { scroll-behavior: auto; }
+  }
+}
