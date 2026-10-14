@@ -946,6 +946,40 @@ function ScorersView({ league }: { league: League }) {
   );
 }
 
+
+type AssistLeader = {
+  player_id:number; name:string; team_id:number; team:string;
+  assists:number; goals:number|null; appearances:number|null; rank:number;
+};
+function AssistsView({ league }: {league:League}) {
+  const [season,setSeason]=useState(league.season);
+  const {result,loading,error,retry}=useApi<AssistLeader[]>(
+    `/api/leagues/${league.id}/assists?season=${season}`, DISPLAY_REFRESH_MS);
+  return <>
+    <LeagueHeader league={league} view="assists" season={season} setSeason={setSeason}/>
+    <div class="panel-top"><h2>Máximos asistidores · {league.name}</h2><span>{season}</span></div>
+    {error&&<ErrorBox error={error} retry={retry}/>}
+    {loading?<Loading/>:!result?.data.length?
+      <Empty title="Asistencias no disponibles">API-Football todavía no importó el ranking o la competición no ofrece estos datos.</Empty>:
+      <div class="panel table-scroll" tabIndex={0} role="region" aria-label="Tabla de máximos asistidores">
+        <table class="scorers-table"><thead><tr>
+          <th>#</th><th>Jugador / club</th><th>Asist.</th><th>Goles</th><th>PJ</th>
+        </tr></thead><tbody>
+          {result.data.map((row)=><tr key={`${row.player_id}-${row.team_id}`}>
+            <td class="rank">{row.rank}</td>
+            <th scope="row" class="club-cell"><span class="sport-team-inline">
+              <img alt="" loading="lazy" src={`https://media.api-sports.io/football/teams/${row.team_id}.png`} onError={e=>{e.currentTarget.style.display="none";}}/>
+              <span>{row.name}<small class="player-team">{row.team}</small></span>
+            </span></th>
+            <td class="goal-count">{row.assists}</td><td>{row.goals??"—"}</td><td>{row.appearances??"—"}</td>
+          </tr>)}
+        </tbody></table>
+      </div>}
+    <p class="updated">Asistencias oficiales registradas por API-Football. Los jugadores sin datos de asistencias no se completan con estimaciones.</p>
+    <Updated meta={result?.meta}/>
+  </>;
+}
+
 function TeamsView({ league }: { league: League }) {
   const [query, setQuery] = useState(""),
     [season, setSeason] = useState(league.season);
