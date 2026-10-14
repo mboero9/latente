@@ -59,10 +59,19 @@ def normalize_games(sport, rows):
 
 
 def normalize_standings(rows, sport=None):
-    """Do not assume standings are comparable between sports/countries."""
+    """Normalize provider standings while keeping actual club crests and scores."""
+    def count(v):
+        if isinstance(v, dict):
+            v = v.get("total", v.get("all"))
+        if isinstance(v, bool):
+            return None
+        try:
+            return int(v) if v is not None else None
+        except (ValueError, TypeError):
+            return None
     data = []
     def visit(items, label=None):
-        for item in items:
+        for item in items or []:
             if isinstance(item, list):
                 visit(item, label)
             elif isinstance(item, dict):
@@ -84,14 +93,23 @@ def normalize_standings(rows, sport=None):
                             "raw_stats": item,
                         })
                         continue
+                    games = item.get("games") or {}
+                    if not isinstance(games, dict):
+                        games = {}
+                    scores = item.get("goals") or item.get("scores") or {}
+                    if not isinstance(scores, dict):
+                        scores = {}
                     data.append({
+                        "drawn": count(games.get("draw", item.get("drawn"))),
+                        "scored": count(scores.get("for")),
+                        "conceded": count(scores.get("against")), 
                         "group": (item.get("group") or {}).get("name") if isinstance(item.get("group"), dict) else item.get("group") or label,
                         "stage": item.get("stage"),
                         "rank": item.get("position", item.get("rank")),
                         "team_id": team["id"], "team": team["name"],
-                        "played": item.get("games", {}).get("played") if isinstance(item.get("games"), dict) else item.get("played"),
-                        "won": item.get("games", {}).get("win") if isinstance(item.get("games"), dict) else item.get("won"),
-                        "lost": item.get("games", {}).get("lose") if isinstance(item.get("games"), dict) else item.get("lost"),
+                        "played": count(games.get("played", item.get("played"))),
+                        "won": count(games.get("win", item.get("won"))),
+                        "lost": count(games.get("lose", item.get("lost"))),
                         "points": item.get("points"),
                         "provider": "api_sports",
                         "logo": _trusted_team_logo(team.get("logo")),
