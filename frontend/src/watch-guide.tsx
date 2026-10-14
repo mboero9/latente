@@ -4,12 +4,16 @@ import { useState } from "preact/hooks";
  * Fuentes oficiales 2026, revisables al cambiar los acuerdos.
  */
 type Channel = { name: string; url: string; coverage: string };
-type Country = "AR"|"BR"|"US"|"CA"|"MX"|"ES"|"GB"|"AU";
+type Country = "AR"|"BR"|"US"|"CA"|"MX"|"ES"|"GB"|"AU"|"CL"|"CO"|"PE"|"UY"|"PY"|"EC"|"BO"|"VE"|"NZ"|"IT"|"DE"|"FR"|"DO";
 type Category = "argentina"|"libertadores"|"champions"|"laliga"|"nba"|"nfl"|"nhl"|"mlb"|"f1"|"afl"|"rugby";
 const countries: {code:Country; name:string}[] = [
   {code:"AR",name:"Argentina"},{code:"BR",name:"Brasil"},{code:"US",name:"Estados Unidos"},
   {code:"CA",name:"Canadá"},{code:"MX",name:"México"},{code:"ES",name:"España"},
   {code:"GB",name:"Reino Unido"},{code:"AU",name:"Australia"},
+  {code:"CL",name:"Chile"},{code:"CO",name:"Colombia"},{code:"PE",name:"Perú"},{code:"UY",name:"Uruguay"},
+  {code:"PY",name:"Paraguay"},{code:"EC",name:"Ecuador"},{code:"BO",name:"Bolivia"},{code:"VE",name:"Venezuela"},
+  {code:"NZ",name:"Nueva Zelanda"},{code:"IT",name:"Italia"},{code:"DE",name:"Alemania"},
+  {code:"FR",name:"Francia"},{code:"DO",name:"República Dominicana"},
 ];
 const categories: {code:Category; name:string}[] = [
   {code:"argentina",name:"Fútbol argentino / Copa Argentina"},
@@ -94,6 +98,44 @@ const guide: Partial<Record<Country,Partial<Record<Category,Channel[]>>>> = {
     nfl:[ch("NFL Game Pass · DAZN","https://www.dazn.com/","Cobertura internacional")],
     f1:[ch("F1 TV","https://f1tv.formula1.com/","Verificar disponibilidad")],
   },
+};
+
+// Acuerdos regionales: UEFA 2026/27 (ESPN en Sudamérica salvo Brasil),
+// LaLiga 2026-2032 (ESPN y DSPORTS en nueve mercados hispanohablantes).
+for (const code of ["CL","CO","PE","UY","PY","EC","BO","VE"] as Country[]) {
+  guide[code] = {
+    champions:[ch("ESPN / UEFA · operadores locales","https://www.uefa.com/uefachampionsleague/news/0253-0d82037aaedd-f371c464f919-1000--where-to-watch-the-uefa-champions-league/","ESPN en Sudamérica hispanohablante según evento")],
+    laliga:[ch("ESPN / Disney+","https://www.disneyplus.com/","Derechos regionales de LaLiga"),ch("DSPORTS / DGO","https://www.directvgo.com/","Partidos según programación del país")],
+    nfl:[ch("NFL Game Pass · DAZN","https://www.dazn.com/","Oferta internacional, verificar restricciones")],
+    nba:[ch("NBA League Pass","https://www.nba.com/watch/league-pass-stream/","Disponibilidad territorial")],
+    mlb:[ch("MLB.TV","https://www.mlb.com/live-stream-games/","Bloqueos por país y evento")],
+    afl:[ch("Watch AFL","https://www.afl.com.au/matches/broadcast-guide/watch-afl","Disponible fuera de Australia")],
+  };
+}
+guide.NZ = {
+  champions:[ch("DAZN","https://www.dazn.com/","Socio Champions League de Nueva Zelanda")],
+  afl:[ch("Watch AFL","https://www.afl.com.au/matches/broadcast-guide/watch-afl","Para público fuera de Australia")],
+  nfl:[ch("NFL Game Pass · DAZN","https://www.dazn.com/","Según restricciones locales")],
+};
+guide.IT = {
+  champions:[ch("Sky Sport / NOW","https://www.sky.it/","Champions League"),ch("Amazon Prime Video","https://www.primevideo.com/","Selección de partidos")],
+  f1:[ch("Sky Sport F1 / NOW","https://www.sky.it/","Derechos F1 Italia confirmados por Formula 1")],
+  nfl:[ch("NFL Game Pass · DAZN","https://www.dazn.com/","Cobertura internacional")],
+};
+guide.DE = {
+  champions:[ch("UEFA · operadores Alemania","https://www.uefa.com/uefachampionsleague/news/0253-0d82037aaedd-f371c464f919-1000--where-to-watch-the-uefa-champions-league/","Revisar transmisiones por jornada")],
+  nfl:[ch("NFL Game Pass · DAZN","https://www.dazn.com/","Cobertura internacional")],
+  afl:[ch("Watch AFL","https://www.afl.com.au/matches/broadcast-guide/watch-afl","Exterior de Australia")],
+};
+guide.FR = {
+  champions:[ch("UEFA · operadores Francia","https://www.uefa.com/uefachampionsleague/news/0253-0d82037aaedd-f371c464f919-1000--where-to-watch-the-uefa-champions-league/","Revisar titulares de derechos")],
+  nfl:[ch("NFL Game Pass · DAZN","https://www.dazn.com/","Cobertura internacional")],
+  afl:[ch("Watch AFL","https://www.afl.com.au/matches/broadcast-guide/watch-afl","Exterior de Australia")],
+};
+guide.DO = {
+  champions:[ch("UEFA · República Dominicana","https://www.uefa.com/uefachampionsleague/news/0253-0d82037aaedd-f371c464f919-1000--where-to-watch-the-uefa-champions-league/","Televideo, ESPN, CPSL y S&T según evento")],
+  nba:[ch("NBA League Pass","https://www.nba.com/watch/league-pass-stream/","Suscripción y cobertura según territorio")],
+  nfl:[ch("NFL Game Pass · DAZN","https://www.dazn.com/","Consultar disponibilidad local")],
 };
 
 export function WatchGuide({ initialSport, initialCountry = "AR" }: { initialSport?: string; initialCountry?: Country }) {
