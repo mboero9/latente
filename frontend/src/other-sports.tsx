@@ -12,6 +12,8 @@ export const sports = [
   { slug: "nba", name: "NBA", emoji: "🏀" },
   { slug: "wnba", name: "WNBA", emoji: "🏀" },
   { slug: "basketball", name: "Básquet", emoji: "🏀" },
+  { slug: "handball", name: "Handball", emoji: "🤾" },
+  { slug: "volleyball", name: "Vóley", emoji: "🏐" },
   { slug: "f1", name: "Fórmula 1", emoji: "🏎️" },
   { slug: "nfl", name: "NFL", emoji: "🏈" },
   { slug: "rugby", name: "Rugby", emoji: "🏉" },
