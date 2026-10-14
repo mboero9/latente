@@ -15,6 +15,7 @@ import type {
 import "./style.css";
 import { observeLanguage } from "./i18n";
 import { MatchExtras } from "./match-extras";
+import { LeagueRecent } from "./league-recent";
 import { WatchView } from "./watch-options";
 import { PromediosPage } from "./argentina-promedios";
 import { FootballAnalytics } from "./football-analytics";
@@ -518,6 +519,7 @@ function FixturesView({
               </span>
             </div>
           )}
+          {league && <LeagueRecent id={league.id} season={league.season} />}
           <DatePicker day={day} setDay={setDay} tz={tz} />
           <div class="match-controls">
             <div class="segmented">
