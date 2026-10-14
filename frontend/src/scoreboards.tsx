@@ -3,7 +3,7 @@ import { useApi } from "./api";
 
 type Game = {
   id: string; league: string; date: string;
-  home: string; away: string; home_score:number|null; away_score:number|null;
+  home: string; away: string; home_logo?:string|null; away_logo?:string|null; home_score:number|null; away_score:number|null;
   status: string; completed:boolean; state:string
 };
 export type Scoreboard = { available:boolean; games?:Game[];
@@ -34,9 +34,9 @@ export function ScoreboardPanel({sport}:{sport:string}) {
       games.length?<div class="sports-games">{games.slice(0,35).map(g=><article class="panel sport-game" key={g.id}>
         <small class="sport-game-league">{dayInArgentina(g.date)} · {g.status||"Programado"}</small>
         <div class="sport-game-teams">
-          <strong class="sport-team">{g.home}</strong>
+          <strong class="sport-team">{g.home_logo && <img src={g.home_logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{g.home}</strong>
           <span>{g.home_score ?? "—"} : {g.away_score ?? "—"}</span>
-          <strong class="sport-team sport-team-away">{g.away}</strong>
+          <strong class="sport-team sport-team-away">{g.away_logo && <img src={g.away_logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{g.away}</strong>
         </div>
       </article>)}</div>:
       <p class="coverage-notice">{data?.message||"No hay partidos verificados para este período."} Probá otra pestaña.</p>}
