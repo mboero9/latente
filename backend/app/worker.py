@@ -532,39 +532,70 @@ def tick(client):
 
 
 def capture_betting_odds(client):
-    """Máximo dos solicitudes por ejecución del cron, sin usar cuota por visita."""
+    """One bounded odds request per ten-minute Railway cron execution.
+
+    Calling /odds/live and /odds without spacing was rejected by the
+    global API minimum gap; alternate between markets across executions.
+    Only capture supported matches already imported, never on page view.
+    """
     if settings.mode != "api" or settings.profile != "live":
         return
     from .odds import prematch, inplay, persist
     from .provider import ProviderError, Deferred
     now = utcnow()
-    day = now.astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date().isoformat()
-    for kind, endpoint, params, normalize in (
-        ("live", "/odds/live", {}, inplay),
-        ("prematch", "/odds", {"date": day}, prematch),
-    ):
-        try:
-            rows = client.get(endpoint, params)
-            stored = 0
-            with session_scope() as db:
-                for raw in rows[:100]:
-                    fixture = raw.get("fixture") or {}
-                    fixture_id = fixture.get("id")
-                    if not isinstance(fixture_id, int) or fixture_id <= 0:
-                        continue
-                    match = db.get(Fixture, ("api", fixture_id))
-                    if not match or match.league_id not in settings.league_ids:
-                        continue
-                    if kind == "live" and match.status not in LIVE:
-                        continue
-                    if kind == "prematch" and match.status not in ("NS", "TBD"):
-                        continue
-                    prices = normalize([raw])
-                    if prices and persist(db, fixture_id, kind, prices):
-                        stored += 1
-            log.info("odds_snapshot kind=%s provider_rows=%s stored_fixtures=%s", kind, len(rows), stored)
-        except (ProviderError, Deferred, ValueError, TypeError, KeyError) as exc:
-            log.info("odds_unavailable kind=%s error_type=%s", kind, type(exc).__name__)
+    live_mode = (now.minute // 10) % 2 == 0
+    kind, endpoint, params, normalize = "live", "/odds/live", {}, inplay
+    if live_mode:
+        with session_scope() as db:
+            count = db.scalar(select(func.count()).select_from(Fixture).where(
+                Fixture.source == "api", Fixture.status.in_(LIVE)
+            )) or 0
+        if not count:
+            # No local live fixture to match: avoid unnecessary paid API calls.
+            return
+    else:
+        with session_scope() as db:
+            upcoming = db.scalars(select(Fixture).where(
+                Fixture.source == "api",
+                Fixture.status.in_(("NS", "TBD")),
+                Fixture.kickoff >= now,
+                Fixture.kickoff < now + timedelta(days=2),
+            ).order_by(Fixture.kickoff).limit(50)).all()
+            chosen = None
+            for match in upcoming:
+                if not settings.accepts_league(match.league_id):
+                    continue
+                old = db.get(FixtureOdds, ("api", match.id, "prematch"))
+                if old and (now - aware(old.updated_at)).total_seconds() < 10800:
+                    continue
+                chosen = match.id
+                break
+        if chosen is None:
+            return
+        kind, endpoint, params, normalize = "prematch", "/odds", {"fixture": chosen}, prematch
+
+    try:
+        rows = client.get(endpoint, params)
+        stored = 0
+        with session_scope() as db:
+            for raw in rows[:100]:
+                fixture_id = (raw.get("fixture") or {}).get("id")
+                if not isinstance(fixture_id, int) or fixture_id <= 0:
+                    continue
+                match = db.get(Fixture, ("api", fixture_id))
+                if not match or not settings.accepts_league(match.league_id):
+                    continue
+                if kind == "live" and match.status not in LIVE:
+                    continue
+                if kind == "prematch" and match.status not in ("NS", "TBD"):
+                    continue
+                prices = normalize([raw])
+                if prices and persist(db, fixture_id, kind, prices):
+                    stored += 1
+        log.info("odds_snapshot kind=%s provider_rows=%s stored_fixtures=%s",
+                 kind, len(rows), stored)
+    except (ProviderError, Deferred, ValueError, TypeError, KeyError) as exc:
+        log.info("odds_unavailable kind=%s error_type=%s", kind, type(exc).__name__)
 
 
 def run(once=False, max_seconds=120):
