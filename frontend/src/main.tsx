@@ -719,9 +719,9 @@ function FixturesView({
             <div><span class="eyebrow">EL ARCHIVO DE LATENTE</span><h2>Históricos del fútbol</h2></div>
           </div>
           <nav class="home-historics-jumps" aria-label="Ir a una tabla histórica">
-            <a href="#goleadores-historicos">Goleadores</a>
-            <a href="#copas-clubes">Copas internacionales de clubes</a>
-            <a href="#copas-selecciones">Títulos de selecciones</a>
+            <button type="button" onClick={() => document.getElementById("goleadores-historicos")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Goleadores</button>
+            <button type="button" onClick={() => document.getElementById("copas-clubes")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Copas internacionales de clubes</button>
+            <button type="button" onClick={() => document.getElementById("copas-selecciones")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Títulos de selecciones</button>
           </nav>
           <WorldScorersSection/>
           <ClubHonours/>
