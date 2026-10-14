@@ -39,21 +39,22 @@ export function CupBracket({ league }: { league: League }) {
 
   return <section class="cup-bracket">
     <div class="view-heading"><div><span class="eyebrow">CUADRO ELIMINATORIO</span>
-      <h1>{league.name} · Copa</h1></div>
+      <h1>{league.name} · Playoffs</h1></div>
       <label class="season-label">Temporada
         <select value={season} onChange={e => setSeason(Number(e.currentTarget.value))}>
           {[...new Set([league.season, ...(league.loaded_seasons || [])])].sort((a,b)=>b-a).map(y=><option value={y}>{y}</option>)}
         </select>
       </label>
     </div>
-    <p class="updated">Desde 32avos hasta la final, cuando estén disponibles en el proveedor. Las fases sin importar no se inventan y no se trazan conexiones no verificadas.</p>
+    <nav class="subnav" aria-label="Vistas de la copa"><a class="active" href={`#/bracket/${league.id}`}>Llave de playoffs</a><a href={`#/fixtures/${league.id}`}>Todos los partidos</a></nav>
+    <p class="updated">Cruces reales de API-Football desde las rondas iniciales hasta la final, cuando estén disponibles. Las fases sin importar no se inventan y no se trazan conexiones no verificadas.</p>
     {loading ? <p>Cargando cuadro de copa…</p> : error ? <p>{error} <button onClick={retry}>Reintentar</button></p> :
     stages.length ? <>
       <div class="knockout-scroll" role="region" tabIndex={0} aria-label="Rondas eliminatorias">
         <div class="knockout-columns" ref={graph}>
           <svg class="knockout-links" aria-hidden="true">{paths.map(path => <path key={path} d={path} />)}</svg>
           {stages.map(stage => <div class="knockout-round" key={stage.order}>
-            <h2>{stage.name}</h2>
+            <h2>{stage.name}{stage.order === 5 ? " 🏆" : ""}</h2>
             <span class="updated">{stage.matches.length} encuentros verificados</span>
             {stage.matches.map(match => <a class="knockout-match" data-match-id={match.id} href={`#/match/${match.id}`} key={match.id}>
               <div class="knockout-team"><span>{match.home.name}</span><b>{match.home_goals ?? "—"}</b></div>
