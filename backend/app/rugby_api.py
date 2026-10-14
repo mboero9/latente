@@ -35,8 +35,8 @@ COMPETITIONS = (
 )
 BY_SLUG = {slug: (title, names, countries) for slug, title, names, countries in COMPETITIONS}
 CATALOG_TTL = timedelta(days=1)
-GAMES_TTL = timedelta(hours=8)
-STANDINGS_TTL = timedelta(hours=12)
+GAMES_TTL = timedelta(hours=6)
+STANDINGS_TTL = timedelta(hours=24)
 FAIL_TTL = timedelta(hours=6)
 
 
@@ -206,7 +206,8 @@ def read_competition(slug, season=None):
     title = BY_SLUG[slug][0]
     league_id = row.get("league_id")
     available = row.get("seasons") or []
-    year = int(season) if season else (available[0] if available else datetime.now(timezone.utc).year)
+    current_year = datetime.now(timezone.utc).year
+    year = int(season) if season else next((y for y in available if y <= current_year), current_year)
     if year < 2000 or year > datetime.now(timezone.utc).year + 1:
         raise ValueError("year out of range")
     if not league_id:
@@ -253,7 +254,7 @@ def sync_once(max_calls=3, fetch=None):
         try:
             rows = fetch(endpoint, params)
             cleaned = normalize(rows)
-            if cleaned:
+            if cleaned and (kind != "leagues" or any(r.get("league_id") for r in cleaned)):
                 _write(kind, ref, cleaned, len(rows), note)
                 result["updated"].append(f"{kind}:{ref}")
             else:
