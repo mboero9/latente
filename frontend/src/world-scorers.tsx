@@ -41,7 +41,7 @@ export function WorldScorersTeaser() {
 export function WorldScorersSection() {
   return <section class="world-scorers-section" id="goleadores-historicos">
 
-    <div class="view-heading"><div><span class="eyebrow">ARCHIVO DEPORTIVO · GOLES Y COPAS</span><h1>Goleadores históricos del mundo</h1></div></div>
+    <div class="view-heading"><div><span class="eyebrow">ARCHIVO DEPORTIVO · GOLES Y COPAS</span><h2>Goleadores históricos del mundo</h2></div></div>
     <p class="coverage-notice">Goles oficiales de carrera, clubes y selección mayor. Cristiano Ronaldo y Lionel Messi tienen corte al <strong>12 de octubre de 2026</strong>; para los demás jugadores retirados se conserva el registro IFFHS histórico del 31 de marzo de 2023. Las cifras son una fotografía fechada, no un marcador en vivo, y pueden variar por el criterio estadístico. Clubes mostrados: los actuales de Messi y Ronaldo; los de los demás jugadores son de referencia histórica.</p>
     <div class="panel table-scroll">
       <table class="scorers-table"><thead><tr><th>#</th><th>Jugador</th><th>País</th><th>Club mostrado</th><th>Goles oficiales</th><th>Actualizado</th></tr></thead>
@@ -58,6 +58,7 @@ export function WorldScorersSection() {
 /** Dedicated history route keeps all three tables as individual sections. */
 export function WorldScorersPage() {
   return <div class="world-scorers-page">
+    <div class="view-heading"><h1>Históricos del fútbol</h1></div>
     <WorldScorersSection/>
     <HistoricalHonours/>
   </div>;
