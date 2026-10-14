@@ -2442,3 +2442,18 @@
 /* Escudos oficiales en tablas y clasificaciones multideporte */
 .sport-team-inline { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 .sport-team-inline img { width: 24px; height: 24px; object-fit: contain; flex: 0 0 24px; }
+
+@layer components {
+  /* Recupera la tipografía base del logotipo anterior; solo cambia el sufijo. */
+  .header .brand .brand-wordmark {
+    font-family: inherit;
+    letter-spacing: -1.5px;
+  }
+  .header .brand .brand-dot {
+    margin-left: 1px;
+    font-size: .68em;
+    font-weight: 850;
+    letter-spacing: -.025em;
+    color: #53cfff;
+  }
+}
