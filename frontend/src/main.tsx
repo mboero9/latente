@@ -1201,7 +1201,7 @@ function App() {
     id = Number(rawId),
     league = leagues.find((l) => l.id === id),
     first = leagues[0]?.id || 128;
-  const isLeagueView = ["league", "table", "scorers", "teams", "history", "promedios", "alltime", "analytics"].includes(view);
+  const isLeagueView = ["league", "table", "scorers", "teams", "history", "promedios", "annual", "alltime", "analytics"].includes(view);
   useEffect(() => {
     document.title = `${league?.name || ({ leagues: "Ligas y copas", team: "Equipo", match: "Partido", watch: "Dónde ver el partido" } as Record<string, string>)[view] || "Resultados"} · Latente`;
   }, [route, league?.name]);
