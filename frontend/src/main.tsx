@@ -26,6 +26,7 @@ import { ArgentinaAnnual } from "./argentina-annual";
 import { ArgentinaAlltime } from "./reference-sports";
 import { FootballAnalytics } from "./football-analytics";
 import { sports, SportPage, HistoryPage } from "./other-sports";
+import { NavRail } from "./nav-rail";
 import { WorldScorersTeaser, WorldScorersPage } from "./world-scorers";
 
 const LIVE = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT"]);
@@ -1374,7 +1375,7 @@ function App() {
             <img src="/latente-mark.png?v=3" width="43" height="43" alt="" />
             <span class="brand-wordmark"><span class="brand-late">late</span><span class="brand-nte">nte</span><span class="brand-dot">.</span></span>
           </a>
-          <nav class="top-nav" aria-label="Navegación principal">
+          <NavRail activePath={route}>
             {[
               ["/", "Partidos"],
               ["/leagues", "Ligas"],
@@ -1383,19 +1384,14 @@ function App() {
               [`/scorers/${first}`, "Goleadores"],
               ["/league/253", "🇺🇸 MLS"],
               ...sports.map(sport => [`/sport/${sport.slug}`, `${sport.emoji} ${sport.name}`]),
-            ].map(([path, label]) => (
-              <a
-                class={
-                  (path.startsWith("/sport/") ? route === path : ((view === "" && path === "/") || path.split("/")[1] === view))
-                    ? "active"
-                    : ""
-                }
-                href={link(path)}
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
+            ].map(([path, label]) => {
+              const active = path.startsWith("/sport/") || path === "/league/253"
+                ? route === path
+                : ((view === "" && path === "/") || path.split("/")[1] === view);
+              return <a key={path} class={active ? "active" : ""}
+                aria-current={active ? "page" : undefined} href={link(path)}>{label}</a>;
+            })}
+          </NavRail>
           <div class="header-actions">
             <button class="language-toggle" type="button"
               aria-label={language === "es" ? "Switch to English" : "Cambiar a español"}
