@@ -31,10 +31,10 @@ export function WorldScorersTeaser() {
     <h2>Goleadores históricos del mundo</h2>
     <p class="updated">Cristiano Ronaldo y Messi: actualizado al 12/10/2026. Otros registros: archivo IFFHS.</p>
     {rows.slice(0,2).map((p,i)=><div class="world-scorer-line" key={p.name}>
-      <span>{i+1}.</span><ReferenceBadge teamId={p.teamId} flag={p.flag} country={p.country} currentClub={p.name === "Lionel Messi"} />
+      <span>{i+1}.</span><ReferenceBadge teamId={p.teamId} flag={p.flag} country={p.country} currentClub={p.name === "Lionel Messi" || p.name === "Cristiano Ronaldo"} />
       <strong>{p.name}</strong><span class="world-scorer-count">{p.goals}</span>
     </div>)}
-    <a class="world-scorer-link" href="#/world-scorers">Ver tabla histórica completa →</a>
+    <a class="world-scorer-link" href="#/world-scorers">Ver goleadores y copas internacionales →</a>
   </section>;
 }
 export function WorldScorersPage() {
