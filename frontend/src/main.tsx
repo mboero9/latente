@@ -270,6 +270,7 @@ function LeagueTabs({ league, view }: { league: League; view: string }) {
         ...(league.kind?.toLowerCase() !== "league" ? [["fixtures", "Todos los partidos"]] : []),
         ["table", "Posiciones"],
         ["scorers", "Goleadores"],
+        ["assists", "Asistencias"],
         ["teams", "Equipos"],
         ...(league.kind?.toLowerCase() !== "league" ? [["bracket", "Cuadro de copa"]] : []),
         ["history", "Históricos"],
@@ -1300,7 +1301,7 @@ function App() {
     id = Number(rawId),
     league = leagues.find((l) => l.id === id),
     first = leagues[0]?.id || 128;
-  const isLeagueView = ["league", "table", "scorers", "teams", "fixtures", "bracket", "history", "promedios", "annual", "alltime", "analytics"].includes(view);
+  const isLeagueView = ["league", "table", "scorers", "assists", "teams", "fixtures", "bracket", "history", "promedios", "annual", "alltime", "analytics"].includes(view);
   useEffect(() => {
     document.title = `${league?.name || ({ leagues: "Ligas y copas", team: "Equipo", match: "Partido", watch: "Dónde ver el partido", "world-scorers": "Goleadores históricos del mundo" } as Record<string, string>)[view] || "Resultados"} · Latente`;
   }, [route, league?.name]);
@@ -1346,6 +1347,7 @@ function App() {
               ["/tv", "📺 Dónde ver"],
               [`/table/${first}`, "Posiciones"],
               [`/scorers/${first}`, "Goleadores"],
+              ["/league/253", "🇺🇸 MLS"],
               ...sports.map(sport => [`/sport/${sport.slug}`, `${sport.emoji} ${sport.name}`]),
             ].map(([path, label]) => (
               <a
@@ -1531,6 +1533,8 @@ function App() {
                   <ArgentinaAlltime />
                 ) : view === "scorers" ? (
                   <ScorersView league={league} />
+                ) : view === "assists" ? (
+                  <AssistsView league={league} />
                 ) : (
                   <TeamsView league={league} />
                 )}
