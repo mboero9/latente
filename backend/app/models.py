@@ -74,6 +74,19 @@ class FixtureDetails(Base):
     )
 
 
+class FixtureOdds(Base):
+    """Instantáneas verificadas 1X2. En vivo sin casa identificada."""
+    __tablename__ = "fixture_odds"
+    source: Mapped[str] = mapped_column(String(8), primary_key=True)
+    fixture_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    market: Mapped[str] = mapped_column(String(12), primary_key=True)
+    quotations: Mapped[list] = mapped_column(JSON, default=list)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    __table_args__ = (
+        ForeignKeyConstraint(["source", "fixture_id"], ["fixtures.source", "fixtures.id"]),
+    )
+
+
 class Membership(Base):
     __tablename__ = "memberships"
     source: Mapped[str] = mapped_column(String(8), primary_key=True)
