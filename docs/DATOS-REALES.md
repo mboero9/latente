@@ -70,3 +70,35 @@ La ampliación propuesta incluye básquet, NBA, WNBA, MLB, NHL y luego otros dep
 La implementación debe incorporar `sport` y `provider` a las identidades, tablas de participantes/competiciones/eventos por deporte, parciales (sets, cuartos, vueltas) y estadísticas tipadas. Las cuotas se separan por API para que básquet no consuma el presupuesto de fútbol. No reutilizar IDs, reglas de posiciones o goles de fútbol para otros deportes. La ingesta, PostgreSQL, Nginx y la interfaz base sí se pueden compartir.
 
 No se agregaron suscripciones deportivas ni se modificó DNS.
+
+
+## Comparador informativo de cuotas deportivas (1X2)
+
+Latente integra un panel en el detalle de cada partido y una franja informativa en
+las filas **En vivo** con precio decimal, probabilidad implícita porcentual
+(100 / cuota), hora de captura y proveedor.
+
+- Los precios de `/odds/live` son del mercado general de API-Football;
+  **no indican la casa de apuestas**. No atribuirlos a Betano, bplay ni
+  a ningún operador concreto.
+- Los precios de `/odds?fixture=ID` son **previos al partido** y sí
+  pueden incluir el nombre de cada bookmaker. En un partido ya iniciado
+  se muestran expresamente como anteriores, nunca como cotización vigente.
+- El worker alterna una sola solicitud al proveedor por ejecución de cron,
+  evitando el choque de `API_MIN_GAP_SECONDS`. Las respuestas se guardan
+  en `fixture_odds` en PostgreSQL; la web nunca consulta directamente
+  API-Football y no necesita exponer `API_FOOTBALL_KEY`.
+- `/api/odds/live` devuelve únicamente snapshots de partidos actualmente
+  en juego con menos de 15 minutos de antigüedad. Si no hay datos, las
+  filas enlazan al detalle sin inventar importes.
+- Los porcentajes son **probabilidades implícitas con margen**, no un
+  pronóstico de éxito. Los precios pueden cambiar en segundos o
+  suspenderse. Una cuota de 2.50 corresponde a 40% implícito.
+- Los enlaces externos a Betano y bplay son **genéricos**, no deeplinks al
+  mismo evento ni prueba de que alguna casa ofrece el precio mostrado.
+  Sus servicios requieren mayoría de edad y disponibilidad legal por jurisdicción.
+  Latente no recibe apuestas.
+- El feed en vivo de API-Football puede no cubrir un torneo o un encuentro.
+  En ese caso se muestra falta de cobertura; no se usan cifras ficticias.
+
+API: `GET /api/fixtures/{id}/odds` y `GET /api/odds/live`.
