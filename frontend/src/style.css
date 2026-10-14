@@ -2237,3 +2237,61 @@
   .knockout-links path { fill: none; stroke: #42addd; stroke-width: 2; stroke-opacity: .7; }
   .knockout-match { z-index: 2; }
 }
+
+
+/* Marca de cabecera — minúsculas, fondo transparente, relieve sutil.
+   El azul claro no contrasta con blanco; el tramo 'nte' usa azul tinta
+   en tema claro y vuelve a blanco en tema oscuro. */
+@layer components {
+  .header .brand {
+    gap: 0;
+    flex-shrink: 0;
+    text-decoration: none;
+  }
+  .header .brand .brand-wordmark {
+    display: inline-flex;
+    align-items: baseline;
+    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: clamp(1.72rem, 2.15vw, 2.15rem);
+    font-style: normal;
+    font-weight: 760;
+    letter-spacing: -.065em;
+    line-height: 1.1;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+    white-space: nowrap;
+  }
+  .header .brand .brand-late {
+    color: #58caff;
+    text-shadow: 0 1px 0 #ffffffbd, 0 2px 3px #0475ba55, 0 4px 10px #2785bf22;
+  }
+  .header .brand .brand-nte {
+    color: #17364e;
+    text-shadow: 0 1px 0 #ffffffd8, 0 2px 3px #0b294124, 0 4px 10px #2c58741c;
+  }
+  .header .brand .brand-dot {
+    color: #58caff;
+    font-size: 1em;
+    line-height: inherit;
+    letter-spacing: 0;
+    margin-left: .085em;
+    text-shadow: 0 1px 0 #ffffffbd, 0 2px 3px #0475ba55, 0 4px 10px #2785bf22;
+  }
+  :root[data-theme="dark"] .header .brand .brand-nte {
+    color: #ffffff;
+    text-shadow: 0 1px 0 #ffffff2e, 0 2px 4px #00000077;
+  }
+}
+@layer responsive {
+  @media (max-width: 650px) {
+    .header .brand .brand-wordmark {
+      font-size: 1.56rem;
+      padding: 0;
+    }
+  }
+}
