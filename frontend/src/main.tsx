@@ -1240,9 +1240,8 @@ function App() {
       </a>
       <header class="header">
         <div class="header-inner">
-          <a href="#/" class="brand" aria-label="LATENTE, inicio">
-            <img src="/latente-mark.png?v=3" width="43" height="43" alt="" />
-            <span class="brand-wordmark"><span class="brand-late">late</span><span class="brand-nte">nte</span><span class="brand-tld">.CFD</span></span>
+          <a href="#/" class="brand" aria-label="latente, inicio">
+            <span class="brand-wordmark"><span class="brand-late">late</span><span class="brand-nte">nte</span><span class="brand-dot">.</span></span>
           </a>
           <nav class="top-nav" aria-label="Navegación principal">
             {[
