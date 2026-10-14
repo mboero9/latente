@@ -2193,3 +2193,17 @@
   .brand .brand-nte { color: #fff; }
   .brand .brand-dot { color: #69d5ff; margin-left: 2px; font-size: 1em; letter-spacing: 0; }
 }
+
+@layer components {
+  .league-recent-section { margin: 20px 0; padding: 18px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); }
+  .league-recent-section h2 { font-size: 1.12rem; margin: 0 0 6px; }
+  .league-recent-section h3 { font-size: .9rem; margin: 18px 0 8px; }
+  .league-recent-games { display: grid; }
+  .league-recent-game { display: grid; align-items: center; grid-template-columns: 55px minmax(70px,1fr) 65px minmax(70px,1fr) 85px; gap: 8px; padding: 9px 6px; text-decoration: none; border-bottom: 1px solid var(--line); color: var(--ink); font-size: .8rem; }
+  .league-recent-game:hover { background: var(--surface-alt, var(--surface)); }
+  .league-recent-game strong { text-align: center; font-variant-numeric: tabular-nums; }
+  .league-recent-date, .league-recent-detail { color: var(--muted); font-size: .74rem; }
+  .league-recent-team { overflow: hidden; text-overflow: ellipsis; }
+  .league-recent-game .league-recent-team:nth-child(4) { text-align: right; }
+  @media (max-width: 720px) { .league-recent-game { grid-template-columns: 38px minmax(65px,1fr) 48px minmax(65px,1fr); gap: 4px; }.league-recent-detail { display:none; } .league-recent-section { padding: 12px; } }
+}
