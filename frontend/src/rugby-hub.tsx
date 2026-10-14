@@ -3,11 +3,12 @@ import { useApi } from "./api";
 
 type Match = {
   id: string; date: string; home: string; away: string;
+  home_logo?:string|null; away_logo?:string|null;
   home_score: number | null; away_score: number | null;
   status: string; completed: boolean;
 };
 type Position = {
-  team: string; team_id?: number; rank: number | null; group: string;
+  team: string; team_id?: number; logo?:string|null; rank: number | null; group: string;
   played: number | null; won: number | null; drawn: number | null;
   lost: number | null; points: number | null;
   for: number | null; against: number | null;
@@ -90,7 +91,7 @@ export function RugbyHub() {
       <table><thead><tr>
         <th>#</th><th>Equipo</th><th>Grupo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>Pts</th>
       </tr></thead><tbody>{data.official.map((r,i)=><tr key={(r.team_id || r.team) + r.group}>
-        <td>{r.rank ?? i+1}</td><th scope="row">{r.team}</th><td>{r.group || "—"}</td>
+        <td>{r.rank ?? i+1}</td><th scope="row"><span class="sport-team-inline">{r.logo && <img src={r.logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{r.team}</span></th><td>{r.group || "—"}</td>
         <td>{r.played ?? "—"}</td><td>{r.won ?? "—"}</td><td>{r.drawn ?? "—"}</td>
         <td>{r.lost ?? "—"}</td><td>{r.points ?? "—"}</td>
       </tr>)}</tbody></table>
@@ -105,9 +106,9 @@ export function RugbyHub() {
     </div>
     {games.length ? <div class="sports-games">{games.slice(0,70).map(m=><article class="panel sport-game" key={m.id}>
       <small class="sport-game-league">{m.date ? new Date(m.date).toLocaleDateString("es-AR") : "—"} · {m.status}</small>
-      <div class="sport-game-teams"><strong class="sport-team">{m.home}</strong>
+      <div class="sport-game-teams"><strong class="sport-team">{m.home_logo && <img src={m.home_logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{m.home}</strong>
         <span>{m.home_score ?? "—"} : {m.away_score ?? "—"}</span>
-        <strong class="sport-team sport-team-away">{m.away}</strong></div>
+        <strong class="sport-team sport-team-away">{m.away_logo && <img src={m.away_logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{m.away}</strong></div>
     </article>)}</div> : <p class="coverage-notice">
       No hay partidos {tab === "past" ? "finalizados" : "programados"} disponibles en la edición seleccionada.
     </p>}
