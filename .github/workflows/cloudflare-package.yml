@@ -32,7 +32,7 @@ jobs:
         working-directory: frontend
         env:
           VITE_API_BASE_URL: ${{ inputs.api_base_url }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: latente-cloudflare
           path: frontend/dist/
