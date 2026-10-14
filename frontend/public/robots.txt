@@ -1,8 +1,10 @@
-# Latente permite indexar las páginas públicas para aparecer en buscadores.
-# Esto expresa preferencias de rastreo, NO es un control de seguridad.
+# Latente: permitir indexacion y representacion de las paginas publicas.
+# Los resultados se cargan con fetch() desde /api/, por lo que NO hay
+# que bloquear toda esa ruta a Googlebot. robots.txt no es un firewall.
 User-agent: *
 Allow: /
-Disallow: /api/
+Disallow: /api/status
+Disallow: /api/health
 Disallow: /api/docs
 Disallow: /api/openapi.json
 
