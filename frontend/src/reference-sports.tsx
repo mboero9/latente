@@ -12,7 +12,7 @@ type F1 = { available:boolean; message?:string; season:number; round?:string;
     results:{position:number;driver:string;team:string;time?:string}[]};
   updated_at?:string; stale?:boolean };
 type NBA = { available:boolean; message?:string; season:number; rows:{
-  id:string;name:string;group:string;wins:number|null;losses:number|null;
+  id:string;name:string;logo?:string|null;group:string;wins:number|null;losses:number|null;
   win_pct:number|null;rank:number|null;games_back:number|null}[];
   note?:string;updated_at?:string;stale?:boolean };
 type Cricket = { available:boolean; message?:string;needs_key:boolean;
@@ -133,7 +133,7 @@ function NBAContent({data,sort,setSort}:{data:NBA;sort:"wins"|"pct";setSort:(sor
       const rows=group==="NBA"?grouped:grouped.filter(row=>row.group===group);
       return <div key={group}><h2 class="sport-section-title">{group}</h2>
         {rows.length?<div class="panel table-scroll"><table><thead><tr><th>#</th><th>Equipo</th><th>G</th><th>P</th><th>%V</th><th>Dif.</th></tr></thead>
-        <tbody>{rank(rows).map((team,i)=><tr key={team.id||team.name}><td>{i+1}</td><th scope="row">{team.name}</th>
+        <tbody>{rank(rows).map((team,i)=><tr key={team.id||team.name}><td>{i+1}</td><th scope="row"><span class="sport-team-inline">{team.logo && <img src={team.logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{team.name}</span></th>
           <td>{team.wins??"—"}</td><td>{team.losses??"—"}</td>
           <td>{team.win_pct==null?"—":(Number(team.win_pct)*100).toFixed(1)+"%"}</td>
           <td>{team.games_back??"—"}</td></tr>)}</tbody></table></div>:
