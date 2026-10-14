@@ -2,6 +2,7 @@ import { useState } from "preact/hooks";
 import { useApi } from "./api";
 import { SportsStandings } from "./sports-standings";
 import { RugbyCompetitions } from "./rugby-competitions";
+import { ReferenceSportPage } from "./reference-sports";
 import type { League, Team } from "./types";
 export const sports = [
   { slug: "nhl", name: "NHL · Hockey", emoji: "🏒" },
@@ -12,6 +13,7 @@ export const sports = [
   { slug: "nfl", name: "NFL", emoji: "🏈" },
   { slug: "rugby", name: "Rugby", emoji: "🏉" },
   { slug: "afl", name: "AFL · Fútbol australiano", emoji: "🏉" },
+  { slug: "cricket", name: "Cricket", emoji: "🏏" },
 ] as const;
 /** Consultas oficiales: no se conoce la señal del partido individual. */
 const officialStreaming: Record<string, { name: string; url: string; access: string }> = {
@@ -40,7 +42,7 @@ export function SportPage({ slug }: { slug: string }) {
   const {result, loading, error, retry} = useApi<{
     matches: OtherGame[]; dates_checked: string[]; snapshot_count: number;
     period: {from:string;to:string};
-  }>(sport ? `/api/sports/${sport.slug}/overview` : null, 120000);
+  }>(sport && !["f1", "nba", "cricket"].includes(slug) ? `/api/sports/${sport.slug}/overview` : null, 120000);
   const all = result?.data.matches || [];
   const dateOf = (game: OtherGame) =>
     typeof game.date === "string"
@@ -85,6 +87,7 @@ export function SportPage({ slug }: { slug: string }) {
     b[1].wins - a[1].wins || b[1].scored - a[1].scored || a[0].localeCompare(b[0])
   ).slice(0, 12);
   if (!sport) return <p>Deporte no disponible.</p>;
+  if (["f1", "nba", "cricket"].includes(slug)) return <ReferenceSportPage slug={slug} />;
   return <section class="sport-landing">
     <div class="view-heading"><div><span class="eyebrow">LATENTE · DEPORTES</span>
       <h1>{sport.emoji} {sport.name}</h1>
