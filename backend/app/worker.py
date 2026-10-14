@@ -116,6 +116,19 @@ def save_catalog(s, rows):
             # Las copas destacadas necesitan sus rondas completas para el
             # cuadro eliminatorio; el feed global por fecha no alcanza.
             # Solo una carga de fixtures por temporada (cacheada por cron).
+            if league["id"] == 253:
+                params = {"league": 253, "season": season["year"]}
+                for kind in ("standings", "teams", "scorers", "assists", "fixtures"):
+                    coverage = season.get("coverage") or {}
+                    if kind == "standings" and coverage.get("standings") is False:
+                        continue
+                    if kind == "scorers" and coverage.get("top_scorers") is False:
+                        continue
+                    if kind == "assists" and coverage.get("top_assists") is False:
+                        continue
+                    key = f"{kind}:253:{season['year']}"
+                    active_keys.add(key)
+                    ensure_job(s, key, kind, params, utcnow() + timedelta(seconds=matched))
             if league.get("type") == "Cup" and league["id"] in settings.league_ids:
                 cup_key = f"fixtures:{league['id']}:{season['year']}"
                 active_keys.add(cup_key)
@@ -629,6 +642,12 @@ def run(once=False, max_seconds=120):
                                               limit_batches=1)
                 # Releer catálogo una vez tras ampliar cobertura a India, Irán
                 # y Argelia; reutilizar la clave Pro y la cuota normal.
+                if not s.get(WorkerState, "mls_2026"):
+                    catalog = s.get(SyncJob, "catalog")
+                    if catalog:
+                        catalog.next_run = utcnow()
+                    s.add(WorkerState(source="mls_2026", heartbeat=utcnow(),
+                                      message="Prioridad MLS y líderes de asistencias"))
                 if settings.profile == "live" and not s.get(WorkerState, "intl2026"):
                     catalog = s.get(SyncJob, "catalog")
                     if catalog:
