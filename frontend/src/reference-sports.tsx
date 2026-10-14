@@ -44,15 +44,15 @@ export function ReferenceSportPage({slug}:{slug:string}) {
   const [f1Tab,setF1Tab]=useState<"drivers"|"constructors"|"results">("drivers");
   const [nbaSort,setNbaSort]=useState<"wins"|"pct">("wins");
   const isF1=slug==="f1", isNba=slug==="nba", isCricket=slug==="cricket";
-  const isUS=["nhl","mlb","nfl"].includes(slug);
+  const isUS=["nhl","mlb","nfl","wnba"].includes(slug);
   const query = isCricket ? `?competition=${competition}` : `?season=${season}`;
   const {result,loading,error,retry} = useApi<F1 | NBA | Cricket>(
     isF1||isNba||isCricket||isUS ? `/api/reference/${slug}${query}` : null, 3600000);
   const data=result?.data;
-  const heading=isF1?"Fórmula 1":isNba?"NBA":isCricket?"Cricket":({nhl:"NHL · Hockey",mlb:"MLB · Béisbol",nfl:"NFL"} as Record<string,string>)[slug]||"Deportes";
+  const heading=isF1?"Fórmula 1":isNba?"NBA":isCricket?"Cricket":({nhl:"NHL · Hockey",mlb:"MLB · Béisbol",nfl:"NFL",wnba:"WNBA"} as Record<string,string>)[slug]||"Deportes";
   return <section class="sport-landing">
     <div class="view-heading"><div><span class="eyebrow">LATENTE · DEPORTES</span>
-      <h1>{isF1?"🏎️":isNba?"🏀":isCricket?"🏏":slug==="nhl"?"🏒":slug==="mlb"?"⚾":"🏈"} {heading}</h1>
+      <h1>{isF1?"🏎️":isNba?"🏀":isCricket?"🏏":slug==="nhl"?"🏒":slug==="mlb"?"⚾":slug==="wnba"?"🏀":"🏈"} {heading}</h1>
       <p>{isF1?"Resultados por Gran Premio y tablas de pilotos y equipos":
         isNba?"Posiciones, conferencias y temporadas anteriores":
         isUS?"Clasificaciones de temporada, récords y archivo histórico":
