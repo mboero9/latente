@@ -1,0 +1,186 @@
+import { useState } from "preact/hooks";
+import { useApi } from "./api";
+
+type F1 = { available:boolean; message?:string; season:number; round?:string;
+  drivers:{rank:number;name:string;team:string;points:number;wins:number}[];
+  constructors:{rank:number;name:string;points:number;wins:number}[];
+  last_race?:{name:string;date:string;circuit:string;
+    podium:{position:number;name:string;team:string}[];
+    results:{position:number;driver:string;team:string;time?:string}[]};
+  updated_at?:string; stale?:boolean };
+type NBA = { available:boolean; message?:string; season:number; rows:{
+  id:string;name:string;group:string;wins:number|null;losses:number|null;
+  win_pct:number|null;rank:number|null;games_back:number|null}[];
+  note?:string;updated_at?:string;stale?:boolean };
+type Cricket = { available:boolean; message?:string;needs_key:boolean;
+  competition:string;provider:string;rows:{
+  id:string;name:string;group:string;wins:number|null;losses:number|null;
+  win_pct:number|null;rank:number|null;}[];
+  matches:{id:string;name:string;date:string;status:string;
+  teams:string[];score:{r?:number;w?:number;o?:number;inning?:string}[];
+  match_type?:string}[];updated_at?:string;stale?:boolean };
+type Historic = {rows:{team:string;team_id:number;pj:number;pg:number;pe:number;pp:number;
+  gf:number;gc:number;difference:number;points_3v:number;win_pct:number}[];
+  seasons:number[];matches:number;partial:boolean;note:string};
+
+const seasons = Array.from({length:12}, (_,i)=>new Date().getFullYear()-i);
+function Status({ stamp, stale }: {stamp?:string;stale?:boolean}) {
+  return <p class="updated">{stamp ? `Consulta: ${new Date(stamp).toLocaleString("es-AR")}` : "Datos pendientes"}
+    {stale && " · Se conserva la última actualización válida"}
+  </p>;
+}
+function Notice({children}:{children:preact.ComponentChildren}) {
+  return <p class="coverage-notice">{children}</p>;
+}
+function Source({href,children}:{href:string;children:preact.ComponentChildren}) {
+  return <a class="official-standings-link" href={href} target="_blank" rel="noopener noreferrer">{children} ↗</a>;
+}
+
+export function ReferenceSportPage({slug}:{slug:string}) {
+  const [season,setSeason]=useState(slug === "nba" ? new Date().getFullYear()-1 : new Date().getFullYear());
+  const [competition,setCompetition]=useState("ipl");
+  const [f1Tab,setF1Tab]=useState<"drivers"|"constructors"|"results">("drivers");
+  const [nbaSort,setNbaSort]=useState<"wins"|"pct">("wins");
+  const isF1=slug==="f1", isNba=slug==="nba", isCricket=slug==="cricket";
+  const query = isCricket ? `?competition=${competition}` : `?season=${season}`;
+  const {result,loading,error,retry} = useApi<F1 | NBA | Cricket>(
+    isF1||isNba||isCricket ? `/api/reference/${slug}${query}` : null, 3600000);
+  const data=result?.data;
+  const heading=isF1?"Fórmula 1":isNba?"NBA":"Cricket";
+  return <section class="sport-landing">
+    <div class="view-heading"><div><span class="eyebrow">LATENTE · DEPORTES</span>
+      <h1>{isF1?"🏎️":isNba?"🏀":"🏏"} {heading}</h1>
+      <p>{isF1?"Resultados por Gran Premio y tablas de pilotos y equipos":
+        isNba?"Posiciones, conferencias y temporadas anteriores":
+        "Cricket internacional, IPL, ICC y resultados verificados"}</p>
+    </div></div>
+    {isCricket ? <label class="season-label">Competición
+      <select value={competition} onChange={e=>setCompetition(e.currentTarget.value)}>
+        <option value="ipl">Indian Premier League (IPL)</option>
+        <option value="icc.t20">ICC T20</option>
+        <option value="icc.world-cup">Copa Mundial ICC</option>
+      </select></label>
+    : <label class="season-label">Temporada
+      <select value={season} onChange={e=>setSeason(Number(e.currentTarget.value))}>
+        {isF1 ? Array.from({length:8},(_,i)=>new Date().getFullYear()-i)
+          .map(year=><option value={year} key={year}>{year}</option>) :
+          seasons.map(year=><option value={year} key={year}>{year}–{String(year+1).slice(-2)}</option>)}
+      </select></label>}
+    {loading ? <p>Cargando tablas y estadísticas…</p> : error ?
+      <Notice>La API no responde: {error} <button onClick={retry}>Reintentar</button></Notice> :
+      !data?.available ? <Notice>{data?.message || "No hay posiciones verificadas disponibles para esta selección."}</Notice> : null}
+    {isF1 && data?.available && <F1Content data={data as F1} tab={f1Tab} setTab={setF1Tab}/>}
+    {isNba && data?.available && <NBAContent data={data as NBA} sort={nbaSort} setSort={setNbaSort}/>}
+    {isNba && <div class="panel sport-intro"><h2>Archivo NBA</h2>
+      <p>Seleccioná una temporada anterior para comparar posiciones, victorias y porcentaje de triunfos.
+        Las tablas corresponden a la temporada regular; no son una suma histórica de todas las décadas.</p>
+      <Source href="https://www.nba.com/standings">Posiciones oficiales NBA</Source>
+      <Source href="https://www.nba.com/history">Archivo oficial NBA</Source>
+    </div>}
+    {isCricket && <CricketContent data={data as Cricket | undefined}/>}
+    {!isCricket && data?.available && <Status stamp={data.updated_at} stale={data.stale}/>}
+  </section>;
+}
+
+function F1Content({data,tab,setTab}:{data:F1;tab:"drivers"|"constructors"|"results";setTab:(value:"drivers"|"constructors"|"results")=>void}) {
+  return <>
+    {data.last_race && <article class="panel sport-intro">
+      <span class="eyebrow">ÚLTIMO GRAN PREMIO FINALIZADO</span>
+      <h2>{data.last_race.name} · {data.last_race.date}</h2>
+      <p>{data.last_race.circuit}</p>
+      <div class="sports-clubs">{data.last_race.podium.map(p=><span class="sports-club" key={p.position}>
+        {p.position===1?"🏆 ":""}{p.position}º {p.name} · {p.team}</span>)}</div>
+    </article>}
+    <div class="sports-tabs" role="group" aria-label="Clasificación F1">
+      <button class={tab==="drivers"?"active":""} onClick={()=>setTab("drivers")}>Pilotos</button>
+      <button class={tab==="constructors"?"active":""} onClick={()=>setTab("constructors")}>Constructores</button>
+      <button class={tab==="results"?"active":""} onClick={()=>setTab("results")}>Última carrera</button>
+    </div>
+    <h2 class="sport-section-title">{tab==="drivers"?"Campeonato de pilotos":tab==="constructors"?"Copa de constructores":"Resultado del último GP"} · {data.season}</h2>
+    <div class="panel table-scroll"><table>
+      <thead><tr><th>#</th><th>{tab==="constructors"?"Escudería":"Piloto"}</th><th>{tab==="drivers"?"Escudería":tab==="results"?"Escudería":"Victorias"}</th><th>{tab==="results"?"Tiempo/Estado":"Puntos"}</th>{tab==="drivers"&&<th>Victorias</th>}</tr></thead>
+      <tbody>
+        {tab==="drivers"&&data.drivers.map(d=><tr key={d.rank}><td>{d.rank}</td><th scope="row">{d.name}</th><td>{d.team}</td><td>{d.points}</td><td>{d.wins}</td></tr>)}
+        {tab==="constructors"&&data.constructors.map(t=><tr key={t.rank}><td>{t.rank}</td><th scope="row">{t.name}</th><td>{t.wins}</td><td>{t.points}</td></tr>)}
+        {tab==="results"&&data.last_race?.results.map(d=><tr key={d.position}><td>{d.position}</td><th scope="row">{d.driver}</th><td>{d.team}</td><td>{d.time||"—"}</td></tr>)}
+      </tbody>
+    </table></div>
+    <Notice>Campeonato en curso: el líder de puntos no es necesariamente el campeón mundial. Fuente Jolpica/Ergast, actualizada periódicamente.</Notice>
+    <Source href="https://www.formula1.com/en/results.html">Resultados oficiales F1</Source>
+  </>;
+}
+
+function NBAContent({data,sort,setSort}:{data:NBA;sort:"wins"|"pct";setSort:(sort:"wins"|"pct")=>void}) {
+  const groups = ["Eastern Conference","Western Conference"];
+  const grouped = data.rows.filter(row=>row.name);
+  const rank=(rows:NBA["rows"])=>[...rows].sort((a,b)=>(sort==="wins"?
+    Number(b.wins??-1)-Number(a.wins??-1):Number(b.win_pct??-1)-Number(a.win_pct??-1))||a.name.localeCompare(b.name));
+  const groupsFound=[...new Set(grouped.map(row=>row.group||"NBA"))];
+  const display=groupsFound.length>1?groupsFound:groups;
+  return <>
+    <div class="sports-tabs" role="group"><button class={sort==="wins"?"active":""} onClick={()=>setSort("wins")}>Por victorias</button>
+      <button class={sort==="pct"?"active":""} onClick={()=>setSort("pct")}>Por porcentaje</button></div>
+    {((groupsFound.length>1?display:["NBA"]).map(group=>{
+      const rows=group==="NBA"?grouped:grouped.filter(row=>row.group===group);
+      return <div key={group}><h2 class="sport-section-title">{group}</h2>
+        {rows.length?<div class="panel table-scroll"><table><thead><tr><th>#</th><th>Equipo</th><th>G</th><th>P</th><th>%V</th><th>Dif.</th></tr></thead>
+        <tbody>{rank(rows).map((team,i)=><tr key={team.id||team.name}><td>{i+1}</td><th scope="row">{team.name}</th>
+          <td>{team.wins??"—"}</td><td>{team.losses??"—"}</td>
+          <td>{team.win_pct==null?"—":(Number(team.win_pct)*100).toFixed(1)+"%"}</td>
+          <td>{team.games_back??"—"}</td></tr>)}</tbody></table></div>:
+          <Notice>No hay registros de esta conferencia en esta temporada.</Notice>}
+      </div>;
+    }))}
+    <Notice>{data.note} Los datos dependen de la cobertura histórica de ESPN; si falta una temporada, no se reconstruye con estimaciones.</Notice>
+  </>;
+}
+function CricketContent({data}:{data?:Cricket}) {
+  return <>
+    <h2 class="sport-section-title">Tabla de posiciones / equipos</h2>
+    {data?.rows?.length ? <div class="panel table-scroll"><table>
+      <thead><tr><th>#</th><th>Equipo</th><th>Grupo</th><th>G</th><th>P</th><th>%V</th></tr></thead><tbody>
+      {data.rows.map((team,i)=><tr key={team.id||i}><td>{team.rank??i+1}</td><th scope="row">{team.name}</th>
+        <td>{team.group}</td><td>{team.wins??"—"}</td><td>{team.losses??"—"}</td>
+        <td>{team.win_pct??"—"}</td></tr>)}</tbody></table></div> :
+      <Notice>El proveedor todavía no entregó una clasificación fiable para esta competición. No se asignan posiciones ficticias.</Notice>}
+    <h2 class="sport-section-title">Resultados y estadísticas</h2>
+    {data?.matches?.length ? <div class="sports-games">{data.matches.map(m=><article class="panel sport-game" key={m.id}>
+      <strong>{m.name}</strong><small>{m.date} · {m.match_type?.toUpperCase()} · {m.status}</small>
+      {(m.score||[]).map((s,i)=><p key={i}>{s.inning}: {s.r??"—"}/{s.w??"—"} ({s.o??"—"} overs)</p>)}
+    </article>)}</div> : <Notice>Los marcadores de cricket requieren una clave activa de CricketData. Una vez configurada, se consultarán con caché del servidor.</Notice>}
+    <div class="panel sport-intro"><h2>Selecciones y torneos internacionales</h2>
+      <p>India, Australia, Inglaterra, Sudáfrica, Nueva Zelanda, Pakistán, Sri Lanka, Bangladesh, Afganistán y West Indies.
+      Consultá los rankings separados para Test, ODI y T20: no existe una única tabla comparable de todas las modalidades.</p>
+      <Source href="https://www.icc-cricket.com/rankings">Ranking mundial ICC</Source>
+      <Source href="https://www.iplt20.com/points-table">Tabla oficial IPL</Source>
+    </div>
+    {data?.available && <Status stamp={data.updated_at} stale={data.stale}/>}
+  </>;
+}
+
+export function ArgentinaAlltime() {
+  const {result,loading,error}=useApi<Historic>("/api/leagues/128/alltime",300000);
+  const [sort,setSort]=useState<"points_3v"|"pj"|"pg"|"win_pct">("points_3v");
+  const data=result?.data;
+  const rows=[...(data?.rows||[])].sort((a,b)=>b[sort]-a[sort]||b.points_3v-a.points_3v);
+  return <section class="history-section">
+    <div class="view-heading"><div><span class="eyebrow">PRIMERA DIVISIÓN ARGENTINA</span>
+      <h1>Tabla histórica</h1><p>Todos los partidos finalizados disponibles en el archivo local de Latente.</p></div></div>
+    {loading?<p>Cargando archivo…</p>:error?<Notice>{error}</Notice>:<>
+      <Notice>{data?.note}</Notice>
+      <p class="updated">Temporadas cargadas: {data?.seasons.join(", ")||"ninguna"} · Partidos: {data?.matches||0}</p>
+      <div class="sports-tabs"><button class={sort==="points_3v"?"active":""} onClick={()=>setSort("points_3v")}>Puntos</button>
+        <button class={sort==="pj"?"active":""} onClick={()=>setSort("pj")}>Partidos</button>
+        <button class={sort==="pg"?"active":""} onClick={()=>setSort("pg")}>Victorias</button>
+        <button class={sort==="win_pct"?"active":""} onClick={()=>setSort("win_pct")}>% victorias</button></div>
+      <div class="panel table-scroll"><table><thead><tr><th>#</th><th>Equipo</th><th>Pts3V</th>
+        <th>PJ</th><th>PG</th><th>PE</th><th>PP</th><th>GF</th><th>GC</th><th>DG</th><th>%PG</th></tr></thead>
+        <tbody>{rows.map((r,i)=><tr key={r.team_id}><td>{i+1}</td><th scope="row">{r.team}</th>
+          <td>{r.points_3v}</td><td>{r.pj}</td><td>{r.pg}</td><td>{r.pe}</td><td>{r.pp}</td>
+          <td>{r.gf}</td><td>{r.gc}</td><td>{r.difference}</td><td>{r.win_pct}%</td></tr>)}</tbody></table></div>
+      <p>Para la tabla histórica completa de Primera División, que incluye las épocas anteriores a los datos importados,
+        consultá el archivo externo. No se deben comparar esos totales con esta tabla parcial.</p>
+      <Source href="https://www.promiedos.com.ar/tablahistorica">Tabla histórica completa de referencia</Source>
+    </>}
+  </section>;
+}
