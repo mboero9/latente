@@ -18,6 +18,7 @@ import { MatchExtras } from "./match-extras";
 import { LeagueRecent } from "./league-recent";
 import { WatchView } from "./watch-options";
 import { PromediosPage } from "./argentina-promedios";
+import { ArgentinaAlltime } from "./reference-sports";
 import { FootballAnalytics } from "./football-analytics";
 import { sports, SportPage, HistoryPage } from "./other-sports";
 
@@ -265,7 +266,7 @@ function LeagueTabs({ league, view }: { league: League; view: string }) {
         ["teams", "Equipos"],
         ["history", "Históricos"],
         ["analytics", "Estadísticas"],
-        ...(league.id === 128 ? [["promedios", "Promedios"]] : []),
+        ...(league.id === 128 ? [["promedios", "Promedios"], ["alltime", "Tabla histórica"]] : []),
       ].map(([key, label]) => (
         <a
           class={view === key ? "active" : ""}
@@ -1199,7 +1200,7 @@ function App() {
     id = Number(rawId),
     league = leagues.find((l) => l.id === id),
     first = leagues[0]?.id || 128;
-  const isLeagueView = ["league", "table", "scorers", "teams", "history", "promedios", "analytics"].includes(view);
+  const isLeagueView = ["league", "table", "scorers", "teams", "history", "promedios", "alltime", "analytics"].includes(view);
   useEffect(() => {
     document.title = `${league?.name || ({ leagues: "Ligas y copas", team: "Equipo", match: "Partido", watch: "Dónde ver el partido" } as Record<string, string>)[view] || "Resultados"} · Latente`;
   }, [route, league?.name]);
@@ -1419,6 +1420,8 @@ function App() {
                   <HistoryPage league={league} />
                 ) : view === "promedios" && league.id === 128 ? (
                   <PromediosPage league={league} />
+                ) : view === "alltime" && league.id === 128 ? (
+                  <ArgentinaAlltime />
                 ) : view === "scorers" ? (
                   <ScorersView league={league} />
                 ) : (
