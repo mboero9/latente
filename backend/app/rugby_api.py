@@ -128,6 +128,7 @@ def normalize_games(rows):
         result.append({
             "id": str(g["id"]), "date": str(date_value),
             "home": str(h["name"]), "away": str(a["name"]),
+            "home_logo": h.get("logo"), "away_logo": a.get("logo"),
             "home_score": score("home"), "away_score": score("away"),
             "status": label, "completed": completed,
         })
@@ -153,7 +154,7 @@ def normalize_standings(rows):
                     grouping = group_obj.get("name") if isinstance(group_obj, dict) else group_obj
                     parsed.append({
                         "team": str(team["name"]),
-                        "team_id": team.get("id"),
+                        "team_id": team.get("id"), "logo": team.get("logo"),
                         "rank": _num(item.get("position", item.get("rank"))),
                         "group": str(grouping or group or "General"),
                         "played": _num(record.get("played", item.get("played"))),
