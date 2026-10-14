@@ -2207,3 +2207,26 @@
   .league-recent-game .league-recent-team:nth-child(4) { text-align: right; }
   @media (max-width: 720px) { .league-recent-game { grid-template-columns: 38px minmax(65px,1fr) 48px minmax(65px,1fr); gap: 4px; }.league-recent-detail { display:none; } .league-recent-section { padding: 12px; } }
 }
+
+@layer components {
+  .cup-bracket { min-width: 0; display: grid; gap: 16px; }
+  .knockout-scroll { overflow-x: auto; max-width: 100%; padding: 10px 2px 20px; }
+  .knockout-columns { display: flex; gap: 20px; align-items: flex-start; width: max-content; }
+  .knockout-round { flex: 0 0 250px; width: 250px; display: grid; align-content: start; gap: 12px; }
+  .knockout-round h2 { font-size: 1rem; margin: 0; color: var(--ink); }
+  .knockout-match { position: relative; display: grid; gap: 5px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px; color: var(--ink); }
+  .knockout-match:hover { border-color: var(--green); }
+  .knockout-team { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; font-size: .84rem; }
+  .knockout-team span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .knockout-match small { font-size: .70rem; color: var(--muted); }
+  .knockout-advance { color: var(--green); font-size: .74rem; font-weight: 750; }
+  .watch-guide { display: grid; gap: 14px; padding: clamp(16px, 3vw, 24px); margin: 16px 0; }
+  .watch-guide h2 { font-size: 1.12rem; }
+  .watch-selectors { display: flex; gap: 12px; flex-wrap: wrap; }
+  .watch-selectors label { display: grid; gap: 6px; min-width: 180px; flex: 1; font-weight: 700; font-size: .8rem; }
+  .watch-selectors select { width: 100%; padding: 10px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; }
+  .watch-links { display: grid; gap: 10px; }
+  .watch-links a { display: grid; gap: 5px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+  .watch-links a:hover { border-color: var(--green); }
+  .watch-links small { font-size: .77rem; color: var(--muted); line-height: 1.5; }
+}
