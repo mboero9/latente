@@ -115,7 +115,7 @@ export function SportPage({ slug }: { slug: string }) {
       {ranking.length ? <div class="panel sport-record-table" role="table" aria-label="Victorias en la ventana disponible">
         <div class="sport-record-row sport-record-heading" role="row"><span>Equipo</span><span>PJ</span><span>G</span><span>A favor</span></div>
         {ranking.map(([name, data]) => <div class="sport-record-row" role="row" key={name}>
-          <strong>{name}</strong><span>{data.played}</span><span>{data.wins}</span><span>{data.scored}</span>
+          <strong class="sport-team-inline">{clubs.get(name) && <img src={clubs.get(name)!} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{name}</strong><span>{data.played}</span><span>{data.wins}</span><span>{data.scored}</span>
         </div>)}
       </div> : <p class="match-details-unavailable">No hay suficientes resultados finales en la ventana para calcular estadísticas fiables.</p>}
       </>
