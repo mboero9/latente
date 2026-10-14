@@ -2458,3 +2458,37 @@
     color: #53cfff;
   }
 }
+
+/* Marca definitiva: recuperar Inter original, LATE celeste,
+   NTE blanco y extensión .CFD celeste. Evitar cascadas anteriores. */
+@layer components {
+  .header .brand .brand-wordmark {
+    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-style: normal;
+    font-weight: 850;
+    font-size: 1.77rem;
+    letter-spacing: -1.5px;
+    font-synthesis: none;
+  }
+  .header .brand .brand-late { color: #53cfff; }
+  .header .brand .brand-nte,
+  :root[data-theme="dark"] .header .brand .brand-nte { color: #fff; }
+  .header .brand .brand-dot {
+    color: #53cfff;
+    font-size: .68em;
+    font-weight: 850;
+    margin-left: 2px;
+    letter-spacing: -.025em;
+  }
+  /* El menú de deportes permanece desplazable, sin barra visible. */
+  .header .top-nav {
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .header .top-nav::-webkit-scrollbar { display: none; }
+  @media (max-width: 650px) {
+    .header .brand .brand-wordmark { font-size: 1.36rem; }
+  }
+}
