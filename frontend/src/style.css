@@ -2559,3 +2559,22 @@
   .odds-percent strong { font-size:.84rem; min-width:47px; text-align:right; }
   @media(max-width:580px) { .odds-choices { grid-template-columns:1fr; } }
 }
+
+
+/* Historical trophies: scrollable audited rankings and compact club marks. */
+@layer components {
+  .historical-honours-section { display:grid; gap:14px; scroll-margin-top:90px; }
+  .historical-honours-section .view-heading { margin-bottom:0; }
+  .historical-honours-section h2 { font-size:clamp(1.12rem,2.6vw,1.65rem);line-height:1.25; }
+  .historical-honours-section .table-scroll { overflow:auto; }
+  .historical-honours-section table { min-width:650px; font-variant-numeric:tabular-nums; }
+  .historical-honours-section td, .historical-honours-section th { padding:10px 12px; }
+  .historical-honours-section td:not(:nth-child(2)), .historical-honours-section thead th:not(:nth-child(2)) { text-align:center; }
+  .historical-honours-section th[scope="row"] { min-width:195px; }
+  .historic-club-name { display:inline-flex; align-items:center; gap:9px; text-align:left; font-weight:700; }
+  .historic-club-name > img { width:29px;height:29px;object-fit:contain;flex:0 0 auto; }
+  .historic-club-name > span[aria-hidden="true"] { font-size:1.4rem;min-width:29px; }
+  .historic-club-name small { display:block; color:var(--muted);font-size:.7rem;font-weight:500; }
+  .historical-filter-tabs { flex-wrap:wrap; }
+  .historical-honours-section .updated a { color:var(--green);text-decoration:underline; }
+}
