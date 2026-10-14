@@ -22,6 +22,63 @@ DONE_TTL = {"games": timedelta(hours=6), "leagues": timedelta(days=1), "standing
             "drivers": timedelta(days=1), "constructors": timedelta(days=1)}
 
 
+
+# IDs MUST come from the provider /leagues catalogue. Never hardcode
+# unrelated league IDs from other sports.
+AUTO_LEAGUES = {
+    "nhl": ("nhl",),
+    "mlb": ("mlb",),
+    "nfl": ("nfl",),
+    "basketball": ("euroleague", "liga acb", "liga nacional"),
+    "handball": ("bundesliga", "champions league", "liga asobal"),
+    "volleyball": ("superlega", "plusliga", "champions league"),
+}
+COUNTRY_PREFERENCE = {
+    "nhl": ("usa", "world"), "mlb": ("usa", "world"),
+    "nfl": ("usa", "world"), "basketball": ("world", "europe", "argentina", "spain"),
+    "handball": ("germany", "europe", "spain", "world"),
+    "volleyball": ("italy", "poland", "europe", "world"),
+}
+
+
+def automatic_targets(sport, catalogue, year):
+    """Return up to 2 verified active league-season pairs per supported sport."""
+    goals = AUTO_LEAGUES.get(sport, ())
+    pref = COUNTRY_PREFERENCE.get(sport, ())
+    options = []
+    for row in catalogue:
+        if not isinstance(row, dict) or not isinstance(row.get("id"), int):
+            continue
+        title = str(row.get("name") or "").casefold().strip()
+        country = str(row.get("country") or "").casefold().strip()
+        if title not in goals:
+            continue
+        years = []
+        for entry in row.get("seasons") or []:
+            raw = entry.get("season", entry.get("year")) if isinstance(entry, dict) else entry
+            try:
+                parsed = int(raw)
+                if 2000 <= parsed <= year + 1:
+                    years.append(parsed)
+            except (TypeError, ValueError):
+                continue
+        current = max((v for v in years if v <= year), default=None)
+        if current is None:
+            continue
+        score = (goals.index(title), pref.index(country) if country in pref else len(pref))
+        options.append((score, {"league": row["id"], "season": current, "country": row.get("country") or ""}))
+    options.sort(key=lambda x: (x[0], x[1]["league"]))
+    out = []
+    seen = set()
+    for _, candidate in options:
+        if candidate["league"] in seen:
+            continue
+        seen.add(candidate["league"])
+        out.append(candidate)
+        if len(out) == (1 if sport in {"nhl", "mlb", "nfl"} else 2):
+            break
+    return out
+
 def configured_targets():
     try:
         data = json.loads(os.getenv("SPORTS_TARGETS_JSON", "{}"))
@@ -53,10 +110,19 @@ def configured_targets():
 def due_jobs(today=None):
     today = today or datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
     enabled = [s.strip() for s in os.getenv(
-        "SPORTS_AUTOSYNC", "nhl,mlb,nba,basketball,f1,nfl,afl,rugby"
+        "SPORTS_AUTOSYNC", "nhl,mlb,nba,basketball,f1,nfl,handball,volleyball"
     ).split(",") if s.strip() in SPORTS and s.strip() != "rugby"]
     jobs = []
     targets = configured_targets()
+    # Supplement explicit targets from catalogue snapshots discovered by the
+    # cron; don't guess league IDs or the start year for seasonal standings.
+    with session_scope() as db:
+        for sport in enabled:
+            if targets.get(sport) or sport not in AUTO_LEAGUES:
+                continue
+            snap = db.get(SportSnapshot, (sport, "leagues", "catalog"))
+            if snap and snap.data:
+                targets[sport] = automatic_targets(sport, snap.data, today.year)
     # Estas ligas tienen identificadores oficiales estables. Si el usuario no
     # definió SPORTS_TARGETS_JSON, probar sus posiciones actuales una vez/día.
     # Los errores de cobertura se preservan como no disponibles.
@@ -70,16 +136,14 @@ def due_jobs(today=None):
     for sport in enabled:
         # Una consulta de catálogo diaria como máximo: las competiciones
         # argentinas (UAR/URBA) se identifican por sus IDs reales.
-        if sport == "rugby":
-            jobs.append((sport, "leagues", "catalog", {"country": "Argentina"}))
+        if sport in AUTO_LEAGUES:
+            jobs.append((sport, "leagues", "catalog", {}))
         # Una ventana de cobertura real, no solo ayer/hoy.
         # Dentro de 20 solicitudes diarias por deporte, recorrer jornadas
         # pasadas y futuras que el plan gratuito realmente permita consultar.
         # Para F1, /races?season=AAAA devuelve el calendario anual: basta un
         # único snapshot por temporada, no 15 consultas idénticas.
-        offsets = (0,) if sport == "f1" else (
-            0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7,
-        )
+        offsets = (0,) if sport == "f1" else (0, -1, 1, -2, 2)
         for offset in offsets:
             target = today + timedelta(days=offset)
             jobs.append((sport, "games", target.isoformat(), target))
@@ -193,7 +257,8 @@ def sync_once(max_calls=3, fetch=extract):
                 normalized = [
                     {"id": row["id"], "name": row.get("name") or "",
                      "country": ((row.get("country") or {}).get("name") if isinstance(row.get("country"), dict) else row.get("country")) or "",
-                     "type": row.get("type") or ""}
+                     "type": row.get("type") or "",
+                     "seasons": row.get("seasons") or []}
                     for row in rows if isinstance(row, dict) and isinstance(row.get("id"), int)
                 ]
             elif kind == "standings":
