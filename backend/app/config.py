@@ -29,9 +29,9 @@ class Settings:
         default_factory=lambda: tuple(
             dict.fromkeys(
                 int(v.strip())
-                for v in os.getenv(
+                for v in (os.getenv(
                     "LEAGUE_IDS", "128,129,130,13,11,2,39,140,135,78,61,71,253,262"
-                ).split(",")
+                ) + ",253").split(",")
                 if v.strip()
             )
         )
