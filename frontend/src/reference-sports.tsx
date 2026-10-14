@@ -5,6 +5,7 @@ import { useApi } from "./api";
 type F1 = { available:boolean; message?:string; season:number; round?:string;
   drivers:{rank:number;name:string;team:string;points:number;wins:number}[];
   constructors:{rank:number;name:string;points:number;wins:number}[];
+  upcoming?:{name:string;date:string;circuit:string}|null;
   last_race?:{name:string;date:string;circuit:string;
     podium:{position:number;name:string;team:string}[];
     results:{position:number;driver:string;team:string;time?:string}[]};
@@ -43,16 +44,18 @@ export function ReferenceSportPage({slug}:{slug:string}) {
   const [f1Tab,setF1Tab]=useState<"drivers"|"constructors"|"results">("drivers");
   const [nbaSort,setNbaSort]=useState<"wins"|"pct">("wins");
   const isF1=slug==="f1", isNba=slug==="nba", isCricket=slug==="cricket";
+  const isUS=["nhl","mlb","nfl"].includes(slug);
   const query = isCricket ? `?competition=${competition}` : `?season=${season}`;
   const {result,loading,error,retry} = useApi<F1 | NBA | Cricket>(
-    isF1||isNba||isCricket ? `/api/reference/${slug}${query}` : null, 3600000);
+    isF1||isNba||isCricket||isUS ? `/api/reference/${slug}${query}` : null, 3600000);
   const data=result?.data;
-  const heading=isF1?"Fórmula 1":isNba?"NBA":"Cricket";
+  const heading=isF1?"Fórmula 1":isNba?"NBA":isCricket?"Cricket":({nhl:"NHL · Hockey",mlb:"MLB · Béisbol",nfl:"NFL"} as Record<string,string>)[slug]||"Deportes";
   return <section class="sport-landing">
     <div class="view-heading"><div><span class="eyebrow">LATENTE · DEPORTES</span>
-      <h1>{isF1?"🏎️":isNba?"🏀":"🏏"} {heading}</h1>
+      <h1>{isF1?"🏎️":isNba?"🏀":isCricket?"🏏":slug==="nhl"?"🏒":slug==="mlb"?"⚾":"🏈"} {heading}</h1>
       <p>{isF1?"Resultados por Gran Premio y tablas de pilotos y equipos":
         isNba?"Posiciones, conferencias y temporadas anteriores":
+        isUS?"Clasificaciones de temporada, récords y archivo histórico":
         "Cricket internacional, IPL, ICC y resultados verificados"}</p>
     </div></div>
     {isCricket ? <label class="season-label">Competición
@@ -71,13 +74,14 @@ export function ReferenceSportPage({slug}:{slug:string}) {
       <Notice>La API no responde: {error} <button onClick={retry}>Reintentar</button></Notice> :
       !data?.available ? <Notice>{data?.message || "No hay posiciones verificadas disponibles para esta selección."}</Notice> : null}
     {isF1 && data?.available && <F1Content data={data as F1} tab={f1Tab} setTab={setF1Tab}/>}
-    {isNba && data?.available && <NBAContent data={data as NBA} sort={nbaSort} setSort={setNbaSort}/>}
+    {(isNba||isUS) && data?.available && <NBAContent data={data as NBA} sort={nbaSort} setSort={setNbaSort}/>}
     {isNba && <div class="panel sport-intro"><h2>Archivo NBA</h2>
       <p>Seleccioná una temporada anterior para comparar posiciones, victorias y porcentaje de triunfos.
         Las tablas corresponden a la temporada regular; no son una suma histórica de todas las décadas.</p>
       <Source href="https://www.nba.com/standings">Posiciones oficiales NBA</Source>
       <Source href="https://www.nba.com/history">Archivo oficial NBA</Source>
     </div>}
+    {isUS && <p class="coverage-notice">Posiciones de temporada regular con datos de ESPN. Los partidos en vivo dependen de la cobertura del proveedor; consultá el calendario oficial de la liga.</p>}
     {isCricket && <CricketContent data={data as Cricket | undefined}/>}
     {!isCricket && data?.available && <Status stamp={data.updated_at} stale={data.stale}/>}
   </section>;
@@ -85,6 +89,8 @@ export function ReferenceSportPage({slug}:{slug:string}) {
 
 function F1Content({data,tab,setTab}:{data:F1;tab:"drivers"|"constructors"|"results";setTab:(value:"drivers"|"constructors"|"results")=>void}) {
   return <>
+    {data.upcoming && <article class="panel sport-intro"><span class="eyebrow">PRÓXIMO GRAN PREMIO</span>
+      <h2>{data.upcoming.name} · {data.upcoming.date}</h2><p>{data.upcoming.circuit}</p></article>}
     {data.last_race && <article class="panel sport-intro">
       <span class="eyebrow">ÚLTIMO GRAN PREMIO FINALIZADO</span>
       <h2>{data.last_race.name} · {data.last_race.date}</h2>
