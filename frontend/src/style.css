@@ -2503,3 +2503,9 @@
  .world-scorers-page { display:grid; gap:17px; }
  .world-scorers-page td,.world-scorers-page th { padding: 12px 10px; }
 }
+
+@layer components {
+ .world-scorer-shield { position:relative; overflow:hidden; flex-shrink:0; }
+ .world-scorer-shield img { width:100%;height:100%;object-fit:contain;padding:3px;position:absolute;inset:0;background:var(--surface);z-index:1; }
+ .world-scorer-shield .badge-fallback {display:inline-flex;align-items:center;justify-content:center;}
+}
