@@ -141,6 +141,7 @@ def _nba_rows(node, label="NBA"):
                 "group": group, "wins": stat("wins", "win"), "losses": stat("losses", "loss"),
                 "win_pct": stat("winPercent", "winPercentage"),
                 "rank": stat("playoffSeed", "rank"), "games_back": stat("gamesBehind", "gamesBack"),
+                "points": stat("points", "point"), "ot_losses": stat("otLosses", "overtimeLosses"),
             })
     for child in node.get("children") or []:
         rows.extend(_nba_rows(child, group))
