@@ -1,0 +1,9 @@
+# Latente permite indexar las páginas públicas para aparecer en buscadores.
+# Esto expresa preferencias de rastreo, NO es un control de seguridad.
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /api/docs
+Disallow: /api/openapi.json
+
+Sitemap: https://latente.cfd/sitemap.xml
