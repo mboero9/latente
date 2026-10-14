@@ -328,6 +328,37 @@ def fixture(fixture_id: int):
         return {"data": match_payload(s, [row])[0], "meta": meta([row])}
 
 
+@app.get("/api/odds/live")
+def live_odds_summary():
+    """Fresh saved odds for live matches; do not invent named bookmakers."""
+    with session_scope() as db:
+        rows = db.execute(
+            select(FixtureOdds, Fixture)
+            .join(Fixture, (Fixture.source == FixtureOdds.source) & (Fixture.id == FixtureOdds.fixture_id))
+            .where(Fixture.source == settings.mode, Fixture.status.in_(LIVE), FixtureOdds.market == "live")
+            .order_by(FixtureOdds.updated_at.desc())
+            .limit(120)
+        ).all()
+        now = utcnow()
+        items = []
+        for odd, match in rows:
+            if not settings.accepts_league(match.league_id):
+                continue
+            if (now - aware(odd.updated_at)).total_seconds() > 900:
+                continue
+            quote = next((q for q in (odd.quotations or [])
+                if q.get("source") == "live" and set((q.get("prices") or {})) == {"home", "draw", "away"}), None)
+            if quote is None:
+                continue
+            items.append({
+                "fixture_id": match.id, "prices": quote["prices"], "implied": quote["implied"],
+                "captured_at": quote.get("captured_at"),
+                "updated_at": aware(odd.updated_at).isoformat(),
+                "source": "API-Football en vivo (casa no identificada)",
+            })
+        return {"data": items, "meta": meta([], total=len(items))}
+
+
 @app.get("/api/fixtures/{fixture_id}/odds")
 def fixture_odds(fixture_id: int):
     """Comparación de cuotas reales, solo snapshots del cron, sin calls públicas."""
