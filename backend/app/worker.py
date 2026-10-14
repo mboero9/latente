@@ -126,7 +126,7 @@ def save_catalog(s, rows):
 
     if not matched:
         raise ValueError("El catálogo no contiene las ligas configuradas")
-    s.execute(delete(SyncJob).where(SyncJob.key.not_in(active_keys), SyncJob.kind.not_in(("statistics", "details"))))
+    s.execute(delete(SyncJob).where(SyncJob.key.not_in(active_keys), SyncJob.kind.not_in(("statistics", "details", "hydrate"))))
 
 
 
