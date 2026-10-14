@@ -31,6 +31,7 @@ export function CupBracket({ league }: { league: League }) {
               <div class="knockout-team"><span>{match.home.name}</span><b>{match.home_goals ?? "—"}</b></div>
               <div class="knockout-team"><span>{match.away.name}</span><b>{match.away_goals ?? "—"}</b></div>
               <small>{match.status === "NS" ? "Por disputar" : match.status} · {new Date(match.kickoff).toLocaleDateString("es-AR")}</small>
+              {(match as Match & {next_match_id?:number}).next_match_id && <span class="knockout-advance">↳ Avanza al partido #{(match as Match & {next_match_id?:number}).next_match_id}</span>}
             </a>)}
           </div>)}
         </div>
