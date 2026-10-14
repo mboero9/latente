@@ -93,7 +93,7 @@ def rugby_feed(league="urba", season=None):
     def produce():
         params = {"dates": f"{year}0101-{year}1231", "limit": 500}
         raw = _get(f"{ESPN_SITE}/rugby/{league_id}/scoreboard", params)
-        games = normalize_games(raw, name)
+        games = [m for m in normalize_games(raw, name) if (m.get("date") or "").startswith(str(year))]
         official = []
         try:
             standings = _get(f"{ESPN_TABLES}/rugby/{league_id}/standings", {"season": year})
