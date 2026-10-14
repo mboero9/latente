@@ -15,6 +15,7 @@ import type {
 import "./style.css";
 import { observeLanguage } from "./i18n";
 import { MatchExtras } from "./match-extras";
+import { CupBracket } from "./cup-bracket";
 import { LeagueRecent } from "./league-recent";
 import { WatchView } from "./watch-options";
 import { PromediosPage } from "./argentina-promedios";
@@ -265,6 +266,7 @@ function LeagueTabs({ league, view }: { league: League; view: string }) {
         ["table", "Posiciones"],
         ["scorers", "Goleadores"],
         ["teams", "Equipos"],
+        ...(league.kind?.toLowerCase() !== "league" ? [["bracket", "Cuadro de copa"]] : []),
         ["history", "Históricos"],
         ["analytics", "Estadísticas"],
         ...(league.id === 128 ? [["promedios", "Promedios"], ["annual", "Tabla anual"], ["alltime", "Tabla histórica"]] : []),
@@ -1201,7 +1203,7 @@ function App() {
     id = Number(rawId),
     league = leagues.find((l) => l.id === id),
     first = leagues[0]?.id || 128;
-  const isLeagueView = ["league", "table", "scorers", "teams", "history", "promedios", "annual", "alltime", "analytics"].includes(view);
+  const isLeagueView = ["league", "table", "scorers", "teams", "bracket", "history", "promedios", "annual", "alltime", "analytics"].includes(view);
   useEffect(() => {
     document.title = `${league?.name || ({ leagues: "Ligas y copas", team: "Equipo", match: "Partido", watch: "Dónde ver el partido" } as Record<string, string>)[view] || "Resultados"} · Latente`;
   }, [route, league?.name]);
@@ -1413,6 +1415,8 @@ function App() {
                     day={day}
                     setDay={setDay}
                   />
+                ) : view === "bracket" ? (
+                  <CupBracket league={league} />
                 ) : view === "table" ? (
                   <TableView league={league} />
                 ) : view === "analytics" ? (
