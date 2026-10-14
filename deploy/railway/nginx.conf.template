@@ -17,7 +17,7 @@ http {
   # de conexión). No confiar en X-Forwarded-For aportado por clientes.
   map $http_x_real_ip $latente_client_key {
     default $binary_remote_addr;
-    ~"^[0-9a-fA-F:.]{3,45}$" $http_x_real_ip;
+    ~^[0-9a-fA-F:.]+$ $http_x_real_ip;
   }
   limit_req_zone $latente_client_key zone=latente_api_ratelimit:10m rate=8r/s;
   limit_conn_zone $latente_client_key zone=latente_api_connections:10m;
