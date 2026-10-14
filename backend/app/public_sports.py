@@ -138,6 +138,7 @@ def _nba_rows(node, label="NBA"):
                 return None
             rows.append({
                 "id": team.get("id"), "name": team.get("displayName") or team.get("name"),
+                "logo": team.get("logo") or next((x.get("href") for x in team.get("logos", []) if isinstance(x, dict) and x.get("href")), None),
                 "group": group, "wins": stat("wins", "win"), "losses": stat("losses", "loss"),
                 "win_pct": stat("winPercent", "winPercentage"),
                 "rank": stat("playoffSeed", "rank"), "games_back": stat("gamesBehind", "gamesBack"),
