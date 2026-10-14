@@ -96,8 +96,22 @@ def save_catalog(s, rows):
         # Los planes pagos importan competiciones importantes y todas las
         # categorías argentinas presentes en el catálogo, nunca miles de
         # ligas sin prioridad.
-        is_argentina = (row.get("country") or {}).get("name") == "Argentina"
-        is_priority = league["id"] in settings.league_ids or is_argentina
+        country = (row.get("country") or {}).get("name", "")
+        is_argentina = country == "Argentina"
+        # Nuevos países pedidos: los nombres/IDs provienen del catálogo real.
+        # Evitar consumir Pro con decenas de ligas menores por país.
+        international_focus = country in ("India", "Iran", "Algeria")
+        name = str(league.get("name") or "").lower()
+        main_division = (
+            league.get("type") == "League"
+            and any(word in name for word in (
+                "super league", "pro league", "premier league",
+                "liga 1", "ligue 1", "i-league", "azadegan",
+            ))
+        )
+        is_priority = league["id"] in settings.league_ids or is_argentina or (
+            international_focus and main_division
+        )
         if settings.profile == "free" and settings.all_leagues:
             continue
         if settings.all_leagues and not is_priority:
@@ -107,8 +121,9 @@ def save_catalog(s, rows):
             pass
         # Datos completos por temporada (tabla, clubes, goleadores y fixtures).
         years = [season["year"]]
-        if settings.profile == "live":
-            # Archivo acotado: 2025 y 2024, priorizando grandes ligas y AFA.
+        if settings.profile == "live" and not international_focus:
+            # Historial de prioridades previas; nuevas ligas empiezan por
+            # una sola temporada para no desplazar marcadores y otras tablas.
             history = [y["year"] for y in seasons if y["year"] < season["year"] and y["year"] >= 2024]
             years.extend(sorted(history, reverse=True)[:2])
         for year in dict.fromkeys(years):
