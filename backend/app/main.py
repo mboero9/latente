@@ -784,6 +784,27 @@ def reference_sport(sport: str, season: int | None = Query(None, ge=1950, le=210
     return {"data": data, "meta": meta([], coverage=data.get("available", False))}
 
 
+@app.get("/api/leagues/128/annual")
+def argentina_annual_table(season: int = Query(2026, ge=2024, le=2100)):
+    """Tabla anual parcial: solo partidos completados e importados de Primera."""
+    with session_scope() as s:
+        season_games = list(s.scalars(select(Fixture).where(
+            Fixture.source == settings.mode,
+            Fixture.league_id == 128,
+            Fixture.season == season,
+            Fixture.status == "FT",
+        )))
+        ids = {team for game in season_games for team in (game.home_id, game.away_id)}
+        club_names = {t.id: public(t) for t in s.scalars(select(Team).where(
+            Team.source == settings.mode, Team.id.in_(ids)
+        ))} if ids else {}
+        result, matches_used = partial_standings(season_games, club_names)
+        return {"data": result, "meta": meta(
+            season_games, provisional=True, matches_used=matches_used,
+            disclaimer="Tabla parcial calculada con partidos almacenados; no equivale a la clasificación anual oficial ni contempla deducciones o reglamentos especiales.",
+        )}
+
+
 @app.get("/api/leagues/128/alltime")
 def argentina_historic_table():
     """Historical index from actually imported Argentine Primera fixtures only.
