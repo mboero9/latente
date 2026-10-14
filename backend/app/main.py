@@ -780,6 +780,21 @@ def scorers(league_id: int, season: int | None = Query(None, ge=1900, le=2200)):
         }
 
 
+
+@app.get("/api/leagues/{league_id}/assists")
+def top_assists(league_id: int, season: int | None = Query(None, ge=1900, le=2200)):
+    """Top assistants stored from API-Football /players/topassists, not guessed."""
+    from .models import SportSnapshot
+    with session_scope() as s:
+        league = league_or_404(s, league_id)
+        year = season or league.season
+        row = s.get(SportSnapshot, ("football", "assists", f"{league_id}:{year}"))
+        return {"data": row.data if row else [], "meta": meta(
+            [row] if row else [], coverage=bool(row), provisional=False,
+            note="API-Football topassists, según cobertura de liga y temporada"
+        )}
+
+
 @app.get("/api/teams")
 def teams(
     league_id: int,
