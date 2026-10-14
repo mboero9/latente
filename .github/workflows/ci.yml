@@ -24,7 +24,7 @@ jobs:
       TEST_DATABASE_URL: postgresql+psycopg://latente:test_only@localhost:5432/latente_test
       DATA_MODE: demo
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v5
         with: { python-version: '3.13' }
       - run: pip install -r requirements-dev.txt
@@ -34,7 +34,7 @@ jobs:
   frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with: { node-version: '24', cache: npm, cache-dependency-path: frontend/package-lock.json }
       - run: npm ci && npm run build
@@ -48,7 +48,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: cp .env.example .env
       - run: docker compose config --quiet && docker compose up -d --build
       - run: curl --fail --retry 30 --retry-delay 2 --retry-all-errors --retry-connrefused http://localhost:8080/api/health
@@ -60,7 +60,7 @@ jobs:
   railway:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: docker compose -f deploy/railway/compose.test.yml up -d --build
       - run: |
           curl --fail --retry 30 --retry-delay 2 --retry-all-errors --retry-connrefused http://localhost:8088/api/health
