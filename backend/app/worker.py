@@ -113,6 +113,15 @@ def save_catalog(s, rows):
             international_focus and main_division
         )
         if settings.profile == "free" and settings.all_leagues:
+            # Las copas destacadas necesitan sus rondas completas para el
+            # cuadro eliminatorio; el feed global por fecha no alcanza.
+            # Solo una carga de fixtures por temporada (cacheada por cron).
+            if league.get("type") == "Cup" and league["id"] in settings.league_ids:
+                cup_key = f"fixtures:{league['id']}:{season['year']}"
+                active_keys.add(cup_key)
+                ensure_job(s, cup_key, "fixtures",
+                           {"league": league["id"], "season": season["year"]},
+                           utcnow() + timedelta(seconds=matched))
             continue
         if settings.all_leagues and not is_priority:
             continue
