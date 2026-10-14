@@ -27,7 +27,8 @@ import { ArgentinaAlltime } from "./reference-sports";
 import { FootballAnalytics } from "./football-analytics";
 import { sports, SportPage, HistoryPage } from "./other-sports";
 import { NavRail } from "./nav-rail";
-import { WorldScorersTeaser, WorldScorersPage } from "./world-scorers";
+import { WorldScorersPage, WorldScorersSection } from "./world-scorers";
+import { ClubHonours, NationalHonours } from "./historical-honours";
 
 const LIVE = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT"]);
 const labels: Record<string, string> = {
@@ -700,7 +701,6 @@ function FixturesView({
         <aside class="right-column" aria-label="Resumen de la jornada">
           {spotlight && <Focus match={spotlight} tz={tz} />}
           <MiniTable league={league || leagues[0]} />
-          {!league && <WorldScorersTeaser />}
           <div class="quiet-note">
             <Icon name="refresh" />
             <div>
@@ -713,6 +713,21 @@ function FixturesView({
           </div>
         </aside>
       </div>
+      {!league && (
+        <div class="home-historics" aria-label="Tablas históricas del fútbol">
+          <div class="view-heading home-historics-heading">
+            <div><span class="eyebrow">EL ARCHIVO DE LATENTE</span><h2>Históricos del fútbol</h2></div>
+          </div>
+          <nav class="home-historics-jumps" aria-label="Ir a una tabla histórica">
+            <a href="#goleadores-historicos">Goleadores</a>
+            <a href="#copas-clubes">Copas internacionales de clubes</a>
+            <a href="#copas-selecciones">Títulos de selecciones</a>
+          </nav>
+          <WorldScorersSection/>
+          <ClubHonours/>
+          <NationalHonours/>
+        </div>
+      )}
     </>
   );
 }
