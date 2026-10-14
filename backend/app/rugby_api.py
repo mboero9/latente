@@ -7,6 +7,7 @@ All API calls run in the cron worker, never on page views.
 import os
 import re
 import logging
+from types import SimpleNamespace
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 
@@ -171,7 +172,10 @@ def normalize_standings(rows):
 
 def _snapshot(kind, ref):
     with session_scope() as db:
-        return db.get(SportSnapshot, ("rugby", kind, ref))
+        row = db.get(SportSnapshot, ("rugby", kind, ref))
+        # Eager immutable data before session_scope expires ORM attributes.
+        return SimpleNamespace(data=row.data, source_count=row.source_count,
+                               updated_at=row.updated_at) if row else None
 
 
 def _write(kind, ref, rows, count, note=""):
