@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import type { ComponentChildren } from "preact";
 import { useApi } from "./api";
+import { ScoreboardPanel } from "./scoreboards";
 
 type F1 = { available:boolean; message?:string; season:number; round?:string;
   drivers:{rank:number;name:string;team:string;points:number;wins:number}[];
@@ -81,7 +82,8 @@ export function ReferenceSportPage({slug}:{slug:string}) {
       <Source href="https://www.nba.com/standings">Posiciones oficiales NBA</Source>
       <Source href="https://www.nba.com/history">Archivo oficial NBA</Source>
     </div>}
-    {isUS && <p class="coverage-notice">Posiciones de temporada regular con datos de ESPN. Los partidos en vivo dependen de la cobertura del proveedor; consultá el calendario oficial de la liga.</p>}
+    {(isNba||isUS) && <ScoreboardPanel sport={slug} />}
+    {isUS && <p class="coverage-notice">Clasificación de temporada regular obtenida de ESPN. Los resultados se actualizan con caché y pueden no incluir temporadas sin cobertura.</p>}
     {isCricket && <CricketContent data={data as Cricket | undefined}/>}
     {!isCricket && data?.available && <Status stamp={data.updated_at} stale={data.stale}/>}
   </section>;
