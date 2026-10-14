@@ -2,7 +2,8 @@
  * IFFHS worldwide top-level official goals, through 31 March 2023:
  * https://www.iffhs.com/posts/2670
  */
-const rows = [
+type HistoricScorer = {name:string;country:string;flag:string;goals:number;club:string;teamId?:number};
+const rows: HistoricScorer[] = [
   { name: "Cristiano Ronaldo", country: "Portugal", flag: "🇵🇹", goals: 834, club: "Al Nassr (2023)", teamId: 2939 },
   { name: "Lionel Messi", country: "Argentina", flag: "🇦🇷", goals: 803, club: "Paris Saint-Germain (2023)", teamId: 85 },
   { name: "Pelé", country: "Brasil", flag: "🇧🇷", goals: 762, club: "Santos (histórico)", teamId: 128 },
