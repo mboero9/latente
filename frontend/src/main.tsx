@@ -424,7 +424,7 @@ const STAR_CLUBS = [
   "ajax", "al nassr", "al hilal",
 ];
 const normalizeForFocus = (v: string) =>
-  v.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
+  v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 function focusPriority(m: Match): number {
   const league = normalizeForFocus(m.league.name);
   let score = TOP_LEAGUES[m.league_id] ?? (
