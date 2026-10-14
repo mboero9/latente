@@ -42,7 +42,7 @@ export function SportPage({ slug }: { slug: string }) {
   const {result, loading, error, retry} = useApi<{
     matches: OtherGame[]; dates_checked: string[]; snapshot_count: number;
     period: {from:string;to:string};
-  }>(sport && !["f1", "nba", "cricket"].includes(slug) ? `/api/sports/${sport.slug}/overview` : null, 120000);
+  }>(sport && !["f1", "nba", "cricket", "mlb", "nhl", "nfl"].includes(slug) ? `/api/sports/${sport.slug}/overview` : null, 120000);
   const all = result?.data.matches || [];
   const dateOf = (game: OtherGame) =>
     typeof game.date === "string"
