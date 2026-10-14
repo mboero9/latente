@@ -767,7 +767,7 @@ def team_detail(team_id: int):
 def reference_sport(sport: str, season: int | None = Query(None, ge=1950, le=2100),
                     competition: str = Query("ipl", max_length=32)):
     """Cached reference rankings independent of paid API-Sports subscriptions."""
-    from .public_sports import formula_one, nba, cricket
+    from .public_sports import formula_one, nba, cricket, us_league
     try:
         if sport == "f1":
             data = formula_one(season)
@@ -775,6 +775,8 @@ def reference_sport(sport: str, season: int | None = Query(None, ge=1950, le=210
             data = nba(season)
         elif sport == "cricket":
             data = cricket(competition)
+        elif sport in {"nhl", "mlb", "nfl"}:
+            data = us_league(sport, season)
         else:
             raise HTTPException(404, "Deporte no disponible")
     except ValueError:
