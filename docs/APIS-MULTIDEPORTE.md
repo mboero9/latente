@@ -28,3 +28,38 @@ Antes de ampliar: nombres de deporte/proveedor en las claves, cuotas separadas, 
 Las peticiones de referencia quedan en un caché en memoria del proceso: una actualización por vencimiento (60 min F1 y cricket, 3 h NBA y ligas de EE.UU.; 5 min cuando la fuente no está disponible). No se crean datos simulados cuando un proveedor devuelve error. El caché de memoria se reinicia al desplegar o escalar; para más réplicas conviene pasarlo a Redis/PostgreSQL.
 
 La interfaz muestra claramente la temporada, procedencia y limitaciones. Los proveedores ESPN/Jolpica son fuentes públicas con endpoints no garantizados contractualmente; revisar condiciones de uso y licencia de publicación antes de monetizar o incrementar tráfico.
+
+
+## Rugby: API-Rugby de API-Sports (implementación 14/10/2026)
+
+Fuente principal: [API-Rugby](https://api-sports.io/sports/rugby), host fijo
+`https://v1.rugby.api-sports.io`; **no ESPN Rugby** para la sección.
+El plan Free publicado por el proveedor permite hasta 100 llamadas/día
+si está activado en esa cuenta. La cuota no garantiza todas las
+temporadas, estadísticas ni endpoints.
+
+- `RUGBY_API_KEY` opcional; si está vacío, se reutiliza la
+  `API_FOOTBALL_KEY` de API-Sports **solo cuando esa misma cuenta tenga
+  acceso a Rugby**. Nunca exponer una clave al frontend.
+- El servicio `ingest` de Railway (cron cada 10 minutos) descubre
+  identificadores reales usando `GET /leagues`. No se hardcodean IDs
+  ESPN ni números deducidos. Resuelve por nombre completo y país para
+  Top 12 de Argentina, Rugby Championship, Six Nations, Super Rugby,
+  Premiership Rugby, Top 14, URC, Champions Cup, amistosos y Mundial.
+- El cron consulta `GET /games?league=ID&season=AAAA` y
+  `GET /standings?league=ID&season=AAAA`, persiste snapshots en
+  PostgreSQL y nunca llama al proveedor por visita al sitio.
+- `GET /api/rugby/catalog` muestra la cobertura y temporadas reales.
+  `GET /api/rugby/{slug}?season=2026` lee exclusivamente PostgreSQL,
+  con resultados y posiciones verificadas.
+- Presupuesto conservador de hasta 60 llamadas al proveedor por día,
+  con control en `sport_quotas`, TTL de 6 h para resultados, 24 h
+  para tablas y catálogo, y 6 h de enfriamiento ante errores. Si
+  falla la API, se conserva el último snapshot válido.
+- Clasificaciones y puntos *solo* desde el endpoint oficial;
+  no se reconstruyen puntos bonus. Las ligas sin cobertura se
+  informan como pendientes, sin inventar nombres, posiciones ni cruces.
+- Ante secciones vacías: comprobar en [dashboard API-Sports](https://dashboard.api-football.com/)
+  que Rugby figure habilitado, que el endpoint esté cubierto por Free,
+  y consultar el cron/endpoint catálogo. El fútbol y otras fuentes no
+  dependen de la activación de Rugby.
