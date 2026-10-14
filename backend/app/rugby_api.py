@@ -187,13 +187,13 @@ def _write(kind, ref, rows, count, note=""):
 
 
 def catalog():
-    obj = _snapshot("leagues", "catalog")
+    obj = _snapshot("leagues", "curated-2026")
     return obj.data if obj else []
 
 
 def public_catalog():
     rows = catalog()
-    by_slug = {r["slug"]: r for r in rows}
+    by_slug = {r["slug"]: r for r in rows if isinstance(r, dict) and r.get("slug") in BY_SLUG}
     return [{"slug": slug, "name": title,
              **{k: v for k, v in by_slug.get(slug, {}).items() if k != "slug"}}
             for slug, title, _, _ in COMPETITIONS]
@@ -262,7 +262,7 @@ def sync_once(max_calls=3, fetch=None):
             _write("diagnostic", error_ref, [{"message": "Proveedor no disponible o plan sin cobertura"}], 1)
             result["unavailable"].append(f"{kind}:{ref}")
 
-    call("leagues", "catalog", "leagues", {}, resolve, CATALOG_TTL,
+    call("leagues", "curated-2026", "leagues", {}, resolve, CATALOG_TTL,
          "Identificadores confirmados por API-Rugby; cobertura sujeta al plan.")
     if not catalog():
         return result
