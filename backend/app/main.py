@@ -775,7 +775,7 @@ def reference_sport(sport: str, season: int | None = Query(None, ge=1950, le=210
             data = nba(season)
         elif sport == "cricket":
             data = cricket(competition)
-        elif sport in {"nhl", "mlb", "nfl"}:
+        elif sport in {"nhl", "mlb", "nfl", "wnba"}:
             data = us_league(sport, season)
         else:
             raise HTTPException(404, "Deporte no disponible")
