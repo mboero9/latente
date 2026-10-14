@@ -2,6 +2,7 @@
 import re
 
 ROUNDS = [
+    ("64avos de final", -1, (r"round of 128", r"1/64", r"64avos")),
     ("32avos de final", 0, (r"round of 64", r"1/32", r"32avos", r"thirty.two")),
     ("16avos de final", 1, (r"round of 32", r"1/16", r"16avos")),
     ("Octavos de final", 2, (r"round of 16", r"last 16", r"1/8", r"octavos")),
@@ -51,6 +52,8 @@ def bracket_rows(fixtures):
     # ambiguo, no atribuir avance.
     for index, stage in enumerate(ordered[:-1]):
         next_stage = ordered[index + 1]
+        if next_stage["order"] != stage["order"] + 1:
+            continue  # Nunca conectar dos rondas si falta una intermedia.
         for match in stage["matches"]:
             winner = winner_id(match)
             candidates = [r for r in next_stage["matches"]
