@@ -274,6 +274,27 @@ def fixtures(
         }
 
 
+@app.get("/api/leagues/{league_id}/recent")
+def league_recent(league_id: int, season: int | None = None):
+    """Últimos partidos terminados y próximos encuentros de la temporada almacenada."""
+    with session_scope() as s:
+        league = league_or_404(s, league_id)
+        year = season or league.season
+        base = (Fixture.source == settings.mode, Fixture.league_id == league_id,
+                Fixture.season == year)
+        done = list(s.scalars(select(Fixture).where(
+            *base, Fixture.status.in_(["FT", "AET", "PEN"]),
+        ).order_by(Fixture.kickoff.desc(), Fixture.id.desc()).limit(12)))
+        upcoming = list(s.scalars(select(Fixture).where(
+            *base, Fixture.kickoff >= utcnow(),
+            Fixture.status.in_(["NS", "TBD"]),
+        ).order_by(Fixture.kickoff, Fixture.id).limit(12)))
+        return {"data": {
+            "recent": match_payload(s, done),
+            "upcoming": match_payload(s, upcoming),
+        }, "meta": meta(done + upcoming, season=year)}
+
+
 @app.get("/api/fixtures/{fixture_id}")
 def fixture(fixture_id: int):
     with session_scope() as s:
