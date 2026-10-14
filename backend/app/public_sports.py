@@ -15,6 +15,7 @@ _CACHE = {}
 _LOCK = threading.RLock()
 F1 = "https://api.jolpi.ca/ergast/f1"
 ESPN_NBA = "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings"
+ESPN_US = {"nhl": "hockey/nhl", "mlb": "baseball/mlb", "nfl": "football/nfl"}
 ESPN_CRICKET = "https://site.api.espn.com/apis/site/v2/sports/cricket"
 CRICKETDATA = "https://api.cricapi.com/v1/currentMatches"
 
@@ -83,6 +84,16 @@ def formula_one(year=None):
                     for row in finishers if row.get("position", "").isdigit()
                 ],
             }
+        upcoming = None
+        try:
+            raw_next = _get(F1 + f"/{year}/next.json")
+            schedule = (raw_next.get("MRData") or {}).get("RaceTable", {}).get("Races") or []
+            if schedule:
+                event = schedule[0]
+                upcoming = {"name": event.get("raceName"), "date": event.get("date"),
+                            "circuit": (event.get("Circuit") or {}).get("circuitName")}
+        except (httpx.HTTPError, ValueError, KeyError, TypeError):
+            pass
         if not drivers and not constructors and not last_race:
             return {"available": False, "message": "Temporada sin clasificaciones confirmadas"}
         return {
@@ -98,20 +109,27 @@ def formula_one(year=None):
                 "rank": int(row["position"]), "name": row.get("Constructor", {}).get("name", ""),
                 "points": float(row["points"]), "wins": int(row.get("wins", 0)),
             } for row in constructors.get("ConstructorStandings", []) if row.get("position") and row.get("points")],
-            "last_race": last_race,
+            "last_race": last_race, "upcoming": upcoming,
         }
     return _cached(("f1", year), 3600, produce)
 
 
 def _nba_rows(node, label="NBA"):
+    """Accept ESPN conference/division nesting and legacy standings lists."""
     rows = []
-    if isinstance(node, dict):
-        group = node.get("name") or node.get("abbreviation") or label
-        group_standings = node.get("standings") or {}
-        for entry in group_standings.get("entries", []):
+    if not isinstance(node, dict):
+        return rows
+    group = node.get("name") or node.get("abbreviation") or label
+    standings = node.get("standings") or {}
+    blocks = standings if isinstance(standings, list) else [standings]
+    for block in blocks:
+        if not isinstance(block, dict):
+            continue
+        for entry in block.get("entries", []):
+            if not isinstance(entry, dict):
+                continue
             team = entry.get("team") or {}
-            stats = {s.get("name"): s for s in entry.get("stats") or []}
-            # ESPN varies its stats.name across seasons. Use its explicit displayValue.
+            stats = {s.get("name"): s for s in entry.get("stats") or [] if isinstance(s, dict)}
             def stat(*names):
                 for name in names:
                     if name in stats:
@@ -124,8 +142,8 @@ def _nba_rows(node, label="NBA"):
                 "win_pct": stat("winPercent", "winPercentage"),
                 "rank": stat("playoffSeed", "rank"), "games_back": stat("gamesBehind", "gamesBack"),
             })
-        for child in node.get("children") or []:
-            rows.extend(_nba_rows(child, group))
+    for child in node.get("children") or []:
+        rows.extend(_nba_rows(child, group))
     return rows
 
 
@@ -199,3 +217,33 @@ def cricket(competition="ipl"):
             "message": None if rows or games else "No hay tabla verificada disponible para esta competición. Los partidos requieren CRICKETDATA_API_KEY.",
         }
     return _cached(("cricket", competition, bool(os.getenv("CRICKETDATA_API_KEY"))), 3600, produce)
+
+
+def us_league(sport, season=None):
+    """NHL/MLB/NFL regular season tables, including prior seasons, from ESPN."""
+    if sport not in ESPN_US:
+        raise ValueError("Unknown US league")
+    year = datetime.now(timezone.utc).year
+    season = int(season if season is not None else year)
+    if season < 2015 or season > year:
+        raise ValueError("Invalid sports season")
+
+    def produce():
+        raw = _get("https://site.api.espn.com/apis/v2/sports/" + ESPN_US[sport] + "/standings",
+                   {"season": season, "type": 2})
+        rows = []
+        for group in raw.get("children") or []:
+            rows.extend(_nba_rows(group))
+        if not rows:
+            rows = _nba_rows(raw)
+        unique = {}
+        for row in rows:
+            if row.get("name"):
+                unique[str(row.get("id") or row["name"])] = row
+        entries = sorted(unique.values(), key=lambda row: (
+            -(float(row["wins"]) if row["wins"] is not None else -1), row["name"]))
+        return {"available": bool(entries), "season": season, "rows": entries,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "provider": "ESPN", "count": len(entries),
+                "note": "Datos de temporada regular según el proveedor. La cobertura de temporadas antiguas puede variar."}
+    return _cached((sport, season), 10800, produce)
