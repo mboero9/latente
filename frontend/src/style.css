@@ -2438,3 +2438,7 @@
     }
   }
 }
+
+/* Escudos oficiales en tablas y clasificaciones multideporte */
+.sport-team-inline { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.sport-team-inline img { width: 24px; height: 24px; object-fit: contain; flex: 0 0 24px; }
