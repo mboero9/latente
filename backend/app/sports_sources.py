@@ -6,7 +6,7 @@ No scraping, credentials in logs, or guessed player records.
 import os
 import httpx
 from datetime import datetime, timezone
-from .other_sports import SPORTS, _game_summary
+from .other_sports import SPORTS, _game_summary, _trusted_logo as _trusted_team_logo
 
 
 class SourceUnavailable(Exception):
