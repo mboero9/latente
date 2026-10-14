@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import { useApi } from "./api";
 import { SportsStandings } from "./sports-standings";
+import { WatchGuide } from "./watch-guide";
 import { RugbyCompetitions } from "./rugby-competitions";
 import { ReferenceSportPage } from "./reference-sports";
 import type { League, Team } from "./types";
@@ -17,16 +18,6 @@ export const sports = [
   { slug: "cricket", name: "Cricket", emoji: "🏏" },
 ] as const;
 /** Consultas oficiales: no se conoce la señal del partido individual. */
-const officialStreaming: Record<string, { name: string; url: string; access: string }> = {
-  nba: { name: "NBA League Pass", url: "https://www.nba.com/watch/league-pass-stream/", access: "Pago" },
-  nfl: { name: "NFL Game Pass · DAZN", url: "https://www.dazn.com/", access: "Pago" },
-  nhl: { name: "NHL · dónde ver", url: "https://www.nhl.com/info/how-to-watch-and-stream-nhl-games", access: "Guía oficial" },
-  mlb: { name: "MLB.TV", url: "https://www.mlb.com/live-stream-games", access: "Pago" },
-  f1: { name: "F1 TV", url: "https://f1tv.formula1.com/", access: "Pago" },
-  rugby: { name: "RugbyPass TV", url: "https://info.rugbypass.tv/", access: "Gratis según evento" },
-  afl: { name: "Watch AFL", url: "https://www.watchafl.com.au/", access: "Pago" },
-  basketball: { name: "Disney+ · ESPN", url: "https://www.disneyplus.com/es-ar", access: "Pago / según torneo" },
-};
 type SportStatus = { name: string; configured: boolean; note: string };
 type Archive = { season: number; matches_loaded: number; official_leader: {team: Team;group: string}|null;leading_scorer:{name:string;goals:number;team:Team}|null;complete:boolean };
 type OtherGame = {id:number|null;league:string;date:string|{start?:string};home:string;away:string;home_logo?:string|null;away_logo?:string|null;league_logo?:string|null;home_score:number|null;away_score:number|null;status:string};
@@ -110,12 +101,7 @@ export function SportPage({ slug }: { slug: string }) {
           <strong class="sport-team sport-team-away">{game.away_logo && <img src={game.away_logo} alt="" loading="lazy" onError={e => {e.currentTarget.style.display = "none";}}/>}{game.away}</strong>
         </div>
         <small>{game.status || "Estado no informado"}</small>
-        {officialStreaming[slug] && <a class="sport-watch-link"
-          href={officialStreaming[slug].url} target="_blank" rel="noopener noreferrer"
-          title="Plataforma oficial: este partido concreto puede no estar incluido en su programación">
-          📺 Consultar {officialStreaming[slug].name} ↗
-          <span>({officialStreaming[slug].access}; señal del partido sin confirmar)</span>
-        </a>}
+
       </article>)}</div> : <article class="panel sport-intro"><h2>No hay encuentros para esta fecha</h2>
         <p>Probá Resultados o Próximos. El proveedor puede no cubrir esta competencia o temporada en el plan gratuito.</p>
       </article>}
@@ -131,6 +117,7 @@ export function SportPage({ slug }: { slug: string }) {
         </div>)}
       </div> : <p class="match-details-unavailable">No hay suficientes resultados finales en la ventana para calcular estadísticas fiables.</p>}
       {slug === "rugby" && <RugbyCompetitions />}
+      <WatchGuide initialSport={slug} />
       <SportsStandings sport={sport.slug} />
     </>}
   </section>;
