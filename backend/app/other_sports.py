@@ -19,6 +19,8 @@ SPORTS = {
     "f1": ("FORMULA1_API_KEY", "https://v1.formula-1.api-sports.io", "races"),
     "nfl": ("NFL_API_KEY", "https://v1.american-football.api-sports.io", "games"),
     "rugby": ("RUGBY_API_KEY", "https://v1.rugby.api-sports.io", "games"),
+    "handball": ("HANDBALL_API_KEY", "https://v1.handball.api-sports.io", "games"),
+    "volleyball": ("VOLLEYBALL_API_KEY", "https://v1.volleyball.api-sports.io", "games"),
     "afl": ("AFL_API_KEY", "https://v1.afl.api-sports.io", "games"),
 }
 _LOCK = threading.Lock()
