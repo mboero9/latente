@@ -162,7 +162,7 @@ function CricketContent({data}:{data?:Cricket}) {
     <h2 class="sport-section-title">Tabla de posiciones por competición</h2>
     {data?.rows?.length ? <div class="panel table-scroll"><table>
       <thead><tr><th>#</th><th>Equipo</th><th>Grupo</th><th>G</th><th>P</th><th>%V</th></tr></thead><tbody>
-      {data.rows.map((team,i)=><tr key={team.id||i}><td>{team.rank??i+1}</td><th scope="row">{team.name}</th>
+      {data.rows.map((team,i)=><tr key={team.id||i}><td>{team.rank??i+1}</td><th scope="row"><span class="sport-team-inline">{("logo" in team && typeof team.logo === "string" && team.logo) ? <img src={team.logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/> : null}{team.name}</span></th>
         <td>{team.group}</td><td>{team.wins??"—"}</td><td>{team.losses??"—"}</td>
         <td>{team.win_pct??"—"}</td></tr>)}</tbody></table></div> :
       <Notice>El proveedor todavía no entregó una clasificación fiable para esta competición. No se asignan posiciones ficticias.</Notice>}
