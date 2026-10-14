@@ -8,6 +8,7 @@ export const sports = [
   { slug: "nhl", name: "NHL · Hockey", emoji: "🏒" },
   { slug: "mlb", name: "MLB · Béisbol", emoji: "⚾" },
   { slug: "nba", name: "NBA", emoji: "🏀" },
+  { slug: "wnba", name: "WNBA", emoji: "🏀" },
   { slug: "basketball", name: "Básquet", emoji: "🏀" },
   { slug: "f1", name: "Fórmula 1", emoji: "🏎️" },
   { slug: "nfl", name: "NFL", emoji: "🏈" },
@@ -42,7 +43,7 @@ export function SportPage({ slug }: { slug: string }) {
   const {result, loading, error, retry} = useApi<{
     matches: OtherGame[]; dates_checked: string[]; snapshot_count: number;
     period: {from:string;to:string};
-  }>(sport && !["f1", "nba", "cricket", "mlb", "nhl", "nfl"].includes(slug) ? `/api/sports/${sport.slug}/overview` : null, 120000);
+  }>(sport && !["f1", "nba", "cricket", "mlb", "nhl", "nfl", "wnba"].includes(slug) ? `/api/sports/${sport.slug}/overview` : null, 120000);
   const all = result?.data.matches || [];
   const dateOf = (game: OtherGame) =>
     typeof game.date === "string"
