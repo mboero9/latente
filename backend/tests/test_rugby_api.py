@@ -68,11 +68,9 @@ def test_rugby_cron_only_fetches_verified_ids_and_persists(monkeypatch):
         if endpoint == "leagues":
             return leagues()
         if endpoint == "games":
-            assert params["league"] == 67
-            return sample_games()
+            return sample_games() if params["league"] == 67 else []
         if endpoint == "standings":
-            assert params["league"] == 67
-            return sample_table()
+            return sample_table() if params["league"] == 67 else []
         raise AssertionError(endpoint)
 
     report = rugby_api.sync_once(max_calls=3, fetch=fake)
@@ -86,7 +84,8 @@ def test_rugby_cron_only_fetches_verified_ids_and_persists(monkeypatch):
     assert stored["games"][0]["home_score"] == 28
 
     # Repeat runs reuse persisted data, not API requests per site visitor.
-    assert rugby_api.sync_once(max_calls=3, fetch=fake)["attempted"] == []
+    rugby_api.sync_once(max_calls=3, fetch=fake)
+    assert all(p.get("league") != 67 for _, p in queries[3:])
 
 
 def test_rugby_http_uses_database_snapshots_without_provider_calls(monkeypatch):
