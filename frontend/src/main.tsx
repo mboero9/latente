@@ -18,6 +18,7 @@ import { MatchExtras } from "./match-extras";
 import { LeagueRecent } from "./league-recent";
 import { WatchView } from "./watch-options";
 import { PromediosPage } from "./argentina-promedios";
+import { ArgentinaAnnual } from "./argentina-annual";
 import { ArgentinaAlltime } from "./reference-sports";
 import { FootballAnalytics } from "./football-analytics";
 import { sports, SportPage, HistoryPage } from "./other-sports";
@@ -266,7 +267,7 @@ function LeagueTabs({ league, view }: { league: League; view: string }) {
         ["teams", "Equipos"],
         ["history", "Históricos"],
         ["analytics", "Estadísticas"],
-        ...(league.id === 128 ? [["promedios", "Promedios"], ["alltime", "Tabla histórica"]] : []),
+        ...(league.id === 128 ? [["promedios", "Promedios"], ["annual", "Tabla anual"], ["alltime", "Tabla histórica"]] : []),
       ].map(([key, label]) => (
         <a
           class={view === key ? "active" : ""}
@@ -1420,6 +1421,8 @@ function App() {
                   <HistoryPage league={league} />
                 ) : view === "promedios" && league.id === 128 ? (
                   <PromediosPage league={league} />
+                ) : view === "annual" && league.id === 128 ? (
+                  <ArgentinaAnnual />
                 ) : view === "alltime" && league.id === 128 ? (
                   <ArgentinaAlltime />
                 ) : view === "scorers" ? (
