@@ -15,7 +15,7 @@ _CACHE = {}
 _LOCK = threading.RLock()
 F1 = "https://api.jolpi.ca/ergast/f1"
 ESPN_NBA = "https://site.api.espn.com/apis/v2/sports/basketball/nba/standings"
-ESPN_US = {"nhl": "hockey/nhl", "mlb": "baseball/mlb", "nfl": "football/nfl"}
+ESPN_US = {"nhl": "hockey/nhl", "mlb": "baseball/mlb", "nfl": "football/nfl", "wnba": "basketball/wnba"}
 ESPN_CRICKET = "https://site.api.espn.com/apis/site/v2/sports/cricket"
 CRICKETDATA = "https://api.cricapi.com/v1/currentMatches"
 
@@ -220,7 +220,7 @@ def cricket(competition="ipl"):
 
 
 def us_league(sport, season=None):
-    """NHL/MLB/NFL regular season tables, including prior seasons, from ESPN."""
+    """NHL/MLB/NFL/WNBA regular season tables, including prior seasons, from ESPN."""
     if sport not in ESPN_US:
         raise ValueError("Unknown US league")
     year = datetime.now(timezone.utc).year
