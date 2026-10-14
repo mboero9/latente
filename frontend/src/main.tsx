@@ -16,6 +16,7 @@ import "./style.css";
 import { observeLanguage } from "./i18n";
 import { MatchExtras } from "./match-extras";
 import { MatchOdds, LiveOddsMini } from "./match-odds";
+import type { LiveOddsSummary } from "./match-odds";
 import { CupBracket } from "./cup-bracket";
 import { WatchGuide } from "./watch-guide";
 import { LeagueRecent } from "./league-recent";
