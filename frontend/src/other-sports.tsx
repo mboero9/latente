@@ -4,6 +4,7 @@ import { SportsStandings } from "./sports-standings";
 import { WatchGuide } from "./watch-guide";
 import { RugbyCompetitions } from "./rugby-competitions";
 import { ReferenceSportPage } from "./reference-sports";
+import { RugbyHub } from "./rugby-hub";
 import type { League, Team } from "./types";
 export const sports = [
   { slug: "nhl", name: "NHL · Hockey", emoji: "🏒" },
@@ -78,6 +79,7 @@ export function SportPage({ slug }: { slug: string }) {
     b[1].wins - a[1].wins || b[1].scored - a[1].scored || a[0].localeCompare(b[0])
   ).slice(0, 12);
   if (!sport) return <p>Deporte no disponible.</p>;
+  if (slug === "rugby") return <RugbyHub />;
   if (["f1", "nba", "wnba", "mlb", "nhl", "nfl", "cricket"].includes(slug)) return <ReferenceSportPage slug={slug} />;
   return <section class="sport-landing">
     <div class="view-heading"><div><span class="eyebrow">LATENTE · DEPORTES</span>
