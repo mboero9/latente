@@ -90,6 +90,8 @@ def resolve(rows):
 
 
 def _num(value):
+    if isinstance(value, dict):
+        value = value.get("total", value.get("value"))
     try:
         return int(value) if value is not None and str(value).strip() else None
     except (TypeError, ValueError):
@@ -272,8 +274,8 @@ def sync_once(max_calls=3, fetch=None):
     for comp in catalog():
         league = comp.get("league_id")
         seasons = comp.get("seasons") or []
-        year = next((y for y in seasons if y <= now_year), None)
-        if not league or year is None:
+        year = next((y for y in seasons if y <= now_year), now_year)
+        if not league:
             continue
         ref = f"{league}:{year}"
         params = {"league": league, "season": year}
