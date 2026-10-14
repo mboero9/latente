@@ -5,12 +5,12 @@ type Dataset = { kind: string; ref: string; updated_at: string; count: number; n
 type StandRow = { team_id: number | string; team: string; group: string | null;
   stage: string | null; rank: number | null; played: number | null;
   won: number | null; lost: number | null; points: number | null };
-type Driver = { driver?: { name?: string }; position?: number; points?: number };
+type Driver = { driver?: { name?: string }; team?: { name?: string }; position?: number; points?: number };
 export function SportsStandings({ sport }: { sport: string }) {
   const { result: catalog, loading } = useApi<Dataset[]>(
     `/api/sports/${sport}/datasets`, 300000);
   const options = (catalog?.data || []).filter(d =>
-    d.kind === "standings" || d.kind === "drivers");
+    d.kind === "standings" || d.kind === "drivers" || d.kind === "constructors");
   const [selected, setSelected] = useState("");
   const current = options.find(d => d.ref === selected) || options[0];
   const { result, error } = useApi<(StandRow | Driver)[]>(
@@ -34,11 +34,11 @@ export function SportsStandings({ sport }: { sport: string }) {
           <table><thead><tr>
             <th>#</th><th>Equipo / piloto</th><th>Grupo</th><th>PJ</th><th>G</th><th>P</th><th>Puntos</th>
           </tr></thead><tbody>{result.data.map((r, i) => {
-            const isDriver = "driver" in r;
-            const name = isDriver ? ((r as Driver).driver?.name || "Piloto sin nombre") : (r as StandRow).team;
+            const isDriver = current?.kind === "drivers" || current?.kind === "constructors";
+            const name = isDriver ? ((r as Driver).team?.name || (r as Driver).driver?.name || "Sin nombre informado") : (r as StandRow).team;
             return <tr key={i}><td>{isDriver ? (r as Driver).position ?? "—" : (r as StandRow).rank ?? "—"}</td>
               <th scope="row">{name}</th>
-              <td>{isDriver ? "Fórmula 1" : (r as StandRow).group || "—"}</td>
+              <td>{isDriver ? (current?.kind === "constructors" ? "Constructores" : "Pilotos") : (r as StandRow).group || "—"}</td>
               <td>{isDriver ? "—" : (r as StandRow).played ?? "—"}</td>
               <td>{isDriver ? "—" : (r as StandRow).won ?? "—"}</td>
               <td>{isDriver ? "—" : (r as StandRow).lost ?? "—"}</td>
