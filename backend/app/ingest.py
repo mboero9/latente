@@ -198,3 +198,43 @@ def save_scorers(s, rows, league, season, source="api"):
         )
         for row in normalized:
             upsert(s, Scorer, row)
+
+
+def save_assists(s, rows, league, season, source="api"):
+    """Official top-assist ranking; stored apart from goal-scorer ranking."""
+    from .models import SportSnapshot
+    leaders = []
+    for record in rows[:30]:
+        player = record.get("player") or {}
+        if not player.get("id") or not player.get("name"):
+            continue
+        for entry in record.get("statistics") or []:
+            competition = entry.get("league") or {}
+            team_data = entry.get("team") or {}
+            if competition.get("id") != league or competition.get("season", season) != season:
+                continue
+            if not team_data.get("id") or not team_data.get("name"):
+                continue
+            goals = entry.get("goals") or {}
+            amount = goals.get("assists")
+            if not isinstance(amount, int) or amount < 0:
+                continue
+            team(s, team_data, source)
+            membership(s, source, league, season, team_data["id"])
+            leaders.append({
+                "player_id": player["id"], "name": player["name"],
+                "team_id": team_data["id"], "team": team_data["name"],
+                "assists": amount, "goals": goals.get("total"),
+                "appearances": (entry.get("games") or {}).get("appearences"),
+            })
+    if not leaders:
+        return False
+    leaders.sort(key=lambda x: (-x["assists"], x["name"]))
+    for rank, row in enumerate(leaders, 1):
+        row["rank"] = rank
+    upsert(s, SportSnapshot, {
+        "sport": "football", "dataset": "assists", "ref": f"{league}:{season}",
+        "provider": "api_football", "data": leaders, "source_count": len(leaders),
+        "updated_at": utcnow(), "note": "Top asistidores verificados en API-Football",
+    })
+    return True
