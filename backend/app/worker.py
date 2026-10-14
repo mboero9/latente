@@ -11,7 +11,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select, text, delete, update, or_, case, func
 from .config import settings
 from .db import engine, session_scope
-from .models import League, Fixture, FixtureStatistics, FixtureDetails, SyncJob, WorkerState, ApiUsage, utcnow
+from .models import League, Fixture, FixtureStatistics, FixtureDetails, FixtureOdds, SyncJob, WorkerState, ApiUsage, utcnow
 from .ingest import (
     upsert,
     save_fixtures,
@@ -531,6 +531,42 @@ def tick(client):
     return True
 
 
+def capture_betting_odds(client):
+    """Máximo dos solicitudes por ejecución del cron, sin usar cuota por visita."""
+    if settings.mode != "api" or settings.profile != "live":
+        return
+    from .odds import prematch, inplay, persist
+    from .provider import ProviderError, Deferred
+    now = utcnow()
+    day = now.astimezone(ZoneInfo("America/Argentina/Buenos_Aires")).date().isoformat()
+    for kind, endpoint, params, normalize in (
+        ("live", "/odds/live", {}, inplay),
+        ("prematch", "/odds", {"date": day}, prematch),
+    ):
+        try:
+            rows = client.get(endpoint, params)
+            stored = 0
+            with session_scope() as db:
+                for raw in rows[:100]:
+                    fixture = raw.get("fixture") or {}
+                    fixture_id = fixture.get("id")
+                    if not isinstance(fixture_id, int) or fixture_id <= 0:
+                        continue
+                    match = db.get(Fixture, ("api", fixture_id))
+                    if not match or match.league_id not in settings.league_ids:
+                        continue
+                    if kind == "live" and match.status not in LIVE:
+                        continue
+                    if kind == "prematch" and match.status not in ("NS", "TBD"):
+                        continue
+                    prices = normalize([raw])
+                    if prices and persist(db, fixture_id, kind, prices):
+                        stored += 1
+            log.info("odds_snapshot kind=%s provider_rows=%s stored_fixtures=%s", kind, len(rows), stored)
+        except (ProviderError, Deferred, ValueError, TypeError, KeyError) as exc:
+            log.info("odds_unavailable kind=%s error_type=%s", kind, type(exc).__name__)
+
+
 def run(once=False, max_seconds=120):
     deadline = time.monotonic() + max_seconds if once else float("inf")
     # Lock de sesión (no de transacción); liberar automáticamente al perder conexión.
@@ -629,6 +665,8 @@ def run(once=False, max_seconds=120):
                 log.warning("api_rugby_sync_error_type=%s", type(exc).__name__)
         client = FootballClient()
         try:
+            if settings.mode == "api" and settings.api_key:
+                capture_betting_odds(client)
             if once and settings.mode == "api" and not settings.api_key:
                 heartbeat("Falta configurar API_FOOTBALL_KEY")
                 return
