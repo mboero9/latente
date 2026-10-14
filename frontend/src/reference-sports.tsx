@@ -1,4 +1,5 @@
 import { useState } from "preact/hooks";
+import type { ComponentChildren } from "preact";
 import { useApi } from "./api";
 
 type F1 = { available:boolean; message?:string; season:number; round?:string;
@@ -29,10 +30,10 @@ function Status({ stamp, stale }: {stamp?:string;stale?:boolean}) {
     {stale && " · Se conserva la última actualización válida"}
   </p>;
 }
-function Notice({children}:{children:preact.ComponentChildren}) {
+function Notice({children}:{children:ComponentChildren}) {
   return <p class="coverage-notice">{children}</p>;
 }
-function Source({href,children}:{href:string;children:preact.ComponentChildren}) {
+function Source({href,children}:{href:string;children:ComponentChildren}) {
   return <a class="official-standings-link" href={href} target="_blank" rel="noopener noreferrer">{children} ↗</a>;
 }
 
