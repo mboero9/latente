@@ -2545,3 +2545,17 @@
   .odds-external > small { flex-basis: 100%; color: var(--muted); }
   .odds-warning { font-size: .74rem; color: var(--muted); line-height: 1.55; }
 }
+
+
+@layer components {
+  .odds-bookmakers { display:grid; gap:13px; }
+  .odds-house { border:1px solid var(--line); border-radius:10px; padding:13px; background:var(--surface); display:grid; gap:9px; }
+  .odds-choices { display:grid; gap:10px; grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .odds-choices > div { display:grid; gap:6px; min-width:0; }
+  .odds-choices small { color:var(--muted); font-size:.74rem; }
+  .odds-percent { display:flex; align-items:center; gap:7px; font-variant-numeric:tabular-nums; }
+  .odds-percent-track { display:block; position:relative; flex:1; height:9px; border-radius:999px; background:var(--line); min-width:20px; overflow:hidden; }
+  .odds-percent-track > span { display:block; height:100%; border-radius:999px; background:var(--green); }
+  .odds-percent strong { font-size:.84rem; min-width:47px; text-align:right; }
+  @media(max-width:580px) { .odds-choices { grid-template-columns:1fr; } }
+}
