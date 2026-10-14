@@ -24,7 +24,7 @@ type OtherGame = {id:number|null;league:string;date:string|{start?:string};home:
 type OtherGamesResponse = {configured:boolean;games:OtherGame[];message:string|null};
 export function SportPage({ slug }: { slug: string }) {
   const sport = sports.find(x => x.slug === slug);
-  const [tab, setTab] = useState<"past" | "today" | "future">("today");
+  const [tab, setTab] = useState<"past" | "today" | "future">(slug === "afl" ? "past" : "today");
   const localToday = new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
   const shift = (days: number) => {
     const date = new Date(localToday + "T12:00:00Z");
@@ -86,7 +86,7 @@ export function SportPage({ slug }: { slug: string }) {
       <p>Partidos, equipos y resultados recientes con información real del proveedor.</p></div></div>
     <div class="sports-tabs" role="group" aria-label="Elegir fecha de partidos">
       <button class={tab === "past" ? "active" : ""} onClick={() => setTab("past")}>Resultados</button>
-      <button class={tab === "today" ? "active" : ""} onClick={() => setTab("today")}>Hoy</button>
+      {slug !== "afl" && <button class={tab === "today" ? "active" : ""} onClick={() => setTab("today")}>Hoy</button>}
       <button class={tab === "future" ? "active" : ""} onClick={() => setTab("future")}>Próximos</button>
     </div>
     {loading ? <p>Cargando partidos del archivo…</p> : error ? <p>{error} <button onClick={retry}>Reintentar</button></p>
@@ -105,6 +105,7 @@ export function SportPage({ slug }: { slug: string }) {
       </article>)}</div> : <article class="panel sport-intro"><h2>No hay encuentros para esta fecha</h2>
         <p>Probá Resultados o Próximos. El proveedor puede no cubrir esta competencia o temporada en el plan gratuito.</p>
       </article>}
+      {slug !== "afl" && <>
       <h2 class="sport-section-title">Equipos encontrados ({clubs.size})</h2>
       {clubs.size ? <div class="sports-clubs">{Array.from(clubs.entries()).map(([name, logo]) => <span class="sports-club" key={name}>{logo && <img src={logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{name}</span>)}</div> :
       <p class="match-details-unavailable">Los equipos aparecerán cuando haya encuentros verificados.</p>}
@@ -116,9 +117,10 @@ export function SportPage({ slug }: { slug: string }) {
           <strong>{name}</strong><span>{data.played}</span><span>{data.wins}</span><span>{data.scored}</span>
         </div>)}
       </div> : <p class="match-details-unavailable">No hay suficientes resultados finales en la ventana para calcular estadísticas fiables.</p>}
+      </>}
       {slug === "rugby" && <RugbyCompetitions />}
-      <WatchGuide initialSport={slug} />
       <SportsStandings sport={sport.slug} />
+      <WatchGuide initialSport={slug} />
     </>}
   </section>;
 }
