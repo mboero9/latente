@@ -54,7 +54,7 @@ def due_jobs(today=None):
     today = today or datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
     enabled = [s.strip() for s in os.getenv(
         "SPORTS_AUTOSYNC", "nhl,mlb,nba,basketball,f1,nfl,afl,rugby"
-    ).split(",") if s.strip() in SPORTS]
+    ).split(",") if s.strip() in SPORTS and s.strip() != "rugby"]
     jobs = []
     targets = configured_targets()
     # Estas ligas tienen identificadores oficiales estables. Si el usuario no
