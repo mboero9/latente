@@ -544,6 +544,16 @@ def run(once=False, max_seconds=120):
                         if league_row.season > 2024:
                             enqueue_hydration(s, league_id, league_row.season - 1,
                                               limit_batches=1)
+                # Releer catálogo una vez tras ampliar cobertura a India, Irán
+                # y Argelia; reutilizar la clave Pro y la cuota normal.
+                if settings.profile == "live" and not s.get(WorkerState, "intl2026"):
+                    catalog = s.get(SyncJob, "catalog")
+                    if catalog:
+                        catalog.next_run = utcnow()
+                    s.add(WorkerState(
+                        source="intl2026", heartbeat=utcnow(),
+                        message="Catálogo ampliado: India, Irán y Argelia",
+                    ))
                 # Si el catálogo se creó antes del upgrade Free→Pro y aún no
                 # existen trabajos por temporada, forzar su reconstrucción.
                 # Es idempotente: al crear los trabajos deja de activarse.
