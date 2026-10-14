@@ -2394,3 +2394,47 @@
     .header .brand .brand-wordmark { font-size: 1.36rem; padding: 5px 7px 6px; }
   }
 }
+
+
+/* Hover del logo Latente: identidad intacta (robot + late celeste,
+   nte blanco y punto celeste), sin sufijo .CFD. */
+@layer components {
+  .header .brand > img {
+    transition: transform 240ms ease, filter 240ms ease;
+    transform-origin: 50% 60%;
+  }
+  .header .brand .brand-wordmark {
+    transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease;
+  }
+  .header .brand .brand-late,
+  .header .brand .brand-dot {
+    transition: text-shadow 240ms ease;
+  }
+  @media (hover: hover) {
+    .header .brand:hover > img {
+      transform: translateY(-2px) rotate(-5deg);
+      filter: drop-shadow(0 3px 4px #00aaff6b);
+    }
+    .header .brand:hover .brand-wordmark {
+      transform: translateY(-2px);
+      border-color: #268dca;
+      box-shadow: 0 5px 14px #0a83c04d;
+    }
+    .header .brand:hover .brand-late,
+    .header .brand:hover .brand-dot {
+      text-shadow: 0 0 8px #55ceff7a;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .header .brand > img,
+    .header .brand .brand-wordmark,
+    .header .brand .brand-late,
+    .header .brand .brand-dot {
+      transition: none;
+    }
+    .header .brand:hover > img,
+    .header .brand:hover .brand-wordmark {
+      transform: none;
+    }
+  }
+}
