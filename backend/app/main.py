@@ -274,6 +274,28 @@ def fixtures(
         }
 
 
+@app.get("/api/leagues/{league_id}/bracket")
+def league_bracket(league_id: int, season: int | None = None):
+    """Bracket de encuentros realmente importados, no un fixture inventado."""
+    from .brackets import bracket_rows
+    with session_scope() as db:
+        league = league_or_404(db, league_id)
+        year = season or league.season
+        fixtures = list(db.scalars(select(Fixture).where(
+            Fixture.source == settings.mode,
+            Fixture.league_id == league_id,
+            Fixture.season == year,
+        ).order_by(Fixture.kickoff, Fixture.id)))
+        matches = match_payload(db, fixtures)
+        stages = bracket_rows(matches)
+        return {
+            "data": {"stages": stages, "season": year, "league": league.name},
+            "meta": meta(fixtures, coverage=bool(stages),
+                         verified_matches=sum(len(x["matches"]) for x in stages),
+                         note="Etapas verificadas; conexiones entre cruces no inferidas"),
+        }
+
+
 @app.get("/api/leagues/{league_id}/recent")
 def league_recent(league_id: int, season: int | None = None):
     """Últimos partidos terminados y próximos encuentros de la temporada almacenada."""
