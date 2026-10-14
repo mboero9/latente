@@ -69,6 +69,10 @@ jobs:
           docker compose -f deploy/railway/compose.test.yml wait ingest
           curl --fail http://localhost:8088/api/status | python -c 'import json,sys; assert json.load(sys.stdin)["data"]["worker_online"]'
           curl --fail -s -D - -o /dev/null -H 'Origin: https://latente.dimebag.workers.dev' http://localhost:8088/api/leagues | grep -qi 'access-control-allow-origin: https://latente.dimebag.workers.dev'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8088/.env)" = "404"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8088/api/docs)" = "404"
+          curl -fsSI http://localhost:8088/ | grep -qi 'strict-transport-security:'
+          curl -fsS http://localhost:8088/robots.txt | grep -q 'Sitemap: https://latente.cfd/sitemap.xml'
       - if: always()
         run: docker compose -f deploy/railway/compose.test.yml logs --no-color
       - if: always()
