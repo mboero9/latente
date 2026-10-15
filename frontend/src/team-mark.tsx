@@ -10,6 +10,7 @@ const allowed = new Set([
   "media.api-sports.io", "a.espncdn.com", "a1.espncdn.com",
   "a2.espncdn.com", "cdn.espn.com", "cdn.nba.com",
   "upload.wikimedia.org", "static.flashscore.com",
+  "www.thesportsdb.com", "r2.thesportsdb.com", "thesportsdb.com",
 ]);
 
 /** Real provider image when available; initial crest is only a placeholder. */
