@@ -192,3 +192,126 @@ def tables(rows):
             "for":value("pf"),"against":value("pa"),
         })
     return sorted(data,key=lambda r:(r["rank"],r["team"]))
+
+def sync_once(max_calls=3, fetch=None):
+    """Iterative bounded ingestion. No HTTP on user requests.
+
+    A RugbyAPI.com free key grants 50 lookups/day. Reserve at most 40/day
+    globally in PostgreSQL so multiple cron runs cannot exceed free allowance.
+    Tournament-specific current standings use season IDs from actual events;
+    /competitions/{id}/seasons requires Archive (not called on Free).
+    """
+    from datetime import timedelta
+    from .db import session_scope
+    from .models import SportSnapshot, utcnow
+    from .provider import aware
+    from .sports_scheduler import reserve_quota
+    from .rugby_api import _snapshot, _write, _fresh
+
+    outcome={"attempted":[],"updated":[],"unavailable":[]}
+    if not configured():
+        outcome["unavailable"].append("RUGBYAPI_COM_KEY not configured")
+        return outcome
+    fetch=fetch or request
+    now=utcnow()
+    year=now.year
+
+    def call(endpoint, params, dataset, ref, ttl):
+        if len(outcome["attempted"])>=max_calls or _fresh(_snapshot(dataset,ref),ttl):
+            return None
+        if not reserve_quota("rugbyapi",cap=40):
+            return None
+        outcome["attempted"].append(endpoint)
+        try:
+            return fetch(endpoint,params)
+        except (httpx.HTTPError, ValueError, TypeError, KeyError):
+            outcome["unavailable"].append(endpoint)
+            return None
+
+    raw_cats=call("competitions",{},"rugbyapi_cats","current",timedelta(hours=24))
+    if raw_cats is not None:
+        cats=catalogue(raw_cats["data"])
+        if cats:
+            _write("rugbyapi_cats","current",cats,len(cats),"rugbyAPI.com catalogue of verified rugby competitions")
+            outcome["updated"].append("competitions")
+
+    cached_cats=_snapshot("rugbyapi_cats","current")
+    if not cached_cats or not cached_cats.data:
+        return outcome
+    by_id={r["competition_id"]:r["slug"] for r in cached_cats.data if r.get("competition_id")}
+    season_cache=_snapshot("rugbyapi_seasons","current")
+    seasons={item["slug"]:item for item in (season_cache.data if season_cache else [])
+             if isinstance(item,dict) and item.get("slug")}
+
+    for endpoint, params, ref, ttl in (
+        ("fixtures",{"days":60},"fixtures",timedelta(hours=8)),
+        ("results",{},"results",timedelta(hours=8)),
+    ):
+        if len(outcome["attempted"])>=max_calls:
+            break
+        response=call(endpoint,params,"rugbyapi_runs",ref,ttl)
+        if response is None:
+            continue
+        records=[]
+        for game in response["data"]:
+            if not isinstance(game,dict):
+                continue
+            cid=(game.get("competition") or {}).get("id") if isinstance(game.get("competition"),dict) else None
+            slug=by_id.get(cid)
+            if slug:
+                records.append({**game,"_latente_slug":slug})
+        matches,seasons_by_game=match_rows(records)
+        # Record successful feed even when no competition has a match today.
+        _write("rugbyapi_runs",ref,[{"checked":True,"matches":len(records)}],1)
+        touched={}
+        for (slug,y,_),item in matches.items():
+            touched.setdefault((slug,y),[]).append(item)
+        for (slug,y),items in touched.items():
+            key=f"{slug}:{y}"
+            old=_snapshot("rugbyapi_games",key)
+            known={g["id"]:g for g in (old.data if old else []) if isinstance(g,dict) and g.get("id")}
+            known.update({g["id"]:g for g in items})
+            # keep the current/next calendar year, without erasing prior verified games
+            merged=sorted(known.values(),key=lambda g:(g["date"],g["id"]))[-450:]
+            _write("rugbyapi_games",key,merged,len(merged),"rugbyAPI.com: recent fixtures/results, Free coverage")
+        for (slug,y),season_id in seasons_by_game.items():
+            entry=seasons.get(slug)
+            if entry is None or y>=entry.get("year",0):
+                seasons[slug]={"slug":slug,"year":y,"season_id":season_id}
+        if seasons:
+            _write("rugbyapi_seasons","current",list(seasons.values()),len(seasons),
+                   "Current season IDs learned only from actual published rugbyAPI.com matches")
+        outcome["updated"].append(endpoint)
+
+    if len(outcome["attempted"])>=max_calls:
+        return outcome
+    # Current-season official tables, prioritized by oldest successful sync.
+    options=[]
+    for slug,entry in seasons.items():
+        sid=entry.get("season_id")
+        if not isinstance(sid,str) or not re.fullmatch(r"ss_[A-Z0-9]+",sid):
+            continue
+        ref=f"{slug}:{year}"
+        snapshot=_snapshot("rugbyapi_tables",ref)
+        # Season can change, e.g. 2026-27 replaces 2025-26.
+        diagnostic=_snapshot("rugbyapi_diag",sid)
+        if _fresh(diagnostic,timedelta(hours=16)):
+            continue
+        if _fresh(snapshot,timedelta(hours=16)):
+            continue
+        stamp=snapshot.updated_at if snapshot else datetime(2000,1,1,tzinfo=timezone.utc)
+        options.append((aware(stamp),slug,sid,ref))
+    for _,slug,sid,ref in sorted(options):
+        if len(outcome["attempted"])>=max_calls:
+            break
+        resp=call(f"seasons/{sid}/standings",{},"rugbyapi_diag",sid,timedelta(hours=16))
+        if resp is None:
+            continue
+        data=tables(resp["data"])
+        # Free provider may have no table for elimination-format cups.
+        if data:
+            _write("rugbyapi_tables",ref,data,len(data),
+                   f"Standings provided by rugbyAPI.com; season {sid}")
+            outcome["updated"].append(f"standings:{slug}")
+        _write("rugbyapi_diag",sid,[{"checked":True,"count":len(data)}],1)
+    return outcome
