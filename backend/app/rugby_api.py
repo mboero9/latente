@@ -225,8 +225,10 @@ def read_competition(slug, season=None):
     # reverse-engineered from match scores (rugby bonus points vary).
     backup_games = _snapshot("espn_games", f"{slug}:{year}")
     backup_table = _snapshot("espn_standings", f"{slug}:{year}")
+    sportsdb_games = _snapshot("thesportsdb_games", f"{slug}:{year}")
     backup_stats = _snapshot("espn_statistics", f"{slug}:{year}")
-    game_source = primary_games if primary_games and primary_games.data else backup_games
+    game_source = (primary_games if primary_games and primary_games.data else
+                   backup_games if backup_games and backup_games.data else sportsdb_games)
     table_source = primary_table if primary_table and primary_table.data else backup_table
     games = game_source.data if game_source else []
     official = table_source.data if table_source else []
@@ -234,6 +236,7 @@ def read_competition(slug, season=None):
         ("API-Rugby", primary_games if game_source == primary_games and primary_games and primary_games.data else None),
         ("API-Rugby", primary_table if table_source == primary_table and primary_table and primary_table.data else None),
         ("ESPN", backup_games if game_source == backup_games and backup_games and backup_games.data else None),
+        ("TheSportsDB", sportsdb_games if game_source == sportsdb_games and sportsdb_games and sportsdb_games.data else None),
         ("ESPN", backup_table if table_source == backup_table and backup_table and backup_table.data else None),
     ) if row is not None]
     provider = " + ".join(dict.fromkeys(sources)) if sources else "API-Rugby / ESPN"
@@ -392,3 +395,40 @@ def sync_espn_once(max_leagues=1, fetch=None):
             _write("espn_diagnostic_v3", ref, [{"attempted": True}], 1)
             report["unavailable"].append(slug)
     return report
+
+
+def sync_sportsdb_once(max_leagues=2, fetch=None):
+    """Backfill rugby calendar from TheSportsDB; no league standings fabricated.
+
+    Service runs periodically and stores confirmed published events only. Free
+    TheSportsDB API returns a limited number of events per queried season.
+    """
+    from .thesportsdb_rugby import LEAGUES, fetch as fetch_sportsdb
+    fetch = fetch or fetch_sportsdb
+    year=datetime.now(timezone.utc).year
+    options=[]
+    for slug in LEAGUES:
+        ref=f"{slug}:{year}"
+        current=_snapshot("thesportsdb_games",ref)
+        diagnostics=_snapshot("thesportsdb_diagnostic",ref)
+        if _fresh(current,timedelta(hours=12)) or _fresh(diagnostics,timedelta(hours=3)):
+            continue
+        last=min((aware(s.updated_at) for s in (current,diagnostics) if s),
+                 default=datetime(2000,1,1,tzinfo=timezone.utc))
+        options.append((last,list(LEAGUES).index(slug),slug))
+    result={"attempted":[],"updated":[],"unavailable":[]}
+    for _,_,slug in sorted(options)[:max_leagues]:
+        ref=f"{slug}:{year}"
+        result["attempted"].append(slug)
+        try:
+            events=fetch(slug,year)
+            if events:
+                _write("thesportsdb_games",ref,events,len(events),
+                       "TheSportsDB free; fixture coverage is limited")
+                result["updated"].append(slug)
+            else:
+                result["unavailable"].append(slug)
+        except (ValueError,TypeError,KeyError,OSError):
+            result["unavailable"].append(slug)
+        _write("thesportsdb_diagnostic",ref,[{"attempted":True}],1)
+    return result
