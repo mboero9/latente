@@ -602,7 +602,7 @@ function FixturesView({
   );
   return (
     <>
-      <div class="content-columns">
+      <div class={"content-columns" + (!league ? " home-content-columns" : "")}>
         <section class="main-column">
           {league ? (
             <LeagueHeader league={league} view="league" />
@@ -698,7 +698,22 @@ function FixturesView({
           )}
           <Updated meta={result?.meta} />
         </section>
-        <aside class="right-column" aria-label="Resumen de la jornada">
+        <aside class={"right-column" + (!league ? " home-right-column" : "")} aria-label={league ? "Resumen de la jornada" : "Históricos y resumen de la jornada"}>
+          {!league && (
+            <div class="home-historics" aria-label="Tablas históricas del fútbol">
+              <div class="view-heading home-historics-heading">
+                <div><span class="eyebrow">EL ARCHIVO DE LATENTE</span><h2>Históricos del fútbol</h2></div>
+              </div>
+              <nav class="home-historics-jumps" aria-label="Ir a una tabla histórica">
+                <button type="button" onClick={() => document.getElementById("goleadores-historicos")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Goleadores</button>
+                <button type="button" onClick={() => document.getElementById("copas-clubes")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Copas internacionales</button>
+                <button type="button" onClick={() => document.getElementById("copas-selecciones")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Selecciones</button>
+              </nav>
+              <WorldScorersSection/>
+              <ClubHonours/>
+              <NationalHonours/>
+            </div>
+          )}
           {spotlight && <Focus match={spotlight} tz={tz} />}
           <MiniTable league={league || leagues[0]} />
           <div class="quiet-note">
@@ -713,21 +728,6 @@ function FixturesView({
           </div>
         </aside>
       </div>
-      {!league && (
-        <div class="home-historics" aria-label="Tablas históricas del fútbol">
-          <div class="view-heading home-historics-heading">
-            <div><span class="eyebrow">EL ARCHIVO DE LATENTE</span><h2>Históricos del fútbol</h2></div>
-          </div>
-          <nav class="home-historics-jumps" aria-label="Ir a una tabla histórica">
-            <button type="button" onClick={() => document.getElementById("goleadores-historicos")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Goleadores</button>
-            <button type="button" onClick={() => document.getElementById("copas-clubes")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Copas internacionales de clubes</button>
-            <button type="button" onClick={() => document.getElementById("copas-selecciones")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Títulos de selecciones</button>
-          </nav>
-          <WorldScorersSection/>
-          <ClubHonours/>
-          <NationalHonours/>
-        </div>
-      )}
     </>
   );
 }
