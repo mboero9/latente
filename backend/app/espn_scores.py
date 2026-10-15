@@ -93,18 +93,56 @@ def rugby_feed(league="urba", season=None):
     name, league_id = RUGBY_LEAGUES[league]
 
     def produce():
-        params = {"dates": f"{year}0101-{year}1231", "limit": 500}
-        raw = _get(f"{ESPN_SITE}/rugby/{league_id}/scoreboard", params)
-        games = [m for m in normalize_games(raw, name) if (m.get("date") or "").startswith(str(year))]
+        # ESPN rejects year-long rugby scoreboard ranges with HTTP 400.
+        # Query bounded 40-day windows, then try the legacy rugby-league
+        # route used by some ESPN competitions. Never scrape HTML.
+        today = datetime.now(timezone.utc).date()
+        windows = [
+            (today - timedelta(days=35), today + timedelta(days=10)),
+            (today + timedelta(days=10), today + timedelta(days=55)),
+        ]
+        games = []
+        used_route = None
+        for rugby_path in ("rugby", "rugby-league"):
+            candidate = {}
+            successful = False
+            for first, last in windows:
+                if first.year > year or last.year < year:
+                    continue
+                from_day = max(first, date(year, 1, 1))
+                to_day = min(last, date(year, 12, 31))
+                try:
+                    raw = _get(f"{ESPN_SITE}/{rugby_path}/{league_id}/scoreboard", {
+                        "dates": from_day.strftime("%Y%m%d") + "-" + to_day.strftime("%Y%m%d"),
+                        "limit": 125,
+                    })
+                    successful = True
+                    for match in normalize_games(raw, name):
+                        if (match.get("date") or "").startswith(str(year)):
+                            candidate[match["id"]] = match
+                except (httpx.HTTPError, ValueError, KeyError, TypeError):
+                    continue
+            if candidate:
+                games = sorted(candidate.values(), key=lambda match: (match["date"] or "", match["id"]))
+                used_route = rugby_path
+                break
+            if successful:
+                used_route = rugby_path
+        # The public ESPN feeds sometimes expose a standalone standings
+        # endpoint and sometimes only a metadata stub. An empty response
+        # must never be shown as official rankings.
         official = []
-        try:
-            standings = _get(f"{ESPN_TABLES}/rugby/{league_id}/standings", {"season": year})
-            for group in standings.get("children") or []:
-                official.extend(_nba_rows(group))
-            if not official:
-                official = _nba_rows(standings)
-        except (httpx.HTTPError, ValueError, KeyError, TypeError):
-            pass
+        for rugby_path in dict.fromkeys((used_route or "rugby", "rugby-league")):
+            try:
+                standings = _get(f"{ESPN_TABLES}/{rugby_path}/{league_id}/standings", {"season": year})
+                for group in standings.get("children") or []:
+                    official.extend(_nba_rows(group))
+                if not official:
+                    official = _nba_rows(standings)
+                if official:
+                    break
+            except (httpx.HTTPError, ValueError, KeyError, TypeError):
+                continue
         # Avoid publishing a fake official championship ranking: rugby bonus
         # points vary by tournament and cannot be inferred from scores.
         from collections import defaultdict
