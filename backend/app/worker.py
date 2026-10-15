@@ -740,6 +740,14 @@ def run(once=False, max_seconds=120):
                          len(espn_report["unavailable"]))
             except Exception as exc:
                 log.warning("espn_rugby_sync_error_type=%s", type(exc).__name__)
+            try:
+                from .rugby_api import sync_sportsdb_once
+                rugby_fallback=sync_sportsdb_once(max_leagues=2)
+                log.info("thesportsdb_rugby_attempts=%s updated=%s unavailable=%s",
+                         len(rugby_fallback["attempted"]),len(rugby_fallback["updated"]),
+                         len(rugby_fallback["unavailable"]))
+            except Exception as exc:
+                log.warning("thesportsdb_rugby_error_type=%s",type(exc).__name__)
         client = FootballClient()
         try:
             if settings.mode == "api" and settings.api_key:
