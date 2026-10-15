@@ -697,6 +697,10 @@ function FixturesView({
             </div>
           )}
           <Updated meta={result?.meta} />
+        </section>
+        <aside class={"right-column" + (!league ? " home-right-column" : "")} aria-label="Resumen de la jornada e históricos">
+          {spotlight && <Focus match={spotlight} tz={tz} />}
+          <MiniTable league={league || leagues.find(l => l.id === 128) || leagues.find(l => l.country === "Argentina" && l.kind?.toLowerCase() === "league") || leagues[0]} />
           {!league && (
             <div class="home-historics" aria-label="Tablas históricas del fútbol">
               <div class="view-heading home-historics-heading">
@@ -712,10 +716,6 @@ function FixturesView({
               <NationalHonours/>
             </div>
           )}
-        </section>
-        <aside class="right-column" aria-label="Resumen de la jornada">
-          {spotlight && <Focus match={spotlight} tz={tz} />}
-          <MiniTable league={league || leagues[0]} />
           <div class="quiet-note">
             <Icon name="refresh" />
             <div>
