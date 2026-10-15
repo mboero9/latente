@@ -1401,7 +1401,7 @@ function App() {
   // Preserve actionable errors such as exhausted quota or offline worker.
   const hideGenericHomeDelay = view === "" && status?.mode === "api" &&
     status.configured && status.worker_online && !status.quota_exhausted &&
-    (status.restricted_jobs ?? 0) === 0 && status.fixtures_today > 0;
+    (status.restricted_jobs ?? 0) === 0 && (status.fixtures_today ?? 0) > 0;
   return (
     <>
       <a
