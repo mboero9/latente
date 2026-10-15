@@ -14,6 +14,7 @@ type Position = {
   lost: number | null; points: number | null;
   for: number | null; against: number | null;
 };
+type MatchStats = {team:string;pj:number;g:number;e:number;p:number;for:number;against:number};
 type Competition = {
   slug: string; name: string; league_id?: number | null;
   league_name?: string | null; country?: string | null; seasons?: number[];
@@ -21,7 +22,7 @@ type Competition = {
 type RugbyData = {
   available: boolean; configured: boolean; provider: string;
   league_name: string; season: number; seasons: number[];
-  games: Match[]; official: Position[];
+  games: Match[]; official: Position[]; statistics?: MatchStats[];
   updated_at?: string; message?: string | null;
 };
 
@@ -96,9 +97,20 @@ export function RugbyHub() {
         <td>{r.played ?? "—"}</td><td>{r.won ?? "—"}</td><td>{r.drawn ?? "—"}</td>
         <td>{r.lost ?? "—"}</td><td>{r.points ?? "—"}</td>
       </tr>)}</tbody></table>
-    </div> : <p class="coverage-notice">
-      No hay posiciones oficiales verificadas para esta temporada. No se calculan puntos bonus ni desempates a partir de marcadores.
-    </p>}
+    </div> : <>
+      <p class="coverage-notice">No hay posiciones oficiales verificadas para esta temporada. No se calculan puntos bonus ni desempates a partir de marcadores.</p>
+      {Boolean(data?.statistics?.length) && <div class="rugby-partial-record">
+        <h3>Rendimiento registrado · partidos disponibles (no es la tabla oficial)</h3>
+        <div class="panel table-scroll"><table><thead><tr><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>A favor</th><th>En contra</th></tr></thead>
+          <tbody>{data!.statistics!.map(row=><tr key={row.team}>
+            <th scope="row"><span class="sport-team-inline"><TeamMark name={row.team}/>{row.team}</span></th>
+            <td>{row.pj}</td><td>{row.g}</td><td>{row.e}</td><td>{row.p}</td>
+            <td>{row.for}</td><td>{row.against}</td>
+          </tr>)}</tbody>
+        </table></div>
+        <p class="updated">Solo se contabilizan los resultados finalizados disponibles en ESPN. No incluye puntos bonus ni es una clasificación completa de temporada.</p>
+      </div>}
+    </>}
 
     <h2 class="sport-section-title">Resultados y próximos partidos</h2>
     <div class="sports-tabs" role="group">
