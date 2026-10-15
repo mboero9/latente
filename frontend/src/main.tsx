@@ -29,6 +29,7 @@ import { sports, SportPage, HistoryPage } from "./other-sports";
 import { NavRail } from "./nav-rail";
 import { WorldScorersPage, WorldScorersSection } from "./world-scorers";
 import { ClubHonours, NationalHonours } from "./historical-honours";
+import { RugbyHomeTables } from "./rugby-home-tables";
 
 const LIVE = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT"]);
 const labels: Record<string, string> = {
@@ -701,6 +702,7 @@ function FixturesView({
         <aside class={"right-column" + (!league ? " home-right-column" : "")} aria-label="Resumen de la jornada e históricos">
           {spotlight && <Focus match={spotlight} tz={tz} />}
           <MiniTable league={league || leagues.find(l => l.id === 128) || leagues.find(l => l.country === "Argentina" && l.kind?.toLowerCase() === "league") || leagues[0]} />
+          {!league && <RugbyHomeTables/>}
           {!league && (
             <div class="home-historics" aria-label="Tablas históricas del fútbol">
               <div class="view-heading home-historics-heading">
