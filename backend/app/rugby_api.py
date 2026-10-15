@@ -412,7 +412,7 @@ def sync_sportsdb_once(max_leagues=2, fetch=None):
     for slug in LEAGUES:
         ref=f"{slug}:{year}"
         current=_snapshot("thesportsdb_games",ref)
-        diagnostics=_snapshot("thesportsdb_diagnostic",ref)
+        diagnostics=_snapshot("tsdb_diagnostic",ref)
         if _fresh(current,timedelta(hours=12)) or _fresh(diagnostics,timedelta(hours=3)):
             continue
         last=min((aware(s.updated_at) for s in (current,diagnostics) if s),
@@ -432,5 +432,5 @@ def sync_sportsdb_once(max_leagues=2, fetch=None):
                 result["unavailable"].append(slug)
         except (ValueError,TypeError,KeyError,OSError):
             result["unavailable"].append(slug)
-        _write("thesportsdb_diagnostic",ref,[{"attempted":True}],1)
+        _write("tsdb_diagnostic",ref,[{"attempted":True}],1)
     return result
