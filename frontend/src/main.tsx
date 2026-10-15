@@ -697,8 +697,6 @@ function FixturesView({
             </div>
           )}
           <Updated meta={result?.meta} />
-        </section>
-        <aside class={"right-column" + (!league ? " home-right-column" : "")} aria-label={league ? "Resumen de la jornada" : "Históricos y resumen de la jornada"}>
           {!league && (
             <div class="home-historics" aria-label="Tablas históricas del fútbol">
               <div class="view-heading home-historics-heading">
@@ -714,6 +712,8 @@ function FixturesView({
               <NationalHonours/>
             </div>
           )}
+        </section>
+        <aside class={"right-column" + (!league ? " home-right-column" : "")} aria-label="Resumen de la jornada">
           {spotlight && <Focus match={spotlight} tz={tz} />}
           <MiniTable league={league || leagues[0]} />
           <div class="quiet-note">
@@ -1397,6 +1397,11 @@ function App() {
       status.quota_exhausted ||
       status.failed_jobs > 0 ||
       (status.fixtures_today === 0 && (status.leagues_loaded ?? 0) > 0));
+  // Hide only the generic temporary refresh notice on the homepage.
+  // Preserve actionable errors such as exhausted quota or offline worker.
+  const hideGenericHomeDelay = view === "" && status?.mode === "api" &&
+    status.configured && status.worker_online && !status.quota_exhausted &&
+    (status.restricted_jobs ?? 0) === 0 && status.fixtures_today > 0;
   return (
     <>
       <a
@@ -1536,7 +1541,7 @@ function App() {
               </span>
             </div>
           )}
-          {warning && (
+          {warning && !hideGenericHomeDelay && (
             <div class="notice warning" role="status">
               <strong>
                 {!status.configured
