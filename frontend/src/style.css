@@ -2822,60 +2822,105 @@
 }
 
 
-/* Home historical rankings sit in the LEFT fixtures column.
- * The RIGHT column retains spotlight and the league mini-table. */
+/* Home historical archive: RIGHT of fixtures, directly BELOW Argentina's mini table.
+   Three independent cards; horizontal scroll for full source columns. */
 @layer components {
   .content-columns.home-content-columns { align-items: start; }
   .home-content-columns .main-column,
   .home-content-columns .right-column { min-width: 0; }
-  .home-content-columns .main-column .home-historics {
-    margin: clamp(28px, 3.2vw, 42px) 0 8px;
+  .home-content-columns .home-right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
     min-width: 0;
+    padding-top: 7px;
+  }
+  .home-right-column .home-historics {
     width: 100%;
+    min-width: 0;
+    margin: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 20px;
+    gap: 15px;
   }
-  .home-content-columns .main-column .home-historics-heading { margin: 0; }
-  .home-content-columns .main-column .home-historics-jumps { margin-top: -6px; gap: 8px; }
-  .home-content-columns .main-column .home-historics > .world-scorers-section,
-  .home-content-columns .main-column .home-historics > .historical-honours-section {
-    min-width: 0;
-    width: 100%;
-    display: grid;
-    gap: 14px;
-    padding: clamp(14px, 2vw, 20px);
+  .home-right-column .home-historics-heading { margin: 0; }
+  .home-right-column .home-historics-jumps {
+    margin: -4px 0 0;
+    gap: 6px;
   }
-  .home-content-columns .main-column .home-historics .panel.table-scroll {
-    min-width: 0;
+  .home-right-column .home-historics-jumps button {
+    padding: 7px 9px;
+    font-size: .75rem;
+  }
+  .home-right-column .home-historics > .world-scorers-section,
+  .home-right-column .home-historics > .historical-honours-section {
     width: 100%;
+    min-width: 0;
+    gap: 11px;
+    padding: 15px 12px;
+    border-radius: 12px;
+  }
+  .home-right-column .home-historics h2 {
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+  .home-right-column .home-historics .coverage-notice,
+  .home-right-column .home-historics .updated {
+    font-size: .76rem;
+    line-height: 1.5;
+  }
+  .home-right-column .home-historics .panel.table-scroll {
+    display: block;
     max-width: 100%;
-    max-height: 470px;
+    min-width: 0;
+    width: 100%;
+    max-height: 360px;
     overflow: auto;
     scrollbar-width: thin;
     -webkit-overflow-scrolling: touch;
   }
-  .home-content-columns .main-column .home-historics .panel.table-scroll thead th {
+  .home-right-column .home-historics .panel.table-scroll thead th {
     position: sticky;
     top: 0;
-    z-index: 1;
+    z-index: 2;
     background: var(--surface);
   }
-  .home-content-columns .main-column .home-historics .historical-honours-section table {
-    min-width: 650px;
+  .home-right-column .home-historics .scorers-table,
+  .home-right-column .home-historics .historical-honours-section table {
+    min-width: 630px;
+    font-size: .81rem;
+  }
+  .home-right-column .home-historics .historical-filter-tabs {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .home-right-column .home-historics .historical-filter-tabs button {
+    padding: 6px 8px;
+    font-size: .72rem;
   }
 }
 @layer responsive {
-  @media (max-width: 1100px) {
-    .home-content-columns .main-column .home-historics {
-      margin-top: 30px;
-      gap: 18px;
+  @media (min-width: 1101px) {
+    .content-columns.home-content-columns {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(350px, 42%);
+      gap: clamp(14px, 1.7vw, 25px);
     }
   }
-  @media (max-width: 650px) {
-    .home-content-columns .main-column .home-historics > .world-scorers-section,
-    .home-content-columns .main-column .home-historics > .historical-honours-section {
-      padding: 13px 11px;
+  @media (max-width: 1100px) {
+    .content-columns.home-content-columns {
+      display: block;
+    }
+    .content-columns.home-content-columns .home-right-column {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      margin-top: 28px;
+      gap: 18px;
+    }
+    .home-right-column .home-historics > .world-scorers-section,
+    .home-right-column .home-historics > .historical-honours-section {
+      padding: 14px 12px;
     }
   }
 }
