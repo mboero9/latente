@@ -49,7 +49,7 @@ def test_sportsdb_cron_saves_fixture_without_creating_fake_official_table():
     assert audit["updated"]==["top-14"]
     with session_scope() as s:
         record=s.get(SportSnapshot,("rugby","thesportsdb_games",f"top-14:{year}"))
-        assert record.provider=="api_rugby"  # source specific dataset; read model labels provider
+        assert record.provider=="thesportsdb"
         assert record.source_count==2
     data=rugby_api.read_competition("top-14",year)
     assert data["available"]
