@@ -211,7 +211,8 @@ def _write(kind, ref, rows, count, note=""):
             return False
         upsert(db, SportSnapshot, {
             "sport": "rugby", "dataset": kind, "ref": ref,
-            "provider": ("thesportsdb" if kind.startswith("thesportsdb_") else
+            "provider": ("rugbyapi.com" if kind.startswith("rugbyapi_") else
+                         "thesportsdb" if kind.startswith("thesportsdb_") else
                          "espn" if kind.startswith("espn_") else "api_rugby"),
             "data": rows, "source_count": count,
             "updated_at": now, "note": note[:250],
@@ -225,18 +226,48 @@ def catalog():
 
 
 def public_catalog():
-    rows = catalog()
-    by_slug = {r["slug"]: r for r in rows if isinstance(r, dict) and r.get("slug") in BY_SLUG}
-    return [{"slug": slug, "name": title,
-             **{k: v for k, v in by_slug.get(slug, {}).items() if k != "slug"}}
-            for slug, title, _, _ in COMPETITIONS]
+    by_slug = {row["slug"]: row for row in catalog()
+               if isinstance(row,dict) and row.get("slug") in BY_SLUG}
+    external=_snapshot("rugbyapi_cats","current")
+    discovered=external.data if external else []
+    by_com={row["slug"]:row for row in discovered
+            if isinstance(row,dict) and row.get("slug")}
+    seasons_snapshot=_snapshot("rugbyapi_seasons","current")
+    seasons=seasons_snapshot.data if seasons_snapshot else []
+    seasons_by_slug={}
+    for item in seasons:
+        if isinstance(item,dict) and item.get("slug") and isinstance(item.get("year"),int):
+            seasons_by_slug.setdefault(item["slug"],set()).add(item["year"])
+    result=[]
+    for slug,title,_,_ in COMPETITIONS:
+        from_api=by_slug.get(slug,{})
+        mapped=by_com.get(slug,{})
+        result.append({
+            "slug":slug,"name":title,
+            **{k:v for k,v in from_api.items() if k not in ("name","slug","seasons")},
+            "rugbyapi_id":mapped.get("competition_id"),
+            "region":mapped.get("region") or mapped.get("country"),
+            "source_coverage":bool(mapped),
+            "seasons":sorted(set(from_api.get("seasons") or []).union(seasons_by_slug.get(slug,set())),reverse=True)
+        })
+    for row in discovered:
+        if not isinstance(row,dict) or not row.get("slug") or row["slug"] in BY_SLUG:
+            continue
+        result.append({
+            "slug":row["slug"],"name":row["name"],
+            "rugbyapi_id":row.get("competition_id"),
+            "region":row.get("region") or row.get("country"),
+            "source_coverage":True,
+            "seasons":sorted(seasons_by_slug.get(row["slug"],set()),reverse=True)
+        })
+    return result
 
 
 def read_competition(slug, season=None):
-    if slug not in BY_SLUG:
+    row = next((c for c in public_catalog() if c["slug"] == slug), None)
+    if row is None:
         raise ValueError("unknown competition")
-    row = next((c for c in public_catalog() if c["slug"] == slug), {})
-    title = BY_SLUG[slug][0]
+    title = row["name"]
     league_id = row.get("league_id")
     available = row.get("seasons") or []
     current_year = datetime.now(timezone.utc).year
@@ -252,22 +283,41 @@ def read_competition(slug, season=None):
     backup_games = _snapshot("espn_games", f"{slug}:{year}")
     backup_table = _snapshot("espn_standings", f"{slug}:{year}")
     sportsdb_games = _snapshot("thesportsdb_games", f"{slug}:{year}")
+    rugbyapi_games = _snapshot("rugbyapi_games", f"{slug}:{year}")
+    rugbyapi_table = _snapshot("rugbyapi_tables", f"{slug}:{year}")
     backup_stats = _snapshot("espn_statistics", f"{slug}:{year}")
-    game_source = (primary_games if primary_games and primary_games.data else
+    game_source = (rugbyapi_games if rugbyapi_games and rugbyapi_games.data else
+                   primary_games if primary_games and primary_games.data else
                    backup_games if backup_games and backup_games.data else sportsdb_games)
-    table_source = primary_table if primary_table and primary_table.data else backup_table
-    games = game_source.data if game_source else []
+    table_source = (rugbyapi_table if rugbyapi_table and rugbyapi_table.data else
+                    primary_table if primary_table and primary_table.data else backup_table)
+    # Independent providers may publish only part of the calendar. Merge real
+    # matches by teams and date, with fresh completed results taking precedence.
+    by_game = {}
+    for source in (sportsdb_games, backup_games, primary_games, rugbyapi_games):
+        for game in (source.data or []) if source else []:
+            if not isinstance(game,dict) or not game.get("home") or not game.get("away"):
+                continue
+            identity = (_clean(game["home"]),_clean(game["away"]),str(game.get("date") or "")[:10])
+            previous = by_game.get(identity)
+            if previous and previous.get("completed") and not game.get("completed"):
+                continue
+            by_game[identity] = game
+    games = sorted(by_game.values(), key=lambda g: (g.get("date") or "", g.get("id") or ""))
     official = table_source.data if table_source else []
     sources = [src for src, row in (
+        ("rugbyAPI.com", rugbyapi_games if rugbyapi_games and rugbyapi_games.data else None),
+        ("rugbyAPI.com", rugbyapi_table if rugbyapi_table and rugbyapi_table.data else None),
         ("API-Rugby", primary_games if game_source == primary_games and primary_games and primary_games.data else None),
         ("API-Rugby", primary_table if table_source == primary_table and primary_table and primary_table.data else None),
         ("ESPN", backup_games if game_source == backup_games and backup_games and backup_games.data else None),
         ("TheSportsDB", sportsdb_games if game_source == sportsdb_games and sportsdb_games and sportsdb_games.data else None),
         ("ESPN", backup_table if table_source == backup_table and backup_table and backup_table.data else None),
     ) if row is not None]
-    provider = " + ".join(dict.fromkeys(sources)) if sources else "API-Rugby / ESPN"
+    provider = " + ".join(dict.fromkeys(sources)) if sources else "API-Rugby / ESPN / rugbyAPI.com"
     return {
-        "available": bool(games or official), "configured": key_configured(),
+        "available": bool(games or official),
+        "configured": key_configured() or bool(os.getenv("RUGBYAPI_COM_KEY")),
         "provider": provider, "league_name": title,
         "season": year, "seasons": sorted(set([*available, *([year] if games or official else [])]), reverse=True),
         "games": games, "official": official,
