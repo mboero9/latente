@@ -225,6 +225,7 @@ def read_competition(slug, season=None):
     # reverse-engineered from match scores (rugby bonus points vary).
     backup_games = _snapshot("espn_games", f"{slug}:{year}")
     backup_table = _snapshot("espn_standings", f"{slug}:{year}")
+    backup_stats = _snapshot("espn_statistics", f"{slug}:{year}")
     game_source = primary_games if primary_games and primary_games.data else backup_games
     table_source = primary_table if primary_table and primary_table.data else backup_table
     games = game_source.data if game_source else []
@@ -241,7 +242,8 @@ def read_competition(slug, season=None):
         "provider": provider, "league_name": title,
         "season": year, "seasons": sorted(set([*available, *([year] if games or official else [])]), reverse=True),
         "games": games, "official": official,
-        "updated_at": max((aware(row.updated_at) for row in (game_source, table_source) if row), default=None),
+        "statistics": backup_stats.data if backup_stats else [],
+        "updated_at": max((aware(row.updated_at) for row in (game_source, table_source, backup_stats) if row), default=None),
         "message": None if games or official else
             "Sin partidos o clasificaciones verificadas en las fuentes disponibles para esta temporada.",
     }
@@ -366,6 +368,11 @@ def sync_espn_once(max_leagues=1, fetch=None):
             result = fetch(slug, current)
             games = result.get("games") or []
             official = espn_standings(result.get("official") or [])
+            # ESPN's already-derived match-only stats can be shown separately,
+            # never with official ranks or rugby competition/bonus points.
+            partial = [v for v in (result.get("statistics") or [])
+                       if isinstance(v, dict) and v.get("team") and
+                       isinstance(v.get("pj"), int) and v["pj"] > 0]
             if games:
                 _write("espn_games", ref, games, len(games), "ESPN: partidos y fixture, cobertura parcial")
                 report["updated"].append(f"games:{slug}")
@@ -373,7 +380,11 @@ def sync_espn_once(max_leagues=1, fetch=None):
                 _write("espn_standings", ref, official, len(official),
                        "ESPN: clasificación publicada por proveedor, sin calcular bonus")
                 report["updated"].append(f"standings:{slug}")
-            if not games and not official:
+            if partial:
+                _write("espn_statistics", ref, partial, len(partial),
+                       "Estadísticas parciales solo de encuentros verificados ESPN")
+                report["updated"].append(f"statistics:{slug}")
+            if not games and not official and not partial:
                 report["unavailable"].append(slug)
             # Record last attempt to throttle empty and restricted sources.
             _write("espn_diagnostic", ref, [{"attempted": True}], 1)
