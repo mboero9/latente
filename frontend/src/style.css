@@ -2952,3 +2952,17 @@
   .rugby-home-card .table-scroll thead th {position:sticky;top:0;background:var(--surface);}
   .rugby-home-card a {color:var(--green);font-size:.82rem;font-weight:700;}
 }
+
+
+@layer components {
+ .rugby-all-league-tables {display:grid;gap:16px;min-width:0;margin-top:32px;}
+ .rugby-league-card-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:15px;align-items:start;}
+ .rugby-league-card {padding:14px;min-width:0;display:grid;gap:12px;}
+ .rugby-league-card-heading {display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+ .rugby-league-card h3 {font-size:1rem;margin:0;}
+ .rugby-league-card .table-scroll {width:100%;max-width:100%;overflow-x:auto;max-height:430px;overflow-y:auto;scrollbar-width:thin;}
+ .rugby-league-card table {min-width:580px;font-size:.82rem;}
+ .rugby-league-card table thead th {position:sticky;top:0;background:var(--surface);z-index:1;}
+ .rugby-all-league-tables input[type="search"] {display:block;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);}
+ .sport-more-leagues {justify-self:center;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:10px 17px;font-weight:700;color:var(--green);}
+}
