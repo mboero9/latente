@@ -102,6 +102,7 @@ def _trusted_logo(value):
     parsed = urlparse(value)
     if parsed.scheme != "https" or parsed.hostname not in {
         "media.api-sports.io", "upload.wikimedia.org", "cdn.nba.com",
+        "a.espncdn.com", "a1.espncdn.com", "a2.espncdn.com", "cdn.espn.com",
     }:
         return None
     return value
