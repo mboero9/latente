@@ -2924,3 +2924,19 @@
     }
   }
 }
+
+/* Authentic provider shields when present, explicit initials for unavailable ones.
+   Keep exact same footprint throughout rugby/handball/volley/US tables. */
+@layer components {
+  .team-mark { display:inline-flex; align-items:center; justify-content:center;
+    width:29px; height:29px; min-width:29px; flex:0 0 29px; vertical-align:middle; }
+  .team-mark img { display:block; width:100%; height:100%; object-fit:contain; }
+  .team-mark-placeholder { display:inline-flex; align-items:center; justify-content:center;
+    width:28px; height:28px; border:1px solid var(--line); border-radius:8px;
+    color:var(--muted); background:var(--surface); letter-spacing:-.02em;
+    font-size:.67rem; font-weight:800; line-height:1; }
+  .sport-team .team-mark, .sport-team-inline .team-mark, .sports-club .team-mark { margin-right:3px; }
+  .sport-team-inline .team-mark img, .sport-team .team-mark img,
+  .sports-club .team-mark img { width:100%; height:100%; object-fit:contain; }
+  .sports-club .team-mark { width:26px; height:26px; min-width:26px; flex-basis:26px; }
+}
