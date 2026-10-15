@@ -19,6 +19,7 @@ import { MatchOdds, LiveOddsMini } from "./match-odds";
 import type { LiveOddsSummary } from "./match-odds";
 import { CupBracket } from "./cup-bracket";
 import { WatchGuide } from "./watch-guide";
+import { BettingView } from "./betting-guide";
 import { LeagueRecent } from "./league-recent";
 import { WatchView } from "./watch-options";
 import { PromediosPage } from "./argentina-promedios";
@@ -1427,6 +1428,7 @@ function App() {
               ["/", "Partidos"],
               ["/leagues", "Ligas"],
               ["/tv", "📺 Dónde ver"],
+              ["/bet", "18+ Dónde apostar"],
               [`/table/${first}`, "Posiciones"],
               [`/scorers/${first}`, "Goleadores"],
               ["/league/253", "🇺🇸 MLS"],
@@ -1623,6 +1625,8 @@ function App() {
             )
           ) : view === "sport" ? (
             <SportPage slug={rawId} />
+          ) : view === "bet" ? (
+            <BettingView />
           ) : view === "tv" ? (
             <WatchGuide />
           ) : view === "world-scorers" ? (
