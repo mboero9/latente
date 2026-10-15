@@ -5,6 +5,7 @@ import { WatchGuide } from "./watch-guide";
 import { RugbyCompetitions } from "./rugby-competitions";
 import { ReferenceSportPage } from "./reference-sports";
 import { RugbyHub } from "./rugby-hub";
+import { TeamMark } from "./team-mark";
 import type { League, Team } from "./types";
 export const sports = [
   { slug: "nhl", name: "NHL · Hockey", emoji: "🏒" },
@@ -22,7 +23,7 @@ export const sports = [
 /** Consultas oficiales: no se conoce la señal del partido individual. */
 type SportStatus = { name: string; configured: boolean; note: string };
 type Archive = { season: number; matches_loaded: number; official_leader: {team: Team;group: string}|null;leading_scorer:{name:string;goals:number;team:Team}|null;complete:boolean };
-type OtherGame = {id:number|null;league:string;date:string|{start?:string};home:string;away:string;home_logo?:string|null;away_logo?:string|null;league_logo?:string|null;home_score:number|null;away_score:number|null;status:string};
+type OtherGame = {id:number|null;home_id?:number|null;away_id?:number|null;league:string;date:string|{start?:string};home:string;away:string;home_logo?:string|null;away_logo?:string|null;league_logo?:string|null;home_score:number|null;away_score:number|null;status:string};
 type OtherGamesResponse = {configured:boolean;games:OtherGame[];message:string|null};
 export function SportPage({ slug }: { slug: string }) {
   const sport = sports.find(x => x.slug === slug);
@@ -99,9 +100,9 @@ export function SportPage({ slug }: { slug: string }) {
       {visible.length ? <div class="sports-games">{visible.map((game, idx) => <article class="panel sport-game" key={game.id ?? idx}>
         <small class="sport-game-league">{game.league_logo && <img src={game.league_logo} alt="" loading="lazy" onError={e => {e.currentTarget.style.display = "none";}}/>}{game.league || "Competición"}</small>
         <div class="sport-game-teams">
-          <strong class="sport-team">{game.home_logo && <img src={game.home_logo} alt="" loading="lazy" onError={e => {e.currentTarget.style.display = "none";}}/>}{game.home}</strong>
+          <strong class="sport-team"><TeamMark name={game.home} logo={game.home_logo} sport={slug} teamId={game.home_id}/>{game.home}</strong>
           <span>{game.home_score ?? "—"} : {game.away_score ?? "—"}</span>
-          <strong class="sport-team sport-team-away">{game.away_logo && <img src={game.away_logo} alt="" loading="lazy" onError={e => {e.currentTarget.style.display = "none";}}/>}{game.away}</strong>
+          <strong class="sport-team sport-team-away"><TeamMark name={game.away} logo={game.away_logo} sport={slug} teamId={game.away_id}/>{game.away}</strong>
         </div>
         <small>{game.status || "Estado no informado"}</small>
 
@@ -110,14 +111,14 @@ export function SportPage({ slug }: { slug: string }) {
       </article>}
       <>
       <h2 class="sport-section-title">Equipos encontrados ({clubs.size})</h2>
-      {clubs.size ? <div class="sports-clubs">{Array.from(clubs.entries()).map(([name, logo]) => <span class="sports-club" key={name}>{logo && <img src={logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{name}</span>)}</div> :
+      {clubs.size ? <div class="sports-clubs">{Array.from(clubs.entries()).map(([name, logo]) => <span class="sports-club" key={name}><TeamMark name={name} logo={logo} />{name}</span>)}</div> :
       <p class="match-details-unavailable">Los equipos aparecerán cuando haya encuentros verificados.</p>}
       <h2 class="sport-section-title">Rendimiento reciente · datos parciales</h2>
       <p class="updated">Ranking calculado solo con resultados finales verificados de los días consultados; no representa las posiciones de la temporada ni los récords históricos.</p>
       {ranking.length ? <div class="panel sport-record-table" role="table" aria-label="Victorias en la ventana disponible">
         <div class="sport-record-row sport-record-heading" role="row"><span>Equipo</span><span>PJ</span><span>G</span><span>A favor</span></div>
         {ranking.map(([name, data]) => <div class="sport-record-row" role="row" key={name}>
-          <strong class="sport-team-inline">{clubs.get(name) && <img src={clubs.get(name)!} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{name}</strong><span>{data.played}</span><span>{data.wins}</span><span>{data.scored}</span>
+          <strong class="sport-team-inline"><TeamMark name={name} logo={clubs.get(name)}/>{name}</strong><span>{data.played}</span><span>{data.wins}</span><span>{data.scored}</span>
         </div>)}
       </div> : <p class="match-details-unavailable">No hay suficientes resultados finales en la ventana para calcular estadísticas fiables.</p>}
       </>
