@@ -2966,3 +2966,58 @@
  .rugby-all-league-tables input[type="search"] {display:block;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);}
  .sport-more-leagues {justify-self:center;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:10px 17px;font-weight:700;color:var(--green);}
 }
+
+/* Latente: logo aprobado para el header claro (sin pastilla oscura).
+   Se mantiene el ícono original a la izquierda y la tipografía en texto. */
+@layer components {
+  .header .brand,
+  :root[data-theme="dark"] .header .brand {
+    gap: 10px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .header .brand > img {
+    width: 43px;
+    height: 43px;
+    object-fit: contain;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+  }
+  .header .brand .brand-wordmark {
+    display: inline-flex;
+    align-items: baseline;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+    color: #0b2540;
+    font-size: 1.82rem;
+    font-weight: 850;
+    letter-spacing: -1.5px;
+    line-height: 1.1;
+  }
+  .header .brand .brand-late { color: #29bfff; }
+  .header .brand .brand-nte { color: #0b2540; }
+  .header .brand .brand-dot { color: #29bfff; margin-left: 0; }
+  :root[data-theme="dark"] .header .brand .brand-nte { color: #f5fbff; }
+  @media (hover: hover) {
+    .header .brand:hover .brand-wordmark {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
+  }
+}
+@layer responsive {
+  @media (max-width: 650px) {
+    .header .brand { gap: 6px; }
+    .header .brand > img { width: 34px; height: 34px; }
+    .header .brand .brand-wordmark { font-size: 1.36rem; padding: 0; }
+  }
+}
