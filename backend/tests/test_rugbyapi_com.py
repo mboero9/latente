@@ -60,7 +60,21 @@ def test_home_country_override_and_argentina_independent_card():
     assert 'slug:"currie-cup"' in home
     assert 'slug:"npc-nz"' in home
     assert '<RugbyHomeTables/>' in main
-    assert 'País sugerido por idioma o zona horaria' in home
+    assert 'País sugerido por Cloudflare' in home
     assert 'slug:"japan"' not in home
     assert 'slug:"chile"' not in home
     assert 'slug:"uruguay"' not in home
+
+
+def test_country_hint_keeps_no_ip_and_allows_browser_fallback():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    with TestClient(app) as client:
+        valid=client.get("/api/visitor/country",headers={"CF-IPCountry":"NZ"})
+        assert valid.status_code==200
+        assert valid.json()["data"]["country"]=="NZ"
+        assert "ip" not in valid.json()["data"]
+        empty=client.get("/api/visitor/country",headers={"CF-IPCountry":"XX"})
+        assert empty.json()["data"]["country"] is None
+    nginx=(ROOT/"deploy/railway/nginx.conf.template").read_text()
+    assert 'proxy_set_header CF-IPCountry $http_cf_ipcountry;' in nginx
