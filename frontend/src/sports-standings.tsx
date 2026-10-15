@@ -1,5 +1,6 @@
 import { useState } from "preact/hooks";
 import { useApi } from "./api";
+import { TeamMark } from "./team-mark";
 
 type Dataset = { kind: string; ref: string; updated_at: string; count: number; note: string };
 type StandRow = { team_id: number | string; team: string; group: string | null;
@@ -61,7 +62,7 @@ export function SportsStandings({sport}:{sport:string}) {
                 return <tr key={isRace?i:(standings.team_id+"-"+standings.group)}>
                   <td>{isRace?race.position??i+1:standings.rank??i+1}</td>
                   <th scope="row"><span class="sport-team-inline">
-                    {logo&&<img src={logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}
+                    {!isRace&&<TeamMark name={name} logo={logo} teamId={standings.team_id} sport={sport}/>}
                     {name}</span></th>
                   <td>{isRace?(current.kind==="drivers"?"Pilotos":"Escuderías"):standings.group||"General"}</td>
                   {!isRace&&<><td><Amount value={standings.played}/></td>
