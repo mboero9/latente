@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { useApi } from "./api";
 import { TeamMark } from "./team-mark";
 
@@ -57,6 +57,11 @@ function MiniRugbyTable({slug,title}:{slug:string;title:string}) {
 export function RugbyHomeTables() {
   const [country,setCountry]=useState(preferredCountry);
   const [local,setLocal]=useState(false);
+  const {result:regionResult}=useApi<{country:string|null;source:string}>("/api/visitor/country",0);
+  useEffect(()=>{
+    const code=regionResult?.data?.country;
+    if (!local && code && COUNTRIES[code]) setCountry(code);
+  },[regionResult?.data?.country,local]);
   const options=Object.entries(COUNTRIES);
   const countryInfo=COUNTRIES[country]||COUNTRIES.AR;
   const outside=countryInfo.slug!=="urba";
@@ -70,6 +75,6 @@ export function RugbyHomeTables() {
       </select>
     </label>
     {outside&&<MiniRugbyTable slug={countryInfo.slug} title={countryInfo.label}/>}
-    <p class="updated">{local?"País elegido manualmente.":"País sugerido por idioma o zona horaria del navegador, no por geolocalización."} Podés elegir otra competición desde el menú.</p>
+    <p class="updated">{local?"País elegido manualmente.":"País sugerido por Cloudflare cuando está disponible; si no, por idioma o zona horaria. La selección puede cambiarse."} Podés elegir otra competición desde el menú.</p>
   </section>;
 }
