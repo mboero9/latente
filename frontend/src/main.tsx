@@ -713,7 +713,7 @@ function FixturesView({
             </div>
           )}
         </section>
-        <aside class={"right-column" + (!league ? " home-right-column" : "")} aria-label="Resumen de la jornada">
+        <aside class="right-column" aria-label="Resumen de la jornada">
           {spotlight && <Focus match={spotlight} tz={tz} />}
           <MiniTable league={league || leagues[0]} />
           <div class="quiet-note">
