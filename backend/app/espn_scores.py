@@ -128,6 +128,23 @@ def rugby_feed(league="urba", season=None):
                 break
             if successful:
                 used_route = rugby_path
+        if not games:
+            # Some ESPN rugby deployments reject the 'dates' parameter
+            # entirely. Try the default current scoreboard once per host;
+            # this is intentionally not a claim of full-season coverage.
+            for host in (ESPN_SITE, "https://site.web.api.espn.com/apis/site/v2/sports"):
+                for rugby_path in ("rugby", "rugby-league"):
+                    try:
+                        raw = _get(f"{host}/{rugby_path}/{league_id}/scoreboard")
+                        seen = {match["id"]: match for match in normalize_games(raw, name)
+                                if (match.get("date") or "").startswith(str(year))}
+                        if seen:
+                            games = sorted(seen.values(), key=lambda match: (match["date"] or "", match["id"]))
+                            break
+                    except (httpx.HTTPError, ValueError, KeyError, TypeError):
+                        continue
+                if games:
+                    break
         # The public ESPN feeds sometimes expose a standalone standings
         # endpoint and sometimes only a metadata stub. An empty response
         # must never be shown as official rankings.
