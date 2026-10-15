@@ -129,6 +129,16 @@ def save_catalog(s, rows):
                     key = f"{kind}:253:{season['year']}"
                     active_keys.add(key)
                     ensure_job(s, key, kind, params, utcnow() + timedelta(seconds=matched))
+            # Mantener rankings de asistencias en ligas prioritarias,
+            # sin agotar la cuota consultando todo el catalogo global.
+            if league["id"] in settings.league_ids and league["id"] != 253:
+                coverage = season.get("coverage") or {}
+                if coverage.get("top_assists") is not False:
+                    key = f"assists:{league['id']}:{season['year']}"
+                    active_keys.add(key)
+                    ensure_job(s, key, "assists",
+                               {"league": league["id"], "season": season["year"]},
+                               utcnow() + timedelta(seconds=matched))
             if league.get("type") == "Cup" and league["id"] in settings.league_ids:
                 cup_key = f"fixtures:{league['id']}:{season['year']}"
                 active_keys.add(cup_key)
