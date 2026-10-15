@@ -110,8 +110,8 @@ function F1Content({data,tab,setTab}:{data:F1;tab:"drivers"|"constructors"|"resu
     <div class="panel table-scroll"><table>
       <thead><tr><th>#</th><th>{tab==="constructors"?"Escudería":"Piloto"}</th><th>{tab==="drivers"?"Escudería":tab==="results"?"Escudería":"Victorias"}</th><th>{tab==="results"?"Tiempo/Estado":"Puntos"}</th>{tab==="drivers"&&<th>Victorias</th>}</tr></thead>
       <tbody>
-        {tab==="drivers"&&data.drivers.map(d=><tr key={d.rank}><td>{d.rank}</td><th scope="row">{d.name}</th><td>{d.team}</td><td>{d.points}</td><td>{d.wins}</td></tr>)}
-        {tab==="constructors"&&data.constructors.map(t=><tr key={t.rank}><td>{t.rank}</td><th scope="row">{t.name}</th><td>{t.wins}</td><td>{t.points}</td></tr>)}
+        {tab==="drivers"&&data.drivers.map(d=><tr key={d.rank}><td>{d.rank}</td><th scope="row">{d.name}</th><td><span class="sport-team-inline"><TeamMark name={d.team}/>{d.team}</span></td><td>{d.points}</td><td>{d.wins}</td></tr>)}
+        {tab==="constructors"&&data.constructors.map(t=><tr key={t.rank}><td>{t.rank}</td><th scope="row"><span class="sport-team-inline"><TeamMark name={t.name}/>{t.name}</span></th><td>{t.wins}</td><td>{t.points}</td></tr>)}
         {tab==="results"&&data.last_race?.results.map(d=><tr key={d.position}><td>{d.position}</td><th scope="row">{d.driver}</th><td>{d.team}</td><td>{d.time||"—"}</td></tr>)}
       </tbody>
     </table></div>
