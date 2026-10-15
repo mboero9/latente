@@ -217,22 +217,33 @@ def read_competition(slug, season=None):
     year = int(season) if season else next((y for y in available if y <= current_year), current_year)
     if year < 2000 or year > datetime.now(timezone.utc).year + 1:
         raise ValueError("year out of range")
-    if not league_id:
-        return {"available": False, "provider": "API-Rugby",
-                "configured": key_configured(), "season": year, "seasons": available,
-                "league_name": title, "games": [], "official": [],
-                "message": "Catálogo de API-Rugby pendiente, torneo no identificado o no disponible en el plan."}
-    ref = f"{league_id}:{year}"
-    games = _snapshot("games", ref)
-    table = _snapshot("standings", ref)
+    ref = f"{league_id}:{year}" if league_id else None
+    primary_games = _snapshot("games", ref) if ref else None
+    primary_table = _snapshot("standings", ref) if ref else None
+    # ESPN is a secondary source, loaded only by the scheduled ingest job.
+    # Each dataset falls back independently: official tables are NEVER
+    # reverse-engineered from match scores (rugby bonus points vary).
+    backup_games = _snapshot("espn_games", f"{slug}:{year}")
+    backup_table = _snapshot("espn_standings", f"{slug}:{year}")
+    game_source = primary_games if primary_games and primary_games.data else backup_games
+    table_source = primary_table if primary_table and primary_table.data else backup_table
+    games = game_source.data if game_source else []
+    official = table_source.data if table_source else []
+    sources = [src for src, row in (
+        ("API-Rugby", primary_games if game_source == primary_games and primary_games and primary_games.data else None),
+        ("API-Rugby", primary_table if table_source == primary_table and primary_table and primary_table.data else None),
+        ("ESPN", backup_games if game_source == backup_games and backup_games and backup_games.data else None),
+        ("ESPN", backup_table if table_source == backup_table and backup_table and backup_table.data else None),
+    ) if row is not None]
+    provider = " + ".join(dict.fromkeys(sources)) if sources else "API-Rugby / ESPN"
     return {
-        "available": bool((games and games.data) or (table and table.data)),
-        "configured": key_configured(), "provider": "API-Rugby",
-        "league_name": title, "season": year, "seasons": available,
-        "games": games.data if games else [],
-        "official": table.data if table else [],
-        "updated_at": max((aware(s.updated_at) for s in (games, table) if s), default=None),
-        "message": None if (games or table) else "Sin datos sincronizados de API-Rugby para esta temporada. Se importan por cron.",
+        "available": bool(games or official), "configured": key_configured(),
+        "provider": provider, "league_name": title,
+        "season": year, "seasons": sorted(set([*available, *([year] if games or official else [])]), reverse=True),
+        "games": games, "official": official,
+        "updated_at": max((aware(row.updated_at) for row in (game_source, table_source) if row), default=None),
+        "message": None if games or official else
+            "Sin partidos o clasificaciones verificadas en las fuentes disponibles para esta temporada.",
     }
 
 
@@ -289,3 +300,84 @@ def sync_once(max_calls=3, fetch=None):
         if len(result["attempted"]) >= max_calls:
             break
     return result
+
+
+# Independent, documented fallback from the existing ESPN rugby provider adapter.
+# ESPN's public feeds are unofficial/undocumented and may stop working; snapshots
+# have source labels and stay empty rather than supplying imaginary league points.
+ESPN_REFRESH = timedelta(hours=8)
+ESPN_RETRY = timedelta(hours=6)
+ESPN_PRIORITY = ("top-14", "urba", "championship", "premiership",
+                 "six-nations", "urc", "super-rugby", "champions",
+                 "test-matches", "world-cup")
+
+
+def espn_standings(rows):
+    """Adapt verified ESPN ranking data to RugbyHub without losing provenance."""
+    parsed = []
+    for i, row in enumerate(rows):
+        if not isinstance(row, dict) or not row.get("name"):
+            continue
+        points = _num(row.get("points"))
+        rank = _num(row.get("rank"))
+        if points is None and rank is None:
+            # Records with neither rank nor league points are team stats,
+            # not an official table. Do not pass them off as standings.
+            continue
+        parsed.append({
+            "team": row["name"], "team_id": row.get("id"),
+            "logo": row.get("logo"), "group": row.get("group") or "General",
+            "rank": rank or i + 1, "played": None,
+            "won": _num(row.get("wins")), "lost": _num(row.get("losses")),
+            "drawn": None, "points": points,
+            "for": None, "against": None,
+        })
+    return parsed
+
+
+def sync_espn_once(max_leagues=1, fetch=None):
+    """Scheduled ESPN fallback. No visitor-initiated ESPN calls.
+
+    Rotates through leagues with old/absent snapshots, attempts each source
+    once per 6h, and retains prior data on provider failure.
+    """
+    from .espn_scores import rugby_feed
+    fetch = fetch or rugby_feed
+    report = {"attempted": [], "updated": [], "unavailable": []}
+    current = datetime.now(timezone.utc).year
+    candidates = []
+    for slug in ESPN_PRIORITY:
+        ref = f"{slug}:{current}"
+        games = _snapshot("espn_games", ref)
+        table = _snapshot("espn_standings", ref)
+        diag = _snapshot("espn_diagnostic", ref)
+        if _fresh(diag, ESPN_RETRY):
+            continue
+        if _fresh(games, ESPN_REFRESH) and _fresh(table, STANDINGS_TTL):
+            continue
+        # Work on least recently tried competitions before retrying coverage.
+        oldest = min((aware(v.updated_at) for v in (games, table, diag) if v),
+                     default=datetime(2000, 1, 1, tzinfo=timezone.utc))
+        candidates.append((oldest, ESPN_PRIORITY.index(slug), slug))
+    for _, _, slug in sorted(candidates)[:max_leagues]:
+        ref = f"{slug}:{current}"
+        report["attempted"].append(slug)
+        try:
+            result = fetch(slug, current)
+            games = result.get("games") or []
+            official = espn_standings(result.get("official") or [])
+            if games:
+                _write("espn_games", ref, games, len(games), "ESPN: partidos y fixture, cobertura parcial")
+                report["updated"].append(f"games:{slug}")
+            if official:
+                _write("espn_standings", ref, official, len(official),
+                       "ESPN: clasificación publicada por proveedor, sin calcular bonus")
+                report["updated"].append(f"standings:{slug}")
+            if not games and not official:
+                report["unavailable"].append(slug)
+            # Record last attempt to throttle empty and restricted sources.
+            _write("espn_diagnostic", ref, [{"attempted": True}], 1)
+        except (ValueError, TypeError, KeyError, ImportError, OSError):
+            _write("espn_diagnostic", ref, [{"attempted": True}], 1)
+            report["unavailable"].append(slug)
+    return report
