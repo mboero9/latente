@@ -1,7 +1,7 @@
 from datetime import date, datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select, func, or_, text
 from .config import settings
@@ -59,6 +59,16 @@ async def cache_policy(request, call_next):
     response.headers["Cache-Control"] = "no-store"
     response.headers["X-Content-Type-Options"] = "nosniff"
     return response
+
+
+@app.get("/api/visitor/country")
+def visitor_country(request: Request):
+    """Country from Cloudflare edge hint only. No visitor IP is persisted."""
+    code=(request.headers.get("cf-ipcountry") or "").upper()
+    if not (len(code)==2 and code.isalpha() and code not in {"XX","T1"}):
+        code=None
+    return {"data":{"country":code,"source":"cloudflare" if code else "browser-fallback"},
+            "meta":meta([])}
 
 
 def public(row):
