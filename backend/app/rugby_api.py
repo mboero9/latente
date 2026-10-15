@@ -253,6 +253,10 @@ def public_catalog():
     for row in discovered:
         if not isinstance(row,dict) or not row.get("slug") or row["slug"] in BY_SLUG:
             continue
+        # Explicitly excluded domestic rugby coverage by request.
+        origin = str(row.get("region") or row.get("country") or "").casefold()
+        if any(place in origin for place in ("japan", "japón", "chile", "uruguay")):
+            continue
         result.append({
             "slug":row["slug"],"name":row["name"],
             "rugbyapi_id":row.get("competition_id"),
