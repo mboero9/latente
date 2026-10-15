@@ -187,7 +187,9 @@ def _write(kind, ref, rows, count, note=""):
             return False
         upsert(db, SportSnapshot, {
             "sport": "rugby", "dataset": kind, "ref": ref,
-            "provider": "api_rugby", "data": rows, "source_count": count,
+            "provider": ("thesportsdb" if kind.startswith("thesportsdb_") else
+                         "espn" if kind.startswith("espn_") else "api_rugby"),
+            "data": rows, "source_count": count,
             "updated_at": now, "note": note[:250],
         })
     return True
