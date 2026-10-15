@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 import { useApi } from "./api";
 import { TeamMark } from "./team-mark";
+import { RugbyLeagueTables } from "./rugby-league-tables";
 
 type Match = {
   id: string; date: string; home: string; away: string;
@@ -129,5 +130,6 @@ export function RugbyHub() {
       {updated ? " Última importación: " + updated : " Importación pendiente."}
       Los datos se actualizan según la cobertura real de cada proveedor. No se calculan puntos bonus no verificados.
     </p>
+    {options.length>0&&<RugbyLeagueTables competitions={options}/>}
   </section>;
 }
