@@ -1,4 +1,5 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
+import { useApi } from "./api";
 type Operator={name:string;url:string;scope:string};
 const AR_OPERATORS:Operator[]=[
  {name:"Betano",url:"https://www.betano.bet.ar/",scope:"Confirmar autorización para la provincia"},
@@ -43,5 +44,33 @@ export function BettingGuide({country}:{country:string}) {
      <strong>{regulator.name} ↗</strong><small>{regulator.description}</small>
    </a></div>:<p class="coverage-notice">Todavía no contamos con una lista de operadores comprobados para este país. Consultá el regulador de juego local antes de utilizar una casa de apuestas.</p>}
    <p class="odds-warning">Solo para mayores de 18 años o la edad legal superior de tu jurisdicción. Apostar implica riesgo de perder dinero. No hay ganancias garantizadas. No apuestes para recuperar pérdidas.</p>
+ </section>;
+}
+
+const COUNTRY_CHOICES=[
+ ["AR","Argentina"],["BR","Brasil"],["US","Estados Unidos"],["CA","Canadá"],
+ ["MX","México"],["ES","España"],["GB","Reino Unido"],["AU","Australia"],
+ ["NZ","Nueva Zelanda"],["FR","Francia"],["IT","Italia"],["DE","Alemania"],
+ ["CL","Chile"],["CO","Colombia"],["PE","Perú"],["UY","Uruguay"],
+ ["PY","Paraguay"],["EC","Ecuador"],["BO","Bolivia"],["VE","Venezuela"],
+ ["DO","República Dominicana"]
+] as const;
+export function BettingView() {
+ const [country,setCountry]=useState<string>("AR");
+ const [manual,setManual]=useState(false);
+ const {result}=useApi<{country:string|null}>("/api/visitor/country",0);
+ useEffect(()=>{
+  const found=result?.data?.country;
+  if(!manual&&found&&COUNTRY_CHOICES.some(([id])=>id===found))setCountry(found);
+ },[result?.data?.country,manual]);
+ return <section class="watch-guide panel">
+  <div class="view-heading"><div><span class="eyebrow">LATENTE · MAYORES DE EDAD</span>
+   <h1>18+ · Dónde apostar por país</h1></div></div>
+  <label class="season-label">País
+   <select value={country} onChange={e=>{setCountry(e.currentTarget.value);setManual(true);}}>
+    {COUNTRY_CHOICES.map(([id,name])=><option key={id} value={id}>{name}</option>)}
+   </select>
+  </label>
+  <BettingGuide country={country}/>
  </section>;
 }
