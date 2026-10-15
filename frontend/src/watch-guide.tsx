@@ -1,11 +1,13 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
+import { useApi } from "./api";
+import { BettingGuide } from "./betting-guide";
 
 /** Guía editorial de derechos. No garantiza que un partido específico esté disponible.
  * Fuentes oficiales 2026, revisables al cambiar los acuerdos.
  */
 type Channel = { name: string; url: string; coverage: string };
 type Country = "AR"|"BR"|"US"|"CA"|"MX"|"ES"|"GB"|"AU"|"CL"|"CO"|"PE"|"UY"|"PY"|"EC"|"BO"|"VE"|"NZ"|"IT"|"DE"|"FR"|"DO";
-type Category = "argentina"|"libertadores"|"champions"|"laliga"|"nba"|"nfl"|"nhl"|"mlb"|"f1"|"afl"|"rugby";
+type Category = string;
 const countries: {code:Country; name:string}[] = [
   {code:"AR",name:"Argentina"},{code:"BR",name:"Brasil"},{code:"US",name:"Estados Unidos"},
   {code:"CA",name:"Canadá"},{code:"MX",name:"México"},{code:"ES",name:"España"},
@@ -27,6 +29,25 @@ const categories: {code:Category; name:string}[] = [
   {code:"f1",name:"Fórmula 1"},
   {code:"afl",name:"Fútbol australiano AFL"},
   {code:"rugby",name:"Rugby"},
+  {code:"mls",name:"MLS / fútbol de Estados Unidos"},
+  {code:"copa-america",name:"Copa América / Eliminatorias CONMEBOL"},
+  {code:"mundial",name:"Copa Mundial FIFA y Eliminatorias"},
+  {code:"sudamericana",name:"Copa Sudamericana / Recopa"},
+  {code:"europa-league",name:"Europa League / Conference League"},
+  {code:"premier-league",name:"Premier League"},
+  {code:"serie-a",name:"Serie A de Italia"},
+  {code:"bundesliga",name:"Bundesliga"},
+  {code:"ligue1",name:"Ligue 1 / Copa Francia"},
+  {code:"libertadores-fem",name:"Fútbol femenino internacional"},
+  {code:"wnba",name:"WNBA"},
+  {code:"basquet",name:"Básquet / Euroliga / FIBA / AmeriCup"},
+  {code:"handball",name:"Handball / Mundial / EHF"},
+  {code:"volleyball",name:"Vóley / VNL / Mundial / CEV"},
+  {code:"cricket",name:"Cricket / ICC / ligas"},
+  {code:"rugby-cups",name:"Rugby Championship / Mundial / Seis Naciones"},
+  {code:"rugby-clubs",name:"Top 14 / URC / Super Rugby / Premiership"},
+  {code:"f1-support",name:"Fórmula 2 / Fórmula 3 / categorías motor"},
+
 ];
 const ch=(name:string,url:string,coverage:string):Channel=>({name,url,coverage});
 const guide: Partial<Record<Country,Partial<Record<Category,Channel[]>>>> = {
@@ -138,26 +159,68 @@ guide.DO = {
   nfl:[ch("NFL Game Pass · DAZN","https://www.dazn.com/","Consultar disponibilidad local")],
 };
 
+// Official global schedules and rights directories, never a claim that a
+// specific event is broadcast by an unverified platform in a given country.
+const directories: Partial<Record<Category,Channel[]>> = {
+  mls:[ch("MLS Season Pass / Apple TV","https://tv.apple.com/","Revisar los derechos de MLS en tu territorio")],
+  mundial:[ch("FIFA+ · partidos y derechos","https://www.plus.fifa.com/","Agenda y disponibilidad de eventos FIFA por territorio")],
+  "copa-america":[ch("CONMEBOL · Copa América","https://copaamerica.com/","Programación y titulares de derechos por edición")],
+  sudamericana:[ch("CONMEBOL · Sudamericana","https://www.conmebol.com/","Información oficial de la competición; no identifica canal por partido")],
+  "europa-league":[ch("UEFA · socios de transmisión","https://www.uefa.com/uefaeuropaleague/","Comprobar broadcaster del torneo y país")],
+  "premier-league":[ch("Premier League · Broadcasters","https://www.premierleague.com/en/broadcasters","Listado oficial por región")],
+  "serie-a":[ch("Lega Serie A","https://www.legaseriea.it/","Consulta de programación y derechos locales")],
+  bundesliga:[ch("Bundesliga · Where to watch","https://www.bundesliga.com/","Consultar socios locales por país")],
+  ligue1:[ch("Ligue 1","https://ligue1.com/","Agenda y cobertura oficial")],
+  "libertadores-fem":[ch("CONMEBOL","https://www.conmebol.com/","Cobertura de torneos femeninos según edición")],
+  wnba:[ch("WNBA · Watch","https://www.wnba.com/","Agenda de transmisiones y League Pass")],
+  basquet:[ch("FIBA · Courtside 1891","https://www.courtside1891.basketball/","Competiciones FIBA según derechos"),ch("EuroLeague TV","https://tv.euroleague.net/","Partidos de Euroliga con restricciones territoriales")],
+  handball:[ch("EHF TV","https://www.ehftv.com/","Partidos EHF según derechos regionales"),ch("IHF · Handball","https://www.ihf.info/","Información oficial de Mundiales")],
+  volleyball:[ch("VBTV · Volleyball World","https://subscribe.volleyballworld.com/","VNL y competiciones según disponibilidad"),ch("CEV","https://www.cev.eu/","Información oficial de competencias europeas")],
+  cricket:[ch("ICC · Cricket","https://www.icc-cricket.com/","Información de broadcaster oficial por torneo")],
+  "rugby-cups":[ch("RugbyPass TV","https://rugbypass.tv/","Solo eventos habilitados para tu país"),ch("World Rugby","https://www.world.rugby/","Programación y titulares de derechos")],
+  "rugby-clubs":[ch("RugbyPass TV","https://rugbypass.tv/","Consultar Top 14, URC y Super Rugby según territorio"),ch("World Rugby","https://www.world.rugby/","Fuentes oficiales de competiciones")],
+};
+directories.argentina=guide.AR?.argentina;
+directories.champions=[ch("UEFA · dónde ver","https://www.uefa.com/uefachampionsleague/news/0253-0d82037aaedd-f371c464f919-1000--where-to-watch-the-uefa-champions-league/","Revisar derechos por país")];
+directories.libertadores=[ch("CONMEBOL","https://www.conmebol.com/","Consultar derechos oficiales del evento")];
+directories.laliga=[ch("LaLiga","https://www.laliga.com/","Revisar transmisiones en tu país")];
+directories.nba=[ch("NBA League Pass","https://www.nba.com/watch/league-pass-stream/","Disponibilidad por territorio")];
+directories.nfl=[ch("NFL · Ways to Watch","https://www.nfl.com/ways-to-watch/","Transmisiones según país")];
+directories.nhl=[ch("NHL · How to Watch","https://www.nhl.com/info/how-to-watch-and-stream-nhl-games","Derechos por región")];
+directories.mlb=[ch("MLB.TV","https://www.mlb.com/live-stream-games/","Blackouts según mercado")];
+directories.f1=[ch("Formula 1 · Where to Watch","https://www.formula1.com/en/toolbar/broadcast-information.html","Derechos por país")];
+directories.rugby=directories["rugby-cups"];
+directories.afl=[ch("AFL · Broadcast Guide","https://www.afl.com.au/matches/broadcast-guide/watch-afl","Programación local e internacional")];
+
 export function WatchGuide({ initialSport, initialCountry = "AR" }: { initialSport?: string; initialCountry?: Country }) {
   const [country,setCountry] = useState<Country>(initialCountry);
   const [category,setCategory] = useState<Category>(
     (categories.some(c=>c.code===initialSport) ? initialSport : "argentina") as Category
   );
+  const [autoCountry,setAutoCountry]=useState(true);
+  const {result:region}=useApi<{country:string|null}>("/api/visitor/country",0);
+  useEffect(()=>{
+    const code=region?.data?.country;
+    if(autoCountry&&code&&countries.some(c=>c.code===code)) setCountry(code as Country);
+  },[region?.data?.country,autoCountry]);
   const current = guide[country]?.[category] || [];
+  const general = (directories[category]||[]).filter(s=>!current.some(x=>x.url===s.url));
+  const displayed = [...current,...general];
   return <section class="watch-guide panel">
     <h2>📺 Dónde ver los deportes</h2>
     <p class="updated">Guía por país y competición. No confirma la transmisión de un partido concreto; los derechos pueden cambiar dentro de la temporada y existir bloqueos.</p>
     <div class="watch-selectors">
-      <label>País<select value={country} onChange={e=>setCountry(e.currentTarget.value as Country)}>
+      <label>País<select value={country} onChange={e=>{setCountry(e.currentTarget.value as Country);setAutoCountry(false);}}>
         {countries.map(c=><option value={c.code}>{c.name}</option>)}
       </select></label>
       <label>Deporte / torneo<select value={category} onChange={e=>setCategory(e.currentTarget.value as Category)}>
         {categories.map(c=><option value={c.code}>{c.name}</option>)}
       </select></label>
     </div>
-    {current.length ? <div class="watch-links">{current.map(c=><a href={c.url} target="_blank" rel="noopener noreferrer" key={c.name}>
+    {displayed.length ? <div class="watch-links">{displayed.map(c=><a href={c.url} target="_blank" rel="noopener noreferrer" key={c.name}>
       <strong>{c.name} <span aria-hidden="true">↗</span></strong><small>{c.coverage}</small>
     </a>)}</div> : <p class="coverage-notice">Todavía no hay una fuente oficial verificada para esa combinación. No asignamos DAZN, TyC o Disney+ automáticamente a cada partido.</p>}
-    <p class="updated">Fuentes: UEFA, AFA/TyC Sports, ESPN, LaLiga, NFL, NBA, NHL, MLB, Formula 1 y AFL. Los enlaces abren plataformas o guías legales; Latente no retransmite señales.</p>
+    <p class="updated">Los enlaces incluyen guías oficiales generales cuando no se conocen derechos específicos para el país seleccionado. La plataforma real, el plan y el territorio deben confirmarse antes de cada evento.</p>
+    <BettingGuide country={country} />
   </section>;
 }
