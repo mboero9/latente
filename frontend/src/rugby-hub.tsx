@@ -1,5 +1,6 @@
 import { useState } from "preact/hooks";
 import { useApi } from "./api";
+import { TeamMark } from "./team-mark";
 
 type Match = {
   id: string; date: string; home: string; away: string;
@@ -44,7 +45,7 @@ export function RugbyHub() {
 
   return <section class="sport-landing">
     <div class="view-heading"><div>
-      <span class="eyebrow">LATENTE · API-RUGBY</span>
+      <span class="eyebrow">LATENTE · RUGBY / FUENTES VERIFICADAS</span>
       <h1>🏉 Rugby · Torneos y selecciones</h1>
       <p>Los Pumas, clubes argentinos y grandes competiciones del mundo. Partidos, resultados y posiciones confirmadas.</p>
     </div></div>
@@ -66,7 +67,7 @@ export function RugbyHub() {
             {slug:"test-matches",name:"Amistosos internacionales"},
             {slug:"world-cup",name:"Mundial de Rugby"}
           ]).map(item => <option key={item.slug} value={item.slug}>
-            {item.name}{item.league_id === null ? " · sin cobertura confirmada" : ""}
+            {item.name}
           </option>)}
         </select>
       </label>
@@ -91,7 +92,7 @@ export function RugbyHub() {
       <table><thead><tr>
         <th>#</th><th>Equipo</th><th>Grupo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>Pts</th>
       </tr></thead><tbody>{data.official.map((r,i)=><tr key={(r.team_id || r.team) + r.group}>
-        <td>{r.rank ?? i+1}</td><th scope="row"><span class="sport-team-inline">{r.logo && <img src={r.logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{r.team}</span></th><td>{r.group || "—"}</td>
+        <td>{r.rank ?? i+1}</td><th scope="row"><span class="sport-team-inline"><TeamMark name={r.team} logo={r.logo} sport="rugby" teamId={r.team_id}/>{r.team}</span></th><td>{r.group || "—"}</td>
         <td>{r.played ?? "—"}</td><td>{r.won ?? "—"}</td><td>{r.drawn ?? "—"}</td>
         <td>{r.lost ?? "—"}</td><td>{r.points ?? "—"}</td>
       </tr>)}</tbody></table>
@@ -106,15 +107,15 @@ export function RugbyHub() {
     </div>
     {games.length ? <div class="sports-games">{games.slice(0,70).map(m=><article class="panel sport-game" key={m.id}>
       <small class="sport-game-league">{m.date ? new Date(m.date).toLocaleDateString("es-AR") : "—"} · {m.status}</small>
-      <div class="sport-game-teams"><strong class="sport-team">{m.home_logo && <img src={m.home_logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{m.home}</strong>
+      <div class="sport-game-teams"><strong class="sport-team"><TeamMark name={m.home} logo={m.home_logo}/>{m.home}</strong>
         <span>{m.home_score ?? "—"} : {m.away_score ?? "—"}</span>
-        <strong class="sport-team sport-team-away">{m.away_logo && <img src={m.away_logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{m.away}</strong></div>
+        <strong class="sport-team sport-team-away"><TeamMark name={m.away} logo={m.away_logo}/>{m.away}</strong></div>
     </article>)}</div> : <p class="coverage-notice">
       No hay partidos {tab === "past" ? "finalizados" : "programados"} disponibles en la edición seleccionada.
     </p>}
-    <p class="updated">Fuente: API-Rugby de API-Sports · importación y caché en PostgreSQL.
+    <p class="updated">Fuente: {data?.provider || "API-Rugby / ESPN"} · importación y caché en PostgreSQL.
       {updated ? " Última importación: " + updated : " Importación pendiente."}
-      Los datos se actualizan según la cobertura real y la cuota del proveedor.
+      Los datos se actualizan según la cobertura real de cada proveedor. No se calculan puntos bonus no verificados.
     </p>
   </section>;
 }
