@@ -1,5 +1,6 @@
 import { useState } from "preact/hooks";
 import { useApi } from "./api";
+import { TeamMark } from "./team-mark";
 
 type Game = {
   id: string; league: string; date: string;
@@ -34,9 +35,9 @@ export function ScoreboardPanel({sport}:{sport:string}) {
       games.length?<div class="sports-games">{games.slice(0,35).map(g=><article class="panel sport-game" key={g.id}>
         <small class="sport-game-league">{dayInArgentina(g.date)} · {g.status||"Programado"}</small>
         <div class="sport-game-teams">
-          <strong class="sport-team">{g.home_logo && <img src={g.home_logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{g.home}</strong>
+          <strong class="sport-team"><TeamMark name={g.home} logo={g.home_logo}/>{g.home}</strong>
           <span>{g.home_score ?? "—"} : {g.away_score ?? "—"}</span>
-          <strong class="sport-team sport-team-away">{g.away_logo && <img src={g.away_logo} alt="" loading="lazy" onError={e=>{e.currentTarget.style.display="none";}}/>}{g.away}</strong>
+          <strong class="sport-team sport-team-away"><TeamMark name={g.away} logo={g.away_logo}/>{g.away}</strong>
         </div>
       </article>)}</div>:
       <p class="coverage-notice">{data?.message||"No hay partidos verificados para este período."} Probá otra pestaña.</p>}
