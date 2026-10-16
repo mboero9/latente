@@ -28,6 +28,7 @@ import { ArgentinaAlltime } from "./reference-sports";
 import { FootballAnalytics } from "./football-analytics";
 import { sports, SportPage, HistoryPage } from "./other-sports";
 import { NavRail } from "./nav-rail";
+import { AdPlacement } from "./ads";
 import { WorldScorersPage, WorldScorersSection } from "./world-scorers";
 import { ClubHonours, NationalHonours } from "./historical-honours";
 import { RugbyHomeTables } from "./rugby-home-tables";
@@ -703,6 +704,7 @@ function FixturesView({
         <aside class={"right-column" + (!league ? " home-right-column" : "")} aria-label="Resumen de la jornada e históricos">
           {spotlight && <Focus match={spotlight} tz={tz} />}
           <MiniTable league={league || leagues.find(l => l.id === 128) || leagues.find(l => l.country === "Argentina" && l.kind?.toLowerCase() === "league") || leagues[0]} />
+          {!league && <AdPlacement placement="side" />}
           {!league && <RugbyHomeTables/>}
           {!league && (
             <div class="home-historics" aria-label="Tablas históricas del fútbol">
@@ -1536,6 +1538,7 @@ function App() {
               </select>
             </label>
           </div>
+          {view !== "bet" && <AdPlacement placement="top" />}
           {mode === "demo" && (
             <div class="notice demo-notice">
               <strong>Modo demostración</strong>
@@ -1646,6 +1649,7 @@ function App() {
               <a href="#/">Volver a partidos</a>
             </Empty>
           )}
+          {view !== "bet" && <AdPlacement placement="bottom" />}
           <footer>
             <a href="#/" class="footer-brand">
               latente.
