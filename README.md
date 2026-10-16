@@ -1,6 +1,8 @@
 # Latente
 
-**Sitio publicado: [latente.cfd](https://latente.cfd/).** El dominio principal ya está asociado a Railway; [URL alternativa de Railway](https://nginx-production-c1c2.up.railway.app/).
+**Sitio publicado: [latente.cfd](https://latente.cfd/).**
+
+**Monetización publicitaria (preparada, aún no activa):** tres ubicaciones discretas de AdSense con vista previa local. La activación requiere cuenta aprobada, consentimiento y CSP compatible. Ver [guía de publicidad](docs/MONETIZACION-PUBLICIDAD.md). El dominio principal ya está asociado a Railway; [URL alternativa de Railway](https://nginx-production-c1c2.up.railway.app/).
 
 **Sin VPS:** [despliegue completo en Railway](docs/DEPLOY-RAILWAY.md), con PostgreSQL, Nginx, API y actualización programada. Cloudflare es opcional. La cuenta de alojamiento y la suscripción a los datos deportivos son independientes.
 
