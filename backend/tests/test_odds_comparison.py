@@ -81,7 +81,7 @@ def test_worker_alternates_live_and_prematch_odds_queries(monkeypatch):
     with session_scope() as s:
         league(s)
         save_fixtures(s, [fixture(1, "1H"), fixture(2, "NS",
-                       utcnow() + timedelta(hours=2))], [128])
+                       datetime(2026, 10, 14, 18, 10, tzinfo=timezone.utc))], [128])
     class Spy:
         def __init__(self): self.calls = []
         def get(self, endpoint, params):
