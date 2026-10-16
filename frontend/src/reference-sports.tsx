@@ -5,12 +5,12 @@ import { ScoreboardPanel } from "./scoreboards";
 import { TeamMark } from "./team-mark";
 
 type F1 = { available:boolean; message?:string; season:number; round?:string;
-  drivers:{rank:number;name:string;team:string;points:number;wins:number}[];
-  constructors:{rank:number;name:string;points:number;wins:number}[];
+  drivers:{rank:number;name:string;nationality?:string|null;team:string;team_nationalities?:(string|null)[];points:number;wins:number}[];
+  constructors:{rank:number;name:string;nationality?:string|null;points:number;wins:number}[];
   upcoming?:{name:string;date:string;circuit:string}|null;
   last_race?:{name:string;date:string;circuit:string;
-    podium:{position:number;name:string;team:string}[];
-    results:{position:number;driver:string;team:string;time?:string}[]};
+    podium:{position:number;name:string;team:string;nationality?:string|null;team_nationality?:string|null}[];
+    results:{position:number;driver:string;team:string;nationality?:string|null;team_nationality?:string|null;time?:string}[]};
   updated_at?:string; stale?:boolean };
 type NBA = { available:boolean; message?:string; season:number; rows:{
   id:string;name:string;logo?:string|null;group:string;wins:number|null;losses:number|null;
@@ -90,6 +90,41 @@ export function ReferenceSportPage({slug}:{slug:string}) {
   </section>;
 }
 
+
+/* Nacionalidades provistas por Jolpica/Ergast; nunca se infieren del nombre del equipo. */
+const F1_COUNTRIES:Record<string,[string,string]> = {
+  argentine:["🇦🇷","Argentina"], argentinian:["🇦🇷","Argentina"],
+  american:["🇺🇸","Estados Unidos"], australian:["🇦🇺","Australia"],
+  austrian:["🇦🇹","Austria"], belgian:["🇧🇪","Bélgica"],
+  brazilian:["🇧🇷","Brasil"], british:["🇬🇧","Reino Unido"],
+  canadian:["🇨🇦","Canadá"], chinese:["🇨🇳","China"],
+  colombian:["🇨🇴","Colombia"], czech:["🇨🇿","Chequia"],
+  danish:["🇩🇰","Dinamarca"], dutch:["🇳🇱","Países Bajos"],
+  finnish:["🇫🇮","Finlandia"], french:["🇫🇷","Francia"],
+  german:["🇩🇪","Alemania"], indian:["🇮🇳","India"],
+  indonesian:["🇮🇩","Indonesia"], irish:["🇮🇪","Irlanda"],
+  italian:["🇮🇹","Italia"], japanese:["🇯🇵","Japón"],
+  malaysian:["🇲🇾","Malasia"], mexican:["🇲🇽","México"],
+  monegasque:["🇲🇨","Mónaco"], "new zealander":["🇳🇿","Nueva Zelanda"],
+  polish:["🇵🇱","Polonia"], portuguese:["🇵🇹","Portugal"],
+  russian:["🇷🇺","Rusia"], "south african":["🇿🇦","Sudáfrica"],
+  spanish:["🇪🇸","España"], swedish:["🇸🇪","Suecia"],
+  swiss:["🇨🇭","Suiza"], thai:["🇹🇭","Tailandia"],
+  venezuelan:["🇻🇪","Venezuela"],
+};
+function F1Nationality({value}:{value?:string|null}) {
+  const raw=value?.trim();
+  const known=raw ? F1_COUNTRIES[raw.toLowerCase()] : undefined;
+  return <span class="f1-nationality" title={raw||"Nacionalidad no informada"}>
+    {known ? <><span aria-hidden="true" class="f1-nationality-flag">{known[0]}</span>{known[1]}</> : raw||"—"}
+  </span>;
+}
+function F1TeamNationalities({values}:{values?:(string|null)[]}) {
+  return <span class="f1-nationality-list">{values?.length
+    ? values.map((value,i)=><F1Nationality key={i} value={value}/>)
+    : <F1Nationality/>}</span>;
+}
+
 function F1Content({data,tab,setTab}:{data:F1;tab:"drivers"|"constructors"|"results";setTab:(value:"drivers"|"constructors"|"results")=>void}) {
   return <>
     {data.upcoming && <article class="panel sport-intro"><span class="eyebrow">PRÓXIMO GRAN PREMIO</span>
@@ -99,7 +134,7 @@ function F1Content({data,tab,setTab}:{data:F1;tab:"drivers"|"constructors"|"resu
       <h2>{data.last_race.name} · {data.last_race.date}</h2>
       <p>{data.last_race.circuit}</p>
       <div class="sports-clubs">{data.last_race.podium.map(p=><span class="sports-club" key={p.position}>
-        {p.position===1?"🏆 ":""}{p.position}º {p.name} · {p.team}</span>)}</div>
+        {p.position===1?"🏆 ":""}{p.position}º {p.name} <F1Nationality value={p.nationality}/> · {p.team} <F1Nationality value={p.team_nationality}/></span>)}</div>
     </article>}
     <div class="sports-tabs" role="group" aria-label="Clasificación F1">
       <button class={tab==="drivers"?"active":""} onClick={()=>setTab("drivers")}>Pilotos</button>
@@ -108,11 +143,30 @@ function F1Content({data,tab,setTab}:{data:F1;tab:"drivers"|"constructors"|"resu
     </div>
     <h2 class="sport-section-title">{tab==="drivers"?"Campeonato de pilotos":tab==="constructors"?"Copa de constructores":"Resultado del último GP"} · {data.season}</h2>
     <div class="panel table-scroll"><table>
-      <thead><tr><th>#</th><th>{tab==="constructors"?"Escudería":"Piloto"}</th><th>{tab==="drivers"?"Escudería":tab==="results"?"Escudería":"Victorias"}</th><th>{tab==="results"?"Tiempo/Estado":"Puntos"}</th>{tab==="drivers"&&<th>Victorias</th>}</tr></thead>
+      <thead><tr>
+        <th>#</th><th>{tab==="constructors"?"Escudería":"Piloto"}</th>
+        {tab!=="constructors"&&<th>Nacionalidad piloto</th>}
+        {tab!=="constructors"&&<th>Escudería</th>}
+        <th>{tab==="constructors"?"Nacionalidad escudería":"País escudería"}</th>
+        {tab==="results"?<th>Tiempo/Estado</th>:<><th>{tab==="constructors"?"Victorias":"Puntos"}</th><th>{tab==="constructors"?"Puntos":"Victorias"}</th></>}
+      </tr></thead>
       <tbody>
-        {tab==="drivers"&&data.drivers.map(d=><tr key={d.rank}><td>{d.rank}</td><th scope="row">{d.name}</th><td><span class="sport-team-inline"><TeamMark name={d.team}/>{d.team}</span></td><td>{d.points}</td><td>{d.wins}</td></tr>)}
-        {tab==="constructors"&&data.constructors.map(t=><tr key={t.rank}><td>{t.rank}</td><th scope="row"><span class="sport-team-inline"><TeamMark name={t.name}/>{t.name}</span></th><td>{t.wins}</td><td>{t.points}</td></tr>)}
-        {tab==="results"&&data.last_race?.results.map(d=><tr key={d.position}><td>{d.position}</td><th scope="row">{d.driver}</th><td>{d.team}</td><td>{d.time||"—"}</td></tr>)}
+        {tab==="drivers"&&data.drivers.map(d=><tr key={d.rank}>
+          <td>{d.rank}</td><th scope="row">{d.name}</th>
+          <td><F1Nationality value={d.nationality}/></td>
+          <td><span class="sport-team-inline"><TeamMark name={d.team}/>{d.team}</span></td>
+          <td><F1TeamNationalities values={d.team_nationalities}/></td>
+          <td>{d.points}</td><td>{d.wins}</td>
+        </tr>)}
+        {tab==="constructors"&&data.constructors.map(t=><tr key={t.rank}>
+          <td>{t.rank}</td><th scope="row"><span class="sport-team-inline"><TeamMark name={t.name}/>{t.name}</span></th>
+          <td><F1Nationality value={t.nationality}/></td><td>{t.wins}</td><td>{t.points}</td>
+        </tr>)}
+        {tab==="results"&&data.last_race?.results.map(d=><tr key={d.position}>
+          <td>{d.position}</td><th scope="row">{d.driver}</th>
+          <td><F1Nationality value={d.nationality}/></td><td>{d.team}</td>
+          <td><F1Nationality value={d.team_nationality}/></td><td>{d.time||"—"}</td>
+        </tr>)}
       </tbody>
     </table></div>
     <Notice>Campeonato en curso: el líder de puntos no es necesariamente el campeón mundial. Fuente Jolpica/Ergast, actualizada periódicamente.</Notice>

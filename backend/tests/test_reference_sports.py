@@ -12,28 +12,35 @@ def test_f1_jolpica_normalization(monkeypatch):
             return {"MRData": {"StandingsTable": {"StandingsLists": [
                 {"round": "17", "DriverStandings": [
                     {"position": "1", "points": "340", "wins": "8",
-                     "Driver": {"givenName": "Kimi", "familyName": "Antonelli"},
-                     "Constructors": [{"name": "Mercedes"}]}
+                     "Driver": {"givenName": "Kimi", "familyName": "Antonelli", "nationality": "Italian"},
+                     "Constructors": [{"name": "Mercedes", "nationality": "German"}]}
                 ]}
             ]}}}
         if "constructorstandings" in url:
             return {"MRData": {"StandingsTable": {"StandingsLists": [
                 {"ConstructorStandings": [
                     {"position": "1", "points": "578", "wins": "11",
-                     "Constructor": {"name": "Mercedes"}}
+                     "Constructor": {"name": "Mercedes", "nationality": "German"}}
                 ]}
             ]}}}
         return {"MRData": {"RaceTable": {"Races": [
             {"raceName": "Singapore Grand Prix", "date": "2026-10-11",
              "round": "17", "Circuit": {"circuitName": "Marina Bay"},
-             "Results": [{"position": "1", "Driver": {"givenName": "Max", "familyName": "Verstappen"},
-                          "Constructor": {"name": "Red Bull"}, "Time": {"time": "1:42:00.785"}}]}
+             "Results": [{"position": "1", "Driver": {"givenName": "Max", "familyName": "Verstappen", "nationality": "Dutch"},
+                          "Constructor": {"name": "Red Bull", "nationality": "Austrian"}, "Time": {"time": "1:42:00.785"}}]}
         ]}}}
     monkeypatch.setattr(public_sports, "_get", fake)
     data = public_sports.formula_one(2026)
     assert data["drivers"][0]["points"] == 340
     assert data["constructors"][0]["name"] == "Mercedes"
     assert data["last_race"]["podium"][0]["name"] == "Max Verstappen"
+    assert data["drivers"][0]["nationality"] == "Italian"
+    assert data["drivers"][0]["team_nationalities"] == ["German"]
+    assert data["constructors"][0]["nationality"] == "German"
+    assert data["last_race"]["podium"][0]["nationality"] == "Dutch"
+    assert data["last_race"]["podium"][0]["team_nationality"] == "Austrian"
+    assert data["last_race"]["results"][0]["nationality"] == "Dutch"
+    assert data["last_race"]["results"][0]["team_nationality"] == "Austrian"
 
 
 def test_nba_standings_are_season_scoped(monkeypatch):

@@ -74,12 +74,16 @@ def formula_one(year=None):
                 "podium": [
                     {"position": int(row["position"]),
                      "name": (row.get("Driver") or {}).get("givenName", "") + " " + (row.get("Driver") or {}).get("familyName", ""),
-                     "team": (row.get("Constructor") or {}).get("name", "")}
+                     "team": (row.get("Constructor") or {}).get("name", ""),
+                     "nationality": (row.get("Driver") or {}).get("nationality"),
+                     "team_nationality": (row.get("Constructor") or {}).get("nationality")}
                     for row in finishers[:3] if row.get("position", "").isdigit()
                 ],
                 "results": [
                     {"position": int(row["position"]), "driver": (row.get("Driver") or {}).get("givenName", "") + " " + (row.get("Driver") or {}).get("familyName", ""),
                      "team": (row.get("Constructor") or {}).get("name", ""),
+                     "nationality": (row.get("Driver") or {}).get("nationality"),
+                     "team_nationality": (row.get("Constructor") or {}).get("nationality"),
                      "time": (row.get("Time") or {}).get("time") or row.get("status")}
                     for row in finishers if row.get("position", "").isdigit()
                 ],
@@ -103,10 +107,13 @@ def formula_one(year=None):
             "drivers": [{
                 "rank": int(row["position"]), "name": f"{row.get('Driver', {}).get('givenName', '')} {row.get('Driver', {}).get('familyName', '')}".strip(),
                 "team": ", ".join(c.get("name", "") for c in row.get("Constructors", []) if c.get("name")),
+                "nationality": (row.get("Driver") or {}).get("nationality"),
+                "team_nationalities": [c.get("nationality") for c in row.get("Constructors", []) if c.get("name")],
                 "points": float(row["points"]), "wins": int(row.get("wins", 0)),
             } for row in drivers.get("DriverStandings", []) if row.get("position") and row.get("points")],
             "constructors": [{
                 "rank": int(row["position"]), "name": row.get("Constructor", {}).get("name", ""),
+                "nationality": (row.get("Constructor") or {}).get("nationality"),
                 "points": float(row["points"]), "wins": int(row.get("wins", 0)),
             } for row in constructors.get("ConstructorStandings", []) if row.get("position") and row.get("points")],
             "last_race": last_race, "upcoming": upcoming,

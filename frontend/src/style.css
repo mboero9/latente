@@ -3021,3 +3021,10 @@
     .header .brand .brand-wordmark { font-size: 1.36rem; padding: 0; }
   }
 }
+
+/* F1: banderas y países en tablas de pilotos, escuderías y último GP. */
+@layer components {
+  .f1-nationality { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .f1-nationality-flag { font-size: 1.08em; line-height: 1; }
+  .f1-nationality-list { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+}
