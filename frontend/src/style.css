@@ -3028,3 +3028,71 @@
   .f1-nationality-flag { font-size: 1.08em; line-height: 1; }
   .f1-nationality-list { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 }
+
+
+/* Discrete monetization inventory. Disabled in production until configured. */
+@layer components {
+  .latente-ad {
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 10px 12px 12px;
+    margin: 16px 0 23px;
+    overflow: hidden;
+  }
+  .latente-ad__label {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .latente-ad__unit {
+    min-width: 0;
+    width: 100%;
+    min-height: 92px;
+  }
+  .latente-ad__preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 92px;
+    background: var(--soft);
+    border: 1px dashed var(--line);
+    border-radius: 7px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  .latente-ad--side {
+    margin: 0;
+  }
+  .latente-ad--side .latente-ad__unit,
+  .latente-ad--side .latente-ad__preview {
+    min-height: 230px;
+  }
+  .latente-ad--bottom {
+    margin: 30px 0 0;
+  }
+}
+@layer responsive {
+  @media (max-width: 800px) {
+    /* Two compact placements on mobile; never interrupt scores/navigation. */
+    .latente-ad--side {
+      display: none;
+    }
+  }
+  @media (max-width: 560px) {
+    .latente-ad {
+      padding: 8px;
+      margin-top: 12px;
+      margin-bottom: 20px;
+    }
+    .latente-ad__unit,
+    .latente-ad__preview {
+      min-height: 80px;
+    }
+  }
+}
