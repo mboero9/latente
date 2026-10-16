@@ -52,7 +52,7 @@ declare global {
 }
 
 export function AdPlacement({ placement }: { placement: AdPlacementName }) {
-  const unit = useRef<HTMLElement>(null);
+  const unit = useRef<HTMLModElement>(null);
   const alreadyRequested = useRef(false);
   const slotId = placementIds[placement];
   const serveAds = enabled && /^\d+$/.test(slotId);
