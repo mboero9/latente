@@ -89,3 +89,4 @@ def test_backend_and_frontend_wire_real_f1_features():
         assert "https://media.formula1.com" in c
         assert "https://commons.wikimedia.org" in c
         assert "https://flagcdn.com" in c
+        assert "https://www.svgrepo.com" in c
