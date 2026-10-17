@@ -29,15 +29,19 @@ AUTO_LEAGUES = {
     "nhl": ("nhl",),
     "mlb": ("mlb",),
     "nfl": ("nfl",),
-    "basketball": ("euroleague", "liga acb", "liga nacional"),
-    "handball": ("bundesliga", "champions league", "liga asobal"),
-    "volleyball": ("superlega", "plusliga", "champions league"),
+    "basketball": ("liga nacional", "liga argentina", "euroleague", "liga acb",
+                   "basketball champions league americas"),
+    "handball": ("nacional de clubes adultos a", "nacional de clubes a",
+                 "liga de honor", "bundesliga", "champions league", "liga asobal"),
+    "volleyball": ("superliga argentina", "liga de voleibol argentina",
+                   "liga argentina femenina", "liga nacional masculina",
+                   "superlega", "plusliga", "champions league"),
 }
 COUNTRY_PREFERENCE = {
     "nhl": ("usa", "world"), "mlb": ("usa", "world"),
     "nfl": ("usa", "world"), "basketball": ("world", "europe", "argentina", "spain"),
-    "handball": ("germany", "europe", "spain", "world"),
-    "volleyball": ("italy", "poland", "europe", "world"),
+    "handball": ("argentina", "germany", "europe", "spain", "world"),
+    "volleyball": ("argentina", "italy", "poland", "europe", "world"),
 }
 
 
@@ -53,6 +57,15 @@ def automatic_targets(sport, catalogue, year):
         country = str(row.get("country") or "").casefold().strip()
         if title not in goals:
             continue
+        # "Liga Nacional" and "Liga Argentina" also name tournaments
+        # elsewhere; require an Argentine country match, never guess ID.
+        if title in {"liga nacional", "liga argentina", "liga de honor",
+                     "liga argentina femenina", "liga nacional masculina",
+                     "liga de voleibol argentina", "superliga argentina",
+                     "nacional de clubes adultos a", "nacional de clubes a",
+                     "basketball champions league americas"}:
+            if title != "basketball champions league americas" and country != "argentina":
+                continue
         years = []
         for entry in row.get("seasons") or []:
             raw = entry.get("season", entry.get("year")) if isinstance(entry, dict) else entry
@@ -75,7 +88,7 @@ def automatic_targets(sport, catalogue, year):
             continue
         seen.add(candidate["league"])
         out.append(candidate)
-        if len(out) == (1 if sport in {"nhl", "mlb", "nfl"} else 2):
+        if len(out) == (1 if sport in {"nhl", "mlb", "nfl"} else 3):
             break
     return out
 
