@@ -314,7 +314,7 @@ def fixture_focus_candidates():
         live_rows = list(s.scalars(
             base.where(Fixture.status.in_(LIVE))
                 .order_by(priority, Fixture.kickoff.desc(), Fixture.id)
-                .limit(400)
+                .limit(160)
         ))
         upcoming_rows = list(s.scalars(
             base.where(
