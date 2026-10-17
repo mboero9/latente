@@ -8,7 +8,7 @@ const providers: Record<string,string> = {
   volleyball: "volleyball", rugby: "rugby",
 };
 const allowed = new Set([
-  "media.api-sports.io", "a.espncdn.com", "a1.espncdn.com",
+  "media.api-sports.io", "api.urba.org.ar", "a.espncdn.com", "a1.espncdn.com",
   "a2.espncdn.com", "cdn.espn.com", "cdn.nba.com",
   "upload.wikimedia.org", "static.flashscore.com",
   "www.thesportsdb.com", "r2.thesportsdb.com", "thesportsdb.com",

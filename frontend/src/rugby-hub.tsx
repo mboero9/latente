@@ -23,7 +23,7 @@ type Competition = {
 type RugbyData = {
   available: boolean; configured: boolean; provider: string;
   league_name: string; season: number; seasons: number[];
-  verified_clubs?: {team:string; group:string}[]; clubs_source_url?:string|null; clubs_note?:string|null;
+  verified_clubs?: {team:string; group:string;logo?:string|null}[]; clubs_source_url?:string|null; clubs_note?:string|null;
   published_schedule?: {round:number; date:string; home:string; away:string}[]; schedule_verified_results?:boolean;
   games: Match[]; official: Position[]; statistics?: MatchStats[];
   updated_at?: string; message?: string | null;
@@ -97,7 +97,7 @@ export function RugbyHub() {
       <h2 class="sport-section-title">Clubes participantes · Edición {data.season}</h2>
       <p class="updated">{data.clubs_note} {data.clubs_source_url && <a href={data.clubs_source_url} target="_blank" rel="noopener noreferrer">Consultar la organización ↗</a>}</p>
       <div class="rugby-clubs-list">{data.verified_clubs.map(club => <div key={club.group + club.team} class="panel rugby-club-entry">
-        <TeamMark name={club.team} sport="rugby"/>
+        <TeamMark name={club.team} sport="rugby" logo={club.logo}/>
         <span><strong>{club.team}</strong><small>{club.group}</small></span>
       </div>)}</div>
     </section> : null}
@@ -142,7 +142,7 @@ export function RugbyHub() {
     {games.length ? <div class="sports-games">{games.slice(0,70).map(m=><article class="panel sport-game" key={m.id}>
       <small class="sport-game-league">{m.date ? new Date(m.date).toLocaleDateString("es-AR") : "—"} · {m.status}</small>
       <div class="sport-game-teams"><strong class="sport-team"><TeamMark name={m.home} logo={m.home_logo}/>{m.home}</strong>
-        <span>{m.home_score ?? "—"} : {m.away_score ?? "—"}</span>
+        <span>{m.completed || /in progress|half.?time|live|playing/i.test(m.status) ? (m.home_score ?? "—") : "—"} : {m.completed || /in progress|half.?time|live|playing/i.test(m.status) ? (m.away_score ?? "—") : "—"}</span>
         <strong class="sport-team sport-team-away"><TeamMark name={m.away} logo={m.away_logo}/>{m.away}</strong></div>
     </article>)}</div> : <p class="coverage-notice">
       No hay partidos {tab === "past" ? "finalizados" : "programados"} disponibles en la edición seleccionada.

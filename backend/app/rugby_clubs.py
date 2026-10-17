@@ -30,6 +30,42 @@ INTERIOR_A_2026 = {
     "Zona 4": ("Duendes RC", "Jockey Club de Córdoba", "La Tablada", "Old Resian"),
 }
 
+# These fourteen logos are linked from the URBA's official 2026 home page,
+# under https://api.urba.org.ar/img/clubs/. No guessing file names or rehosting.
+URBA_TOP14_OFFICIAL_LOGOS = {
+    "Alumni": "alumni.png",
+    "Atlético del Rosario": "rosario.png",
+    "Belgrano Athletic": "belgrano.png",
+    "Buenos Aires Cricket & Rugby Club": "bacrc.png",
+    "CASI": "casi.png",
+    "Champagnat": "champagnat.png",
+    "CUBA": "cuba.png",
+    "Hindú": "hindu.png",
+    "La Plata Rugby Club": "laplata.png",
+    "Los Matreros": "losmatreros.png",
+    "Los Tilos": "lostilos.png",
+    "Newman": "newman.png",
+    "Regatas Bella Vista": "regatasbellavista.png",
+    "SIC": "sic.png",
+}
+
+# Official 2026 Córdoba Top 10 fixture (Unión Cordobesa de Rugby).
+CORDOBA_TOP10_2026 = (
+    "San Martín de Villa María", "Córdoba Athletic Club",
+    "Carlos Paz RC", "Palermo Bajo", "Universitario de Córdoba",
+    "La Tablada", "Urú Curé", "Jockey Club de Villa María",
+    "Tala RC", "Jockey Club de Córdoba",
+)
+
+# First division entrants, per URR/USR/UER 2026 official TRL regulations.
+LITORAL_TOP10_2026 = (
+    "Gimnasia y Esgrima de Rosario", "Duendes RC",
+    "Jockey Club de Rosario", "Old Resian",
+    "Jockey Club de Venado Tuerto", "Universitario de Rosario",
+    "Santa Fe Rugby Club", "CRAI", "Estudiantes de Paraná",
+    "Paraná Rowing",
+)
+
 # These are just the four TDI-B 2026 qualification pairings; the final
 # TDI-B competition groups were announced after qualification.
 INTERIOR_B_REPECHAJE_2026 = (
@@ -74,6 +110,19 @@ CHALLENGE_CUP_2026_27 = {
 
 OFFICIAL_SOURCES = {
     "urba": "https://urba.org.ar/fixture",
+    "urba-primera-a": "https://urba.org.ar/fixture",
+    "urba-primera-b": "https://urba.org.ar/fixture",
+    "urba-primera-c": "https://urba.org.ar/fixture",
+    "urba-segunda": "https://urba.org.ar/fixture",
+    "urba-tercera": "https://urba.org.ar/fixture",
+    "urba-desarrollo": "https://urba.org.ar/fixture",
+    "litoral-top10": "https://usr.org.ar/wp-content/uploads/2026/03/2026-Reglamento-General-TRL.pdf",
+    "litoral-segunda": "https://urr.org.ar/programacion-semanal-arranca-el-trl-%F0%9F%92%A5/",
+    "cordoba-top10": "https://unioncordobesaderugby.com.ar/fixtures-2026/",
+    "cordoba-super9": "https://unioncordobesaderugby.com.ar/fixtures-2026/",
+    "noa-regional-a": "https://www.urtuc.com/",
+    "noa-regional-b": "https://www.urtuc.com/",
+    "tucumano-anual": "https://www.urtuc.com/",
     "interior-a": "https://uar.com.ar/se-confirmo-el-fixture-del-torneo-del-interior-2026/",
     "interior-b": "https://uar.com.ar/se-confirmo-el-fixture-del-torneo-del-interior-2026/",
     "top-14": "https://top14.lnr.fr/classement/2026-2027/j3",
@@ -91,7 +140,16 @@ def edition_clubs(slug: str, year: int) -> list[dict[str, str]]:
     if year != 2026:
         return []
     if slug == "urba":
-        return [{"team": name, "group": "URBA Top 14"} for name in URBA_2026]
+        return [{"team": name, "group": "URBA Top 14",
+                 "logo": "https://api.urba.org.ar/img/clubs/" +
+                         URBA_TOP14_OFFICIAL_LOGOS[name]}
+                for name in URBA_2026]
+    if slug == "cordoba-top10":
+        return [{"team": name, "group": "Top 10 A · Córdoba"}
+                for name in CORDOBA_TOP10_2026]
+    if slug == "litoral-top10":
+        return [{"team": name, "group": "Top 10 · Litoral"}
+                for name in LITORAL_TOP10_2026]
     if slug == "interior-a":
         return [{"team": name, "group": group}
                 for group, names in INTERIOR_A_2026.items() for name in names]
