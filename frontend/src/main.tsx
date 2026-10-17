@@ -595,8 +595,9 @@ function FixturesView({
   useEffect(() => {
     setPage(0);
   }, [day, league?.id, live]);
+  const pageSize = live ? 300 : 150;
   const { result, loading, error, retry } = useApi<Match[]>(
-    `/api/fixtures?date=${day}&tz=${encodeURIComponent(tz)}&offset=${page * 150}${league ? `&league_id=${league.id}` : ""}${live ? "&live=true" : ""}`,
+    `/api/fixtures?date=${day}&tz=${encodeURIComponent(tz)}&offset=${page * pageSize}&limit=${pageSize}${league ? `&league_id=${league.id}` : ""}${live ? "&live=true" : ""}`,
     DISPLAY_REFRESH_MS,
   );
   // Spotlight global independiente de fecha, liga elegida y paginación.
@@ -734,7 +735,7 @@ function FixturesView({
                   incidents={incidentsByFixture.get(m.id)} />)}
             </article>
           ))}
-          {(result?.meta.total || 0) > 150 && (
+          {(result?.meta.total || 0) > pageSize && (
             <div class="pagination">
               <button
                 disabled={page === 0}
@@ -744,7 +745,7 @@ function FixturesView({
               </button>
               <span>Página {page + 1}</span>
               <button
-                disabled={(page + 1) * 150 >= (result?.meta.total || 0)}
+                disabled={(page + 1) * pageSize >= (result?.meta.total || 0)}
                 onClick={() => setPage((p) => p + 1)}
               >
                 Siguiente
