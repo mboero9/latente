@@ -12,7 +12,7 @@ ROOT=Path(__file__).resolve().parents[2]
 
 
 def test_argentine_federation_leagues_always_listed_without_fake_results():
-    expected={"basketball":2,"volleyball":4,"handball":3}
+    expected={"basketball":2,"volleyball":4,"handball":4}
     for sport,n in expected.items():
         assert len(ARGENTINE_LEAGUES[sport])==n
         items=build_competitions(sport,[])
