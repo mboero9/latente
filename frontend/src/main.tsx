@@ -31,6 +31,7 @@ import { ArgentinaAlltime } from "./reference-sports";
 import { FootballAnalytics } from "./football-analytics";
 import { sports, SportPage, HistoryPage } from "./other-sports";
 import { NavRail } from "./nav-rail";
+import { SportNavLogo } from "./sport-nav-logo";
 // Only the HEADER order changes. Keep the sport catalog and its routes intact.
 // Editorial prominence is not claimed to be a measured global audience ranking.
 const SPORT_NAV_ORDER: string[] = [
@@ -1543,13 +1544,19 @@ function App() {
               ["/bet", "18+ Dónde apostar"],
               ...[...sports].sort((a,b) => SPORT_NAV_ORDER.indexOf(a.slug) -
                 SPORT_NAV_ORDER.indexOf(b.slug))
-                .map(sport => [`/sport/${sport.slug}`, `${sport.emoji} ${sport.name}`]),
+                .map(sport => [`/sport/${sport.slug}`, sport.name]),
             ].map(([path, label]) => {
+              const navSport = path.startsWith("/sport/")
+                ? sports.find(sport => path === `/sport/${sport.slug}`)
+                : undefined;
               const active = path.startsWith("/sport/") || path.startsWith("/league/")
                 ? route === path
                 : ((view === "" && path === "/") || path.split("/")[1] === view);
               return <a key={path} class={active ? "active" : ""}
-                aria-current={active ? "page" : undefined} href={link(path)}>{label}</a>;
+                aria-current={active ? "page" : undefined} href={link(path)}>
+                  {navSport && <SportNavLogo slug={navSport.slug} fallback={navSport.emoji}/>}
+                  <span>{label}</span>
+                </a>;
             })}
           </NavRail>
           <div class="header-actions">
