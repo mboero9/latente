@@ -46,7 +46,7 @@ COUNTRY_PREFERENCE = {
 
 
 def automatic_targets(sport, catalogue, year):
-    """Return up to 2 verified active league-season pairs per supported sport."""
+    """Return up to three verified league-season pairs per supported sport."""
     goals = AUTO_LEAGUES.get(sport, ())
     pref = COUNTRY_PREFERENCE.get(sport, ())
     options = []
@@ -130,15 +130,29 @@ def due_jobs(today=None):
     enabled = list(dict.fromkeys([*enabled, "handball", "volleyball"]))
     jobs = []
     targets = configured_targets()
-    # Supplement explicit targets from catalogue snapshots discovered by the
-    # cron; don't guess league IDs or the start year for seasonal standings.
+    # Supplement explicit targets using catalogue snapshots already imported.
+    # Do not remove caller-configured targets, but do include verified Argentine
+    # leagues even when an older Railway SPORTS_TARGETS_JSON has only Euroleague.
     with session_scope() as db:
         for sport in enabled:
-            if targets.get(sport) or sport not in AUTO_LEAGUES:
+            if sport not in AUTO_LEAGUES:
                 continue
             snap = db.get(SportSnapshot, (sport, "leagues", "catalog"))
-            if snap and snap.data:
-                targets[sport] = automatic_targets(sport, snap.data, today.year)
+            if not snap or not snap.data:
+                continue
+            discovered = automatic_targets(sport, snap.data, today.year)
+            existing = targets.get(sport, [])
+            if sport in {"basketball", "volleyball", "handball"}:
+                combined = []
+                for candidate in [*discovered, *existing]:
+                    if all(str(item["league"]) != str(candidate["league"])
+                           for item in combined):
+                        combined.append(candidate)
+                # Bounded standings calls: 5 + 1 league discovery + <=5 tables
+                # each day, still within the conservative 20-call sport cap.
+                targets[sport] = combined[:5]
+            elif not existing:
+                targets[sport] = discovered
     # Estas ligas tienen identificadores oficiales estables. Si el usuario no
     # definió SPORTS_TARGETS_JSON, probar sus posiciones actuales una vez/día.
     # Los errores de cobertura se preservan como no disponibles.
