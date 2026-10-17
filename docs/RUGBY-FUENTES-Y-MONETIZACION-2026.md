@@ -8,6 +8,18 @@
 - Las vistas `#/sport/rugby` no mostraban clubes al no existir snapshots. Se añadió listado 2026 verificado de URBA Top 14, Torneo del Interior A (16 equipos en 4 grupos), reválidas TDI B (8 aspirantes, **NO** participantes finales), más 48 cruces publicados para las 6 fechas de TDI A. Los calendarios NO tienen resultados o puntos inventados.
 - URBA pasó de **Top 12 2025 a Top 14 2026**. “Top 13” no corresponde al campeonato oficial superior 2026. Top 14 francés es una competición completamente distinta.
 
+## Clubes oficiales internacionales 2026/27: implementación sin licencia de resultados
+
+Se incorporaron al catálogo de lectura los **participantes**, separados de partidos, posiciones y estadísticas (que siguen requiriendo fuentes automatizadas autorizadas).
+
+- **TOP 14 Francia**: 14 clubes 2026/27 de clasificación LNR. Fuente: https://top14.lnr.fr/classement/2026-2027/j3 .
+- **Gallagher PREM Inglaterra**: 10 clubes verificados en la web oficial Premiership. Fuente: https://www.premiershiprugby.com/match-centre/288986/standings .
+- **Investec Champions Cup**: 24 clubes organizados en cuatro pools de seis. Fuente EPCR: https://www.epcrugby.com/challenge-cup/content/official-investec-champions-cup-and-epcr-challenge-pools-confirmed-for-202627-season .
+- **EPCR Challenge Cup**: 18 clubes en tres pools de seis; misma fuente EPCR.
+- Para estos cuatro torneos el año `2026` designa **temporada 2026/27**; el listado no debe heredarse automáticamente a 2027/28.
+- En el panel puede verse un listado de clubes sin fixtures ni standings, señal de que **la ingesta API aún no está configurada**. No mostrar los participantes de EPCR como ranking, no inventar puntos ni resultados.
+- No copiar logos ni contenido gráfico sin permisos.
+
 ## API/Proveedor: precio, cobertura y uso recomendado
 
 | Fuente | Cobertura demostrable | Condición / recomendación |
