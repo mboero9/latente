@@ -17,7 +17,7 @@ from .ingest import upsert
 from .sports_sources import extract, SourceUnavailable
 from .sports_scheduler import reserve_quota
 from .provider import aware
-from .rugby_clubs import edition_clubs, source_url
+from .rugby_clubs import edition_clubs, published_schedule, source_url
 
 log = logging.getLogger("latente.rugby")
 
@@ -331,6 +331,8 @@ def read_competition(slug, season=None):
         "season": year, "seasons": sorted(set([*available, *([year] if games or official else [])]), reverse=True),
         "games": games, "official": official,
         "verified_clubs": edition_clubs(slug, year),
+        "published_schedule": published_schedule(slug, year),
+        "schedule_verified_results": False,
         "clubs_source_url": source_url(slug),
         "clubs_note": ("Participantes de la edición 2026, verificados contra la unión organizadora. No equivalen a una tabla de posiciones ni a resultados."
                         if edition_clubs(slug, year) else None),
