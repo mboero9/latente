@@ -3255,3 +3255,116 @@
   .bookmaker-directory a .bookmaker-brand > strong {font-weight:750;}
   .public-operator-mark {font-size:.9rem;}
 }
+
+
+/* Historical identity cards: real flags work on Windows/Linux where emoji flag
+   sequences display only AR/PT/EG. A missing licensed crest keeps initials. */
+@layer components {
+  .historic-flags {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex: 0 0 auto;
+    vertical-align: middle;
+    white-space: nowrap;
+    min-height: 18px;
+  }
+  .historic-flag-img {
+    display: inline-block;
+    width: 28px;
+    height: 21px;
+    flex: 0 0 auto;
+    object-fit: cover;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--surface);
+  }
+  .historic-flag-img.compact {
+    width: 22px;
+    height: 17px;
+  }
+  .historic-flag-fallback {
+    display: inline-grid;
+    align-items: center;
+    justify-items: center;
+    min-width: 26px;
+    height: 20px;
+    font: 700 .65rem/1 ui-sans-serif, sans-serif;
+    border: 1px solid var(--line);
+    background: var(--soft);
+    border-radius: 3px;
+    color: var(--muted);
+  }
+  .historic-club-text { min-width: 0; overflow-wrap: anywhere; }
+  .historic-club-text small {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    white-space: normal;
+  }
+  .historic-club-crest {
+    display: inline-flex;
+    flex: 0 0 29px;
+    width: 29px;
+    height: 29px;
+    align-items: center;
+    justify-content: center;
+  }
+  .historic-club-crest .team-mark img { object-fit: contain; }
+  .historic-country-cell, .historic-scorer-name, .historic-scorer-club {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    text-align: left;
+  }
+  .historic-country-cell { white-space: nowrap; }
+  .historic-scorer-name { font-weight: 700; }
+  .historic-scorer-name > span:last-child,
+  .historic-scorer-club > span:last-child {
+    overflow-wrap: anywhere;
+  }
+  .historic-player-portrait {
+    display: inline-grid;
+    position: relative;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--soft);
+    font: 750 .71rem/1 ui-sans-serif, sans-serif;
+    color: var(--green);
+    overflow: hidden;
+  }
+  .historic-player-portrait img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .historic-teaser-identity {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .world-scorers-teaser .world-scorer-line {
+    grid-template-columns: 16px 64px minmax(0, 1fr) auto;
+  }
+  .scorers-table .historic-scorer-name { min-width: 145px; }
+  .scorers-table .historic-scorer-club { min-width: 168px; }
+  .world-scorers-section .scorers-table { min-width: 790px; }
+}
+@layer responsive {
+  @media(max-width:650px) {
+    .historic-flag-img {width:24px;height:18px;}
+    .historic-player-portrait {width:30px;height:30px;min-width:30px;}
+    .historic-scorer-name,.historic-scorer-club {gap:6px;}
+    .world-scorers-teaser .world-scorer-line {
+      grid-template-columns: 16px 60px minmax(0, 1fr) auto;
+    }
+  }
+}
