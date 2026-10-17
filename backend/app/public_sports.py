@@ -60,6 +60,7 @@ def formula_one(year=None):
         raise ValueError("Invalid F1 season")
 
     def produce():
+        from .f1_history import current_driver_media, enrich_driver_rows
         drivers = _standing_list(f"/{year}/driverstandings.json")
         constructors = _standing_list(f"/{year}/constructorstandings.json")
         last = _get(F1 + f"/{year}/last/results.json")
@@ -104,13 +105,14 @@ def formula_one(year=None):
             "available": True, "season": year, "round": drivers.get("round"),
             "updated_at": datetime.now(timezone.utc).isoformat(),
             "provider": "Jolpica / Ergast",
-            "drivers": [{
+            "drivers": enrich_driver_rows([{
                 "rank": int(row["position"]), "name": f"{row.get('Driver', {}).get('givenName', '')} {row.get('Driver', {}).get('familyName', '')}".strip(),
+                "family_name": (row.get("Driver") or {}).get("familyName"),
                 "team": ", ".join(c.get("name", "") for c in row.get("Constructors", []) if c.get("name")),
                 "nationality": (row.get("Driver") or {}).get("nationality"),
                 "team_nationalities": [c.get("nationality") for c in row.get("Constructors", []) if c.get("name")],
                 "points": float(row["points"]), "wins": int(row.get("wins", 0)),
-            } for row in drivers.get("DriverStandings", []) if row.get("position") and row.get("points")],
+            } for row in drivers.get("DriverStandings", []) if row.get("position") and row.get("points")], current_driver_media(year)),
             "constructors": [{
                 "rank": int(row["position"]), "name": row.get("Constructor", {}).get("name", ""),
                 "nationality": (row.get("Constructor") or {}).get("nationality"),
