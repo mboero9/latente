@@ -3657,3 +3657,25 @@
     .latente-ad--rail-left,.latente-ad--rail-right {display:none!important;}
   }
 }
+
+@layer responsive {
+  @media(max-width:600px) {
+    /* Rugby/NBA/NFL and other sports: prevent long club names and scores
+       from forcing a viewport-wide layout. Scores stay readable. */
+    .sport-game-teams {grid-template-columns:minmax(0,1fr) 58px minmax(0,1fr);
+      gap:7px;min-width:0;}
+    .sport-game-teams .sport-team {min-width:0;font-size:.77rem;gap:5px;
+      overflow-wrap:break-word;word-break:normal;}
+    .sport-game-teams .sport-team .team-mark {flex:0 0 24px;width:24px;height:24px;}
+    .sport-game-teams > span {font-size:.95rem;white-space:nowrap;}
+    .sport-game {min-width:0;padding:11px 10px;}
+    .sports-game,.sports-games,.sport-landing>.panel {min-width:0;}
+    .sport-landing .sports-club,.sport-landing .sport-team-inline {
+      word-break:normal;overflow-wrap:break-word;min-width:0;}
+    .knockout-scroll {overscroll-behavior-inline:contain;
+      -webkit-overflow-scrolling:touch;}
+    .watch-links a {overflow-wrap:break-word;}
+    .odds-choices,.odds-house {min-width:0;}
+    .live-incidents,.live-bookmakers {min-width:0;}
+  }
+}
