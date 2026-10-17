@@ -920,7 +920,7 @@ function TableView({ league }: { league: League }) {
           ? "Primera D · archivo hasta 2023"
           : "Puntos por partido · indicador estadístico (no descenso oficial)"}</small>
       </a>}
-      {error && <ErrorBox error={error} retry={retry} />
+      {error && <ErrorBox error={error} retry={retry} />}
       {result?.meta.provisional && (
         <div class="coverage-notice" role="note">
           <strong>Tabla parcial, no oficial.</strong> Calculada con {result.meta.matches_used ?? 0} partidos terminados disponibles en Latente. Puede faltar gran parte de la temporada, equipos y descuentos de puntos.
