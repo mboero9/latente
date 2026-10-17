@@ -80,6 +80,8 @@ def test_backend_and_frontend_wire_real_f1_features():
     assert "F1TeamLogo" in view and "F1CountryFlag" in view
     assert 'href={link("/sport/f1")}' in home
     assert "f1-home-feature" in styles
+    assert "f1-home-mobile-link" in styles
+    assert "f1-home-mobile-link" in home
     assert '"/api/f1/champions"' in history
     assert "1958" in history
     assert "2026" in media or '"mclaren"' in media
