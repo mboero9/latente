@@ -905,6 +905,7 @@ function TableView({ league }: { league: League }) {
     DISPLAY_REFRESH_MS,
   );
   const groups = [...new Set(result?.data.map((r) => r.group) || [])];
+  const ascensoAverage = lowerLeagueCode(league);
   return (
     <>
       <LeagueHeader
@@ -913,6 +914,12 @@ function TableView({ league }: { league: League }) {
         season={season}
         setSeason={setSeason}
       />
+      {ascensoAverage && <a class="ascenso-promedios-quick-link" href={link(`/promedios/${league.id}`)}>
+        <span>📊 Ver promedios PTS/PJ</span>
+        <small>{ascensoAverage==="d"
+          ? "Primera D · archivo hasta 2023"
+          : "Puntos por partido · indicador estadístico (no descenso oficial)"}</small>
+      </a>}
       {error && <ErrorBox error={error} retry={retry} />}
       {result?.meta.provisional && (
         <div class="coverage-notice" role="note">
@@ -953,6 +960,7 @@ function TableView({ league }: { league: League }) {
                     {[
                       "PTS",
                       "PJ",
+                      ...(ascensoAverage ? ["PTS/PJ"] : []),
                       "G",
                       "E",
                       "P",
@@ -980,6 +988,13 @@ function TableView({ league }: { league: League }) {
                         </th>
                         <td class="points">{r.points}</td>
                         <td>{r.played}</td>
+                        {ascensoAverage && <td class="ascenso-ppg-cell"
+                          title="Puntos divididos por partidos jugados; no es un promedio oficial de descenso">
+                          {r.played>0 && Number.isFinite(r.points)
+                            ? (r.points/r.played).toLocaleString("es-AR",
+                                {minimumFractionDigits:3,maximumFractionDigits:3})
+                            : "—"}
+                        </td>}
                         <td>{r.won}</td>
                         <td>{r.drawn}</td>
                         <td>{r.lost}</td>
@@ -1001,7 +1016,9 @@ function TableView({ league }: { league: League }) {
         ))
       )}
       <p class="table-key">
-        PTS: puntos · PJ: jugados · G/E/P: ganados, empatados y perdidos ·
+        PTS: puntos · PJ: jugados · {ascensoAverage
+          ? "PTS/PJ: puntos por partido, estadística informativa (no determina descensos) · "
+          : ""}G/E/P: ganados, empatados y perdidos ·
         GF/GC: goles a favor y en contra · DIF: diferencia.
       </p>
       <Updated meta={result?.meta} />
@@ -1639,13 +1656,23 @@ function App() {
                   a.name.localeCompare(b.name,"es"))
                 .slice(0, leagueSearch ? 30 : 12)
                 .map((l) => (
-                  <a
-                    class={l.id === id && isLeagueView ? "selected" : ""}
-                    href={link(`/league/${l.id}`)}
-                  >
-                    <LeagueLogo league={l} />
-                    <span>{argentinaLeagueName(l)}</span>
-                  </a>
+                  <div class="league-nav-item" key={l.id}>
+                    <a
+                      class={l.id === id && isLeagueView ? "selected" : ""}
+                      href={link(`/league/${l.id}`)}
+                    >
+                      <LeagueLogo league={l} />
+                      <span>{argentinaLeagueName(l)}</span>
+                    </a>
+                    {lowerLeagueCode(l) && <a class="league-nav-average"
+                      href={link(`/promedios/${l.id}`)}
+                      aria-label={`Promedios de puntos por partido: ${l.name}`}
+                      title={lowerLeagueCode(l)==="d"
+                        ? "PTS/PJ · Primera D histórica (hasta 2023)"
+                        : "PTS/PJ · Promedios estadísticos (no oficiales de descenso)"}>
+                      PTS/PJ
+                    </a>}
+                  </div>
                 ))}
             </div>
           ))}

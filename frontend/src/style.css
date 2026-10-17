@@ -3850,3 +3850,44 @@
   .live-odds-preview-legend {font-size:.61rem;}
  }
 }
+
+
+/* Argentine lower-division statistical averages: same route accessible
+   from the league list and season standings, even on narrow viewports.
+   These are PTS/PJ, NOT AFA's official relegation coefficients. */
+@layer components {
+ .league-nav-item {display:flex;align-items:center;gap:4px;min-width:0;margin:2px -7px;}
+ .league-nav-group .league-nav-item > a:first-child {
+   flex:1;min-width:0;margin:0;overflow-wrap:anywhere;
+ }
+ .league-nav-group .league-nav-item > a.league-nav-average {
+   flex:0 0 auto;margin:0;padding:7px 5px;border:1px solid var(--line);
+   border-radius:6px;background:var(--surface);font-size:.65rem;font-weight:800;
+   color:var(--green);white-space:nowrap;
+ }
+ .league-nav-group .league-nav-item > a.league-nav-average:hover,
+ .league-nav-group .league-nav-item > a.league-nav-average:focus-visible {
+   background:var(--green-soft);border-color:var(--green);
+ }
+ .ascenso-promedios-quick-link {
+   display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+   gap:6px 16px;margin:4px 0 16px;padding:11px 15px;
+   border:1px solid var(--line);border-left:3px solid var(--green);
+   border-radius:9px;background:var(--surface);text-decoration:none;
+ }
+ .ascenso-promedios-quick-link > span {color:var(--green);font-size:.86rem;font-weight:800;}
+ .ascenso-promedios-quick-link > small {color:var(--muted);font-size:.72rem;}
+ .ascenso-promedios-quick-link:hover,.ascenso-promedios-quick-link:focus-visible {
+   border-color:var(--green);background:var(--soft);
+ }
+ .standings-panel td.ascenso-ppg-cell {
+   font-variant-numeric:tabular-nums;font-weight:800;color:var(--green);
+   white-space:nowrap;
+ }
+}
+@layer responsive {
+ @media(max-width:640px) {
+  .ascenso-promedios-quick-link {padding:10px 12px;align-items:flex-start;}
+  .ascenso-promedios-quick-link > small {width:100%;line-height:1.45;}
+ }
+}
