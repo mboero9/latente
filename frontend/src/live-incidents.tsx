@@ -32,10 +32,6 @@ export function LiveIncidentStrip({
   const incidents = snapshot?.events ?? [];
   const visible = incidents.slice(0, 5);
   const pending = !snapshot?.checked_at;
-  const delayed = Boolean(
-    snapshot?.checked_at &&
-    Date.now() - new Date(snapshot.checked_at).getTime() > 20 * 60_000,
-  );
 
   return (
     <div class="live-incidents" aria-label={`Goles y tarjetas: ${match.home.name} contra ${match.away.name}`}>
@@ -57,7 +53,6 @@ export function LiveIncidentStrip({
           {incidents.length > visible.length && <a href={`#/match/${match.id}`}
             class="live-incidents-more">+{incidents.length - visible.length} más</a>}
         </span>
-        {delayed && <span class="live-incidents-delayed" title="La API todavía no actualizó estas incidencias">Datos demorados</span>}
       </> : <span class="live-incidents-pending">
         ⚽ 🟨 🟥 {pending ? "Incidencias pendientes del proveedor" : "Sin detalle de goles o tarjetas confirmado"}
       </span>}
