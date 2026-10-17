@@ -22,12 +22,16 @@ def test_only_real_winner_connects_to_next_round():
     assert rows[0]["matches"][0]["next_match_id"] == 2
     assert rows[0]["matches"][0]["winner_id"] == 10
 
-def test_no_fabricated_advancement_from_ties_or_missing_bracket():
+def test_tied_score_can_connect_only_if_next_round_confirms_participant():
     rows = bracket_rows([
         match(1,"Round of 32",10,11,1,1,"FT"),
         match(2,"Round of 16",10,12),
     ])
-    assert "next_match_id" not in rows[0]["matches"][0]
+    # Match itself is tied; only the published next-round roster identifies
+    # club 10 as advanced. No 1st-leg winner is inferred.
+    assert winner_id(rows[0]["matches"][0]) is None
+    assert rows[0]["matches"][0]["next_match_id"] == 2
+    assert rows[0]["matches"][0]["qualified_team_id"] == 10
     assert winner_id(match(1,"Final",10,11,1,1,"PEN",{"home":4,"away":5})) == 11
 
 def test_semifinal_not_misclassified_as_final():
