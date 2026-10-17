@@ -245,7 +245,6 @@ function MatchRow({
               ? hour(m.kickoff, tz)
               : labels[m.status] || m.status}
         </span>
-        {m.stale && <span class="stale">Demorado</span>}
         {live && <a class="watch-live-link" href={link(`/watch/${m.id}`)} title="Opciones oficiales para ver este partido" aria-label={`Dónde ver ${m.home.name} contra ${m.away.name}`}>📺 Ver</a>}
       </div>
       <a class="team home" href={link(`/team/${m.home.id}`)}>
@@ -539,7 +538,6 @@ function Focus({ match: m, tz }: { match: Match; tz: string }) {
         <span>{LIVE.has(m.status) ? (labels[m.status] || `${m.elapsed ?? "—"} minutos`) : `Comienza ${shortDate(m.kickoff, tz)} · ${hour(m.kickoff, tz)}`}</span>
         <a href={link(`/match/${m.id}`)}>Ver partido</a>
       </div>
-      {m.stale && <p>Datos demorados · {hour(m.updated_at, tz)}</p>}
     </article>
   );
 }
@@ -1260,7 +1258,6 @@ function MatchStats({ match }: { match: Match }) {
               </tr>
             ))}</tbody>
           </table>
-          {result?.meta.stale && <p class="stale">Las estadísticas están demoradas. Conservamos el último dato recibido.</p>}
           <Updated meta={result?.meta} />
         </>
       ) : !error && (
@@ -1316,12 +1313,6 @@ function MatchView({ id, tz }: { id: number; tz: string }) {
                   <h1>{m.away.name}</h1>
                 </a>
               </div>
-              {m.stale && (
-                <p class="stale">
-                  El último dato está demorado. El marcador puede haber
-                  cambiado.
-                </p>
-              )}
               <a class="watch-detail-link" href={link(`/watch/${m.id}`)}>📺 Dónde ver · Plataformas oficiales</a>
               <Updated meta={result.meta} />
             </article>
@@ -1495,13 +1486,8 @@ function App() {
     (!status.configured ||
       !status.worker_online ||
       status.quota_exhausted ||
-      status.failed_jobs > 0 ||
       (status.fixtures_today === 0 && (status.leagues_loaded ?? 0) > 0));
-  // Hide only the generic temporary refresh notice on the homepage.
-  // Preserve actionable errors such as exhausted quota or offline worker.
-  const hideGenericHomeDelay = view === "" && status?.mode === "api" &&
-    status.configured && status.worker_online && !status.quota_exhausted &&
-    (status.restricted_jobs ?? 0) === 0 && (status.fixtures_today ?? 0) > 0;
+  // Keep actionable outages visible; generic lag is for internal monitoring.
   return (
     <>
       <a
@@ -1646,7 +1632,7 @@ function App() {
               </span>
             </div>
           )}
-          {warning && !hideGenericHomeDelay && (
+          {warning && (
             <div class="notice warning" role="status">
               <strong>
                 {!status.configured
@@ -1659,7 +1645,7 @@ function App() {
                         ? "Algunas fechas o temporadas no están disponibles"
                         : status.fixtures_today === 0
                           ? "No hay partidos disponibles para hoy"
-                          : "Algunas actualizaciones están demoradas"}
+                          : "Información deportiva no disponible"}
               </strong>
               <span>
                 {!status.configured
