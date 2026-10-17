@@ -46,7 +46,7 @@ import { RugbyHomeTables } from "./rugby-home-tables";
 // leagues in the mobile shortcuts, catalog and home match list.
 const LATENTE_PRIMARY_LEAGUES = [
   {id:128,label:"🇦🇷 Primera División"},
-  {id:129,label:"🏆 Copa Argentina"},
+  {id:130,label:"🏆 Copa Argentina"},
   {id:13,label:"🏆 Libertadores"},
   {id:11,label:"🏆 Sudamericana"},
 ] as const;
@@ -443,7 +443,7 @@ const TOP_LEAGUES: Record<number, number> = {
   13: 1650, 1: 1270, 11: 1580, 135: 1210,
   78: 1200, 61: 1170, 71: 1080, 3: 1140,
   4: 1100, 9: 980, 45: 1020, 253: 1020,
-  129: 1560, 130: 790, 262: 910,
+  129: 790, 130: 1560, 262: 910,
 };
 const STAR_CLUBS = [
   "real madrid", "barcelona", "bayern", "manchester united",
