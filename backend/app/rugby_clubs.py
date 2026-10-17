@@ -108,8 +108,16 @@ CHALLENGE_CUP_2026_27 = {
                "Harlequins", "RC Toulon", "RC Vannes"),
 }
 
+# Competitors confirmed by the 2026 federation fixture publication;
+# group is tournament participation only, NOT an official table.
+SUPER_RUGBY_AMERICAS_2026 = (
+    "Tarucas", "Dogos XV", "Yacare XV", "Cobras Brasil Rugby",
+    "Selknam", "Pampas", "Peñarol Rugby", "Capibaras XV",
+)
+
 OFFICIAL_SOURCES = {
     "urba": "https://urba.org.ar/fixture",
+    "super-rugby-americas": "https://www.superrugbyamericas.com/habemus-fixture-22?nid=650",
     "urba-primera-a": "https://urba.org.ar/fixture",
     "urba-primera-b": "https://urba.org.ar/fixture",
     "urba-primera-c": "https://urba.org.ar/fixture",
@@ -139,6 +147,9 @@ OFFICIAL_SOURCES = {
 def edition_clubs(slug: str, year: int) -> list[dict[str, str]]:
     if year != 2026:
         return []
+    if slug == "super-rugby-americas":
+        return [{"team": name, "group": "Súper Rugby Américas 2026"}
+                for name in SUPER_RUGBY_AMERICAS_2026]
     if slug == "urba":
         return [{"team": name, "group": "URBA Top 14",
                  "logo": "https://api.urba.org.ar/img/clubs/" +

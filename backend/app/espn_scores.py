@@ -25,6 +25,10 @@ RUGBY_LEAGUES = {
     "champions": ("Champions Cup", "271937"),
     "test-matches": ("Partidos internacionales", "289234"),
     "world-cup": ("Mundial de Rugby", "164205"),
+    # Competition IDs appear in ESPN game/result URLs; these IDs are not
+    # provider IDs for API-Sports. Keep sources rigorously separated.
+    "mlr": ("Major League Rugby", "289262"),
+    "challenge-cup": ("European Rugby Challenge Cup", "272073"),
 }
 
 def _number(value):
@@ -84,6 +88,21 @@ def us_scoreboard(sport, day=None):
     return _cached(("scoreboard", sport, date_key), 600, produce)
 
 
+def season_windows(year, days=28):
+    """Bounded ESPN scoreboard slices across the entire calendar season.
+
+    ESPN rejects overly broad rugby date ranges. Small 28-day windows let
+    RugbyHub display verified March games in October, not just this week.
+    These calls run in scheduled ingestion, NEVER in request handlers.
+    """
+    cursor = date(year, 1, 1)
+    end = date(year, 12, 31)
+    while cursor <= end:
+        last = min(cursor + timedelta(days=days - 1), end)
+        yield cursor, last
+        cursor = last + timedelta(days=1)
+
+
 def rugby_feed(league="urba", season=None):
     if league not in RUGBY_LEAGUES:
         raise ValueError("Competición de rugby inválida")
@@ -93,97 +112,89 @@ def rugby_feed(league="urba", season=None):
     name, league_id = RUGBY_LEAGUES[league]
 
     def produce():
-        # ESPN rejects year-long rugby scoreboard ranges with HTTP 400.
-        # Query bounded 40-day windows, then try the legacy rugby-league
-        # route used by some ESPN competitions. Never scrape HTML.
-        today = datetime.now(timezone.utc).date()
-        windows = [
-            (today - timedelta(days=35), today + timedelta(days=10)),
-            (today + timedelta(days=10), today + timedelta(days=55)),
-        ]
-        games = []
+        games = {}
         used_route = None
-        for rugby_path in ("rugby", "rugby-league"):
-            candidate = {}
-            successful = False
-            for first, last in windows:
-                if first.year > year or last.year < year:
-                    continue
-                from_day = max(first, date(year, 1, 1))
-                to_day = min(last, date(year, 12, 31))
+        windows = list(season_windows(year))
+        # Try the regular rugby feed first for the FULL calendar year.
+        # If none has coverage, use just three distributed probes with the
+        # legacy rugby-league path; avoid doubling requests indiscriminately.
+        for rugby_path, scans in (
+            ("rugby", windows),
+            ("rugby-league", [windows[2], windows[len(windows)//2], windows[-3]]),
+        ):
+            any_success = False
+            for first, last in scans:
                 try:
                     raw = _get(f"{ESPN_SITE}/{rugby_path}/{league_id}/scoreboard", {
-                        "dates": from_day.strftime("%Y%m%d") + "-" + to_day.strftime("%Y%m%d"),
-                        "limit": 125,
+                        "dates": first.strftime("%Y%m%d") + "-" + last.strftime("%Y%m%d"),
+                        "limit": 250,
                     })
-                    successful = True
-                    for match in normalize_games(raw, name):
-                        if (match.get("date") or "").startswith(str(year)):
-                            candidate[match["id"]] = match
+                    any_success = True
+                    for game in normalize_games(raw, name):
+                        if (game.get("date") or "").startswith(str(year)) and game.get("id"):
+                            prev = games.get(game["id"])
+                            if prev is None or (game["completed"] and not prev["completed"]):
+                                games[game["id"]] = game
                 except (httpx.HTTPError, ValueError, KeyError, TypeError):
+                    # Unsupported league/period: missing is not a fake score.
                     continue
-            if candidate:
-                games = sorted(candidate.values(), key=lambda match: (match["date"] or "", match["id"]))
+            if games:
                 used_route = rugby_path
                 break
-            if successful:
+            if any_success:
                 used_route = rugby_path
+
+        # Some ESPN leagues ignore 'dates'; try one default scoreboard as a
+        # final, bounded discovery query if the date ranges contained no games.
         if not games:
-            # Some ESPN rugby deployments reject the 'dates' parameter
-            # entirely. Try the default current scoreboard once per host;
-            # this is intentionally not a claim of full-season coverage.
-            for host in (ESPN_SITE, "https://site.web.api.espn.com/apis/site/v2/sports"):
-                for rugby_path in ("rugby", "rugby-league"):
-                    try:
-                        raw = _get(f"{host}/{rugby_path}/{league_id}/scoreboard")
-                        seen = {match["id"]: match for match in normalize_games(raw, name)
-                                if (match.get("date") or "").startswith(str(year))}
-                        if seen:
-                            games = sorted(seen.values(), key=lambda match: (match["date"] or "", match["id"]))
-                            break
-                    except (httpx.HTTPError, ValueError, KeyError, TypeError):
-                        continue
-                if games:
-                    break
-        # The public ESPN feeds sometimes expose a standalone standings
-        # endpoint and sometimes only a metadata stub. An empty response
-        # must never be shown as official rankings.
+            for path in dict.fromkeys((used_route or "rugby", "rugby-league")):
+                try:
+                    raw = _get(f"{ESPN_SITE}/{path}/{league_id}/scoreboard", {"limit": 250})
+                    for game in normalize_games(raw, name):
+                        if (game.get("date") or "").startswith(str(year)) and game.get("id"):
+                            games[game["id"]] = game
+                    if games:
+                        used_route = path
+                        break
+                except (httpx.HTTPError, ValueError, KeyError, TypeError):
+                    continue
+
+        # Only standings actually provided by ESPN; rugby points and bonus
+        # can NOT be computed faithfully from ordinary rugby results.
         official = []
-        for rugby_path in dict.fromkeys((used_route or "rugby", "rugby-league")):
+        for rugby_path in dict.fromkeys((used_route or "rugby", "rugby", "rugby-league")):
             try:
-                standings = _get(f"{ESPN_TABLES}/{rugby_path}/{league_id}/standings", {"season": year})
-                for group in standings.get("children") or []:
-                    official.extend(_nba_rows(group))
-                if not official:
-                    official = _nba_rows(standings)
+                table = _get(f"{ESPN_TABLES}/{rugby_path}/{league_id}/standings",
+                             {"season": year})
+                official = _nba_rows(table)
                 if official:
                     break
             except (httpx.HTTPError, ValueError, KeyError, TypeError):
                 continue
-        # Avoid publishing a fake official championship ranking: rugby bonus
-        # points vary by tournament and cannot be inferred from scores.
+        ordered = sorted(games.values(), key=lambda row: (row.get("date") or "", row["id"]))
         from collections import defaultdict
         by_team = defaultdict(lambda: {"pj": 0, "g": 0, "e": 0, "p": 0,
                                         "for": 0, "against": 0})
-        for match in games:
-            if not match["completed"] or match["home_score"] is None or match["away_score"] is None:
+        for game in ordered:
+            if not game["completed"] or game["home_score"] is None or game["away_score"] is None:
                 continue
             for team, own, conceded in (
-                (match["home"], match["home_score"], match["away_score"]),
-                (match["away"], match["away_score"], match["home_score"])
+                (game["home"], game["home_score"], game["away_score"]),
+                (game["away"], game["away_score"], game["home_score"]),
             ):
-                row = by_team[team]
-                row["pj"] += 1
-                row["for"] += own
-                row["against"] += conceded
-                row["g" if own > conceded else "e" if own == conceded else "p"] += 1
-        statistics = [{"team": team, **stats} for team, stats in by_team.items()]
-        statistics.sort(key=lambda x: (-x["g"], -(x["for"] - x["against"]), x["team"]))
+                stats = by_team[team]
+                stats["pj"] += 1
+                stats["for"] += own
+                stats["against"] += conceded
+                stats["g" if own > conceded else "e" if own == conceded else "p"] += 1
+        stats = [{"team": team, **data} for team, data in by_team.items()]
+        stats.sort(key=lambda v: (-v["g"], -(v["for"]-v["against"]), v["team"]))
         return {
-            "available": bool(games or official), "league": league,
-            "league_name": name, "season": year, "games": games, "official": official,
-            "statistics": statistics, "provider": "ESPN",
+            "available": bool(ordered or official), "league": league,
+            "league_name": name, "season": year, "games": ordered,
+            "official": official, "statistics": stats, "provider": "ESPN",
             "updated_at": datetime.now(timezone.utc).isoformat(),
-            "message": None if games or official else "No hay encuentros confirmados de esta temporada en ESPN.",
+            "message": (None if ordered or official else
+                        "ESPN no ofrece datos estructurados verificables de esta liga y temporada."),
         }
-    return _cached(("rugby", league, year), 1800, produce)
+    return _cached(("rugby_season_full", league, year), 21600, produce)

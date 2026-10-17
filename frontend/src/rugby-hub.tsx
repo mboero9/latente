@@ -1,4 +1,4 @@
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { useApi } from "./api";
 import { TeamMark } from "./team-mark";
 import { RugbyLeagueTables } from "./rugby-league-tables";
@@ -32,7 +32,10 @@ type RugbyData = {
 export function RugbyHub() {
   const [competition, setCompetition] = useState("urba");
   const [year, setYear] = useState<number | null>(null);
-  const [tab, setTab] = useState<"past" | "future">("past");
+  const [tab, setTab] = useState<"all" | "past" | "future">("all");
+  const [shown,setShown] = useState(70);
+  const [search,setSearch] = useState("");
+  useEffect(()=>{setShown(70);setSearch("");},[competition,year,tab]);
 
   const {result: catalog, loading: catalogLoading, error: catalogError} =
     useApi<Competition[]>("/api/rugby/catalog", 3600000);
@@ -42,7 +45,13 @@ export function RugbyHub() {
   const {result, loading, error, retry} = useApi<RugbyData>(
     "/api/rugby/" + competition + params, 300000);
   const data = result?.data;
-  const games = (data?.games || []).filter(match => tab === "past" ? match.completed : !match.completed)
+  const allGames = data?.games || [];
+  const completedCount=allGames.filter(match=>match.completed).length;
+  const upcomingCount=allGames.length-completedCount;
+  const games = allGames.filter(match =>
+    (tab==="all"|| (tab === "past" ? match.completed : !match.completed)) &&
+    (!search || `${match.home} ${match.away} ${match.status}`
+      .toLocaleLowerCase("es").includes(search.toLocaleLowerCase("es"))))
     .sort((a,b) => tab === "past" ? b.date.localeCompare(a.date) : a.date.localeCompare(b.date));
   const seasons = current?.seasons?.length ? current.seasons : data?.seasons || [];
   const updated = data?.updated_at ? new Date(data.updated_at).toLocaleString("es-AR") : null;
@@ -135,18 +144,28 @@ export function RugbyHub() {
       </div>)}</div>
     </details>}
     <h2 class="sport-section-title">Resultados y próximos partidos</h2>
-    <div class="sports-tabs" role="group">
-      <button class={tab === "past" ? "active" : ""} onClick={()=>setTab("past")}>Resultados</button>
-      <button class={tab === "future" ? "active" : ""} onClick={()=>setTab("future")}>Programados</button>
+    <div class="sports-tabs" role="group" aria-label="Mostrar partidos de rugby">
+      <button class={tab === "all" ? "active" : ""} onClick={()=>setTab("all")}>Todos ({allGames.length})</button>
+      <button class={tab === "past" ? "active" : ""} onClick={()=>setTab("past")}>Resultados ({completedCount})</button>
+      <button class={tab === "future" ? "active" : ""} onClick={()=>setTab("future")}>Programados ({upcomingCount})</button>
     </div>
-    {games.length ? <div class="sports-games">{games.slice(0,70).map(m=><article class="panel sport-game" key={m.id}>
+    <label class="season-label rugby-match-search">Buscar club o encuentro
+      <input type="search" value={search} placeholder="Buscar entre todos los partidos"
+        onInput={e=>{setSearch(e.currentTarget.value);setShown(70);}}/>
+    </label>
+    {games.length ? <div class="sports-games">{games.slice(0,shown).map(m=><article class="panel sport-game" key={m.id}>
       <small class="sport-game-league">{m.date ? new Date(m.date).toLocaleDateString("es-AR") : "—"} · {m.status}</small>
       <div class="sport-game-teams"><strong class="sport-team"><TeamMark name={m.home} logo={m.home_logo}/>{m.home}</strong>
         <span>{m.completed || /in progress|half.?time|live|playing/i.test(m.status) ? (m.home_score ?? "—") : "—"} : {m.completed || /in progress|half.?time|live|playing/i.test(m.status) ? (m.away_score ?? "—") : "—"}</span>
         <strong class="sport-team sport-team-away"><TeamMark name={m.away} logo={m.away_logo}/>{m.away}</strong></div>
     </article>)}</div> : <p class="coverage-notice">
-      No hay partidos {tab === "past" ? "finalizados" : "programados"} disponibles en la edición seleccionada.
+      No hay partidos {tab === "past" ? "finalizados" : tab==="future" ? "programados" : "verificados"} disponibles con el filtro seleccionado.
     </p>}
+    {games.length>shown&&<button class="sport-more-leagues" type="button"
+      onClick={()=>setShown(n=>n+70)}>
+      Ver más partidos ({Math.min(shown,games.length)} de {games.length})
+    </button>}
+    {games.length>0&&<p class="updated">{games.length} encuentros verificados para esta selección. Mostrando {Math.min(shown,games.length)}; podés cargar el resto sin perder los resultados anteriores.</p>}
     <p class="updated">Fuente: {data?.provider || "API-Rugby / ESPN"} · importación y caché en PostgreSQL.
       {updated ? " Última importación: " + updated : " Importación pendiente."}
       Los datos se actualizan según la cobertura real de cada proveedor. No se calculan puntos bonus no verificados.

@@ -6,7 +6,9 @@ from app.db import session_scope
 from app.models import SportSnapshot
 
 
-def test_espn_backup_populates_real_top14_games_and_verified_table():
+def test_espn_backup_populates_real_top14_games_and_verified_table(monkeypatch):
+    # Isolate test from the editorial priority order (URBA goes first).
+    monkeypatch.setattr(rugby_api, 'ESPN_PRIORITY', ('top-14', 'urba'))
     now = datetime.now(timezone.utc).year
     calls = []
     def fake(slug, season):

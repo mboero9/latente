@@ -8,8 +8,12 @@ type Position={team:string;team_id?:string|number|null;logo?:string|null;
  lost:number|null;points:number|null;bonus?:number|null;difference?:number|null};
 type Standing={official:Position[];league_name:string;season:number;provider:string;updated_at?:string|null};
 
-const FEATURED=["urba","championship","top-14","premiership","urc","six-nations",
- "super-rugby","npc-nz","currie-cup","pro-d2","europe-championship","champions"];
+const FEATURED=["urba","super-rugby-americas","interior-a","interior-b",
+ "urba-primera-a","urba-primera-b","urba-primera-c",
+ "litoral-top10","cordoba-top10","championship","top-14",
+ "premiership","urc","six-nations","super-rugby",
+ "npc-nz","currie-cup","mlr","challenge-cup",
+ "pro-d2","europe-championship","champions"];
 const OMIT=/jap(o|a)n|uruguay|chile/i;
 
 function LeagueTable({comp}:{comp:Comp}) {

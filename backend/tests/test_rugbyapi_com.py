@@ -56,7 +56,7 @@ def test_no_key_results_in_no_remote_calls(monkeypatch):
 def test_home_country_override_and_argentina_independent_card():
     home=(ROOT/"frontend/src/rugby-home-tables.tsx").read_text()
     main=(ROOT/"frontend/src/main.tsx").read_text()
-    assert '<MiniRugbyTable slug="urba" title="Argentina · URBA Top 12"/>' in home
+    assert '<MiniRugbyTable slug="urba" title="Argentina · URBA Top 14"/>' in home
     assert 'slug:"currie-cup"' in home
     assert 'slug:"npc-nz"' in home
     assert '<RugbyHomeTables/>' in main
