@@ -61,6 +61,21 @@ async def cache_policy(request, call_next):
     return response
 
 
+@app.get("/api/history/club-crests")
+def historic_club_crests():
+    """One safe DB query for the archived clubs, no extra provider quota."""
+    from .historic_crests import CLUB_ALIASES, resolve_curated_clubs
+    names = sorted({alias.lower() for aliases in CLUB_ALIASES.values()
+                    for alias in aliases})
+    with session_scope() as s:
+        rows = list(s.scalars(select(Team).where(
+            Team.source == settings.mode,
+            func.lower(Team.name).in_(names),
+        ).limit(150)))
+        return {"data": resolve_curated_clubs(rows),
+                "meta": meta(rows, coverage=bool(rows))}
+
+
 @app.get("/api/visitor/country")
 def visitor_country(request: Request):
     """Country from Cloudflare edge hint only. No visitor IP is persisted."""
