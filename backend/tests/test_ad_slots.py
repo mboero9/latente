@@ -19,8 +19,22 @@ def test_three_advertising_positions_are_present():
     assert 'VITE_ADS_PRIVACY_READY === "true"' in ads
 
 
-def test_no_fake_adsense_identity_or_ads_txt():
+def test_verified_publisher_and_disabled_ad_placements():
     example = (ROOT / ".env.example").read_text()
+    home = (ROOT / "frontend/index.html").read_text()
+    ads = (ROOT / "frontend/src/ads.tsx").read_text()
+    seller = (ROOT / "frontend/public/ads.txt").read_text()
+    publisher = "9760821039036895"
+
     assert "VITE_ADSENSE_ENABLED=false" in example
     assert "VITE_ADS_PRIVACY_READY=false" in example
-    assert not (ROOT / "frontend/public/ads.txt").exists()
+    assert f'content="ca-pub-{publisher}"' in home
+    assert home.count(f"client=ca-pub-{publisher}") == 1
+    assert home.index(f"client=ca-pub-{publisher}") < home.index("</head>")
+    assert seller == f"google.com, pub-{publisher}, DIRECT, f08c47fec0942fa0\\n"
+    assert 'if (verifiedLoader) return Promise.resolve();' in ads
+
+    for name in ("deploy/railway/nginx.conf.template", "deploy/nginx/nginx.conf", "frontend/public/_headers"):
+        csp = (ROOT / name).read_text()
+        assert "script-src" in csp
+        assert "https://pagead2.googlesyndication.com; style-src" in csp
