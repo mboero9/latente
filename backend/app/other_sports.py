@@ -146,9 +146,17 @@ def _game_summary(sport: str, item: dict):
     h, a = scores.get("home"), scores.get("away")
     league = item.get("league") or {}
     state = item.get("status") or {}
+    # Provider schemas differ by discipline: preserve the supplied
+    # country whether it is an object or string, without guessing from
+    # participants or from a league name that exists in multiple nations.
+    raw_country = item.get("country")
+    if not raw_country and isinstance(league, dict):
+        raw_country = league.get("country")
+    country = (raw_country.get("name") if isinstance(raw_country, dict)
+               else raw_country if isinstance(raw_country, str) else None)
     return {"id": item.get("id"), "league": league.get("name") if isinstance(league, dict) else str(league),
             "league_id": league.get("id") if isinstance(league, dict) else None,
-            "country": (item.get("country") or {}).get("name") if isinstance(item.get("country"), dict) else None,
+            "country": country,
             "date": item.get("date"), "home": home.get("name") or "Local",
             "away": away.get("name") or "Visitante",
             "home_id": home.get("id"), "away_id": away.get("id"),
