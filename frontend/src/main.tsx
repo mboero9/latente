@@ -670,6 +670,9 @@ function FixturesView({
             </div>
           )}
           {league && <LeagueRecent id={league.id} season={league.season} />}
+          {!league && <a class="f1-home-mobile-link" href={link("/sport/f1")}>
+            🏎️ F1 · Posiciones, fotos y campeones históricos <span aria-hidden="true">↗</span>
+          </a>}
           <DatePicker day={day} setDay={setDay} tz={tz} />
           <div class="match-controls">
             <div class="segmented">
