@@ -1592,6 +1592,14 @@ function App() {
           </div>
         </div>
       </header>
+      {/* Desktop advertising rails are prepared but remain inactive until
+          publisher approval, explicit privacy consent setup and slot IDs.
+          Avoid betting, match details and watch pages. */}
+      {view !== "bet" && view !== "match" && view !== "watch" &&
+        <div class="latente-outer-ad-rails" aria-label="Espacios laterales de publicidad">
+          <AdPlacement placement="side-left"/>
+          <AdPlacement placement="side-right"/>
+        </div>}
       <div class="app-shell">
         <aside class="sidebar">
           <div class="sidebar-heading">
