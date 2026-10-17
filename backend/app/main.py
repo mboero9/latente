@@ -596,6 +596,41 @@ def sport_datasets(sport: str):
         } for row in rows], "meta": meta(rows)}
 
 
+@app.get("/api/sports/{sport}/competitions")
+def sport_country_competitions(sport: str):
+    """Country navigation from the persisted API catalogue and federation pages.
+
+    No third-party calls on a visitor request. A catalogue listing is not
+    evidence that the subscription includes game scores or standings.
+    """
+    from .other_sports import SPORTS
+    from .models import SportSnapshot
+    from .sport_competitions import ARGENTINE_LEAGUES, build_competitions
+    if sport not in SPORTS:
+        raise HTTPException(404, "Deporte no disponible")
+    if sport not in ARGENTINE_LEAGUES:
+        return {"data": [], "meta": meta([], coverage=False)}
+    with session_scope() as s:
+        catalog = s.get(SportSnapshot, (sport, "leagues", "catalog"))
+        # Only a few recent snapshots for badges, no invented coverage.
+        recent = list(s.scalars(select(SportSnapshot).where(
+            SportSnapshot.sport == sport,
+            SportSnapshot.dataset.in_(("games", "standings")),
+        ).order_by(SportSnapshot.updated_at.desc()).limit(120)))
+        matches = [game for snap in recent if snap.dataset == "games"
+                   for game in (snap.data or []) if isinstance(game, dict)]
+        standings_refs = [snap.ref for snap in recent
+                          if snap.dataset == "standings" and snap.source_count > 0]
+        items = build_competitions(
+            sport, (catalog.data if catalog else []) or [],
+            matches, standings_refs,
+        )
+        return {"data": items, "meta": meta(
+            ([catalog] if catalog else []) + recent, coverage=bool(catalog),
+            note="Las ligas oficiales pueden no tener datos automáticos en API-Sports",
+        )}
+
+
 @app.get("/api/sports/{sport}/overview")
 def sport_overview(sport: str):
     """Calendario de 15 días desde PostgreSQL, sin consultas por visitante."""
