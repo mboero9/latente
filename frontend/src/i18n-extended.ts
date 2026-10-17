@@ -6,6 +6,8 @@ export const EXTENDED_EN: Record<string,string> = {
   "Regulación y operadores por país": "Regulation and operators by country",
   "Operadores privados · referencias sujetas a licencia": "Private operators · subject to licensing",
   "Opciones estatales · modalidad distinta cuando corresponda": "State-run options · different market when applicable",
+  "Opciones estatales o de monopolio regulado · modalidades diferentes": "State or regulated-monopoly options · different bet types",
+  "Apuestas deportivas presenciales bajo derechos exclusivos; FDJ no es necesariamente una empresa estatal ni equivale a cuotas online": "Retail sports betting under exclusive rights; FDJ is not necessarily state-owned and does not match online odds",
   "Información legal por país y organismos reguladores": "Country-by-country legal information and regulators",
   "Ver información legal por país y organismos reguladores ↗": "View country-by-country rules and regulators ↗",
   "Jurisdicción argentina": "Argentine jurisdiction",
