@@ -28,3 +28,25 @@ Fuentes:
 - Probar /#/sport/f1, 2026 y temporada anterior; sin mostrar retratos del año incorrecto.
 - Verificar flags/caras/logo desde navegador, CSP y estado de red, especialmente links de Wikimedia Commons.
 - Verificar all-time champions con 2026 excluido, carreras recientes reales, y que «En foco» no sea tapado por tarjeta F1.
+
+## Ajuste visual del 17/10/2026: dos equipos Red Bull y orden de menú
+
+- Header: primero fútbol (Partidos, Ligas, Posiciones, Goleadores y MLS),
+  luego Dónde ver / Dónde apostar; entre los demás deportes van NBA y F1
+  consecutivos y más adelante Cricket, NFL, Rugby, MLB y NHL.
+  Es una **prioridad editorial**, no se afirma que proceda de estadísticas
+  auditadas de audiencia global. Se reordena exclusivamente la navegación;
+  no se cambian las rutas, la sección de F1 ni el acceso existente en la home.
+- Red Bull Racing 2026 (Reino Unido) y Racing Bulls/VCARB (Italia)
+  son dos constructores diferentes. Los nombres `Red Bull` y `Red Bull Racing`
+  identifican al primero; `Racing Bulls` y `RB F1 Team` al segundo.
+- Se utilizan fuentes de identificación visual de Wikipedia para ambos:
+  https://en.wikipedia.org/wiki/File:Red_Bull_Racing_Logo_2026.svg
+  y https://en.wikipedia.org/wiki/File:VCARB_F1_logo.svg .
+  **Estas imágenes tienen restricciones de derechos declaradas por Wikipedia**,
+  especialmente la del equipo italiano. La hotlink de los archivos no supone
+  licencia de reutilización comercial; revisar autorización antes de explotar
+  publicidad relacionada con estos emblemas. Son recursos opcionales:
+  si no se cargan, permanece el fallback con iniciales.
+- Los logos se aplican en las filas de pilotos, constructores, podios y
+  resultados mediante el componente compartido `F1TeamLogo`.
