@@ -3110,3 +3110,49 @@
     footer .footer-links { width: 100%; order: 3; }
   }
 }
+
+
+/* Verified club rosters: show actual UAR/URBA participants when the rugby
+   feed has no licensed results, never invent tables or scores. */
+@layer components {
+  .rugby-clubs-verified { margin: 22px 0 28px; }
+  .rugby-clubs-verified .updated a { color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
+  .rugby-clubs-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(205px,1fr)); gap: 10px; }
+  .rugby-club-entry { display: flex; align-items: center; gap: 12px; padding: 12px; min-width: 0; }
+  .rugby-club-entry span { min-width: 0; display: flex; flex-direction: column; }
+  .rugby-club-entry strong { font-size: .82rem; overflow-wrap: anywhere; }
+  .rugby-club-entry small { font-size: .71rem; color: var(--muted); }
+}
+@layer responsive {
+  @media (max-width: 560px) {
+    .rugby-clubs-list { grid-template-columns: repeat(2,minmax(0,1fr)); gap:8px; }
+    .rugby-club-entry { padding:9px; gap: 7px; }
+  }
+}
+
+
+/* Desktop mouse drag support, while native swipe remains available on touch. */
+@layer components {
+  @media (pointer: fine) {
+    .header .top-nav { cursor: grab; }
+    .header .top-nav.is-dragging { cursor: grabbing; scroll-behavior: auto; scroll-snap-type: none; user-select: none; }
+    .header .top-nav.is-dragging a { pointer-events: none; }
+  }
+}
+
+
+@layer components {
+ .rugby-published-schedule {margin: 18px 0 25px;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--surface);}
+ .rugby-published-schedule summary {cursor:pointer;color:var(--green);font-weight:700;font-size:.86rem;}
+ .rugby-published-schedule a {color:var(--green);text-decoration:underline;}
+ .rugby-calendar-rows {max-height:650px;overflow-y:auto;border-top:1px solid var(--line);margin-top:12px;}
+ .rugby-calendar-match {display:grid;grid-template-columns:92px minmax(0,1fr) 34px minmax(0,1fr);gap:8px;align-items:center;padding:12px 8px;border-bottom:1px solid var(--line);font-size:.81rem;}
+ .rugby-calendar-match small {color:var(--muted);white-space:nowrap;}
+ .rugby-calendar-vs {text-align:center;color:var(--muted);}
+}
+@layer responsive {
+ @media (max-width:650px) {
+   .rugby-calendar-match {grid-template-columns:1fr 24px 1fr;gap:5px;font-size:.75rem;}
+   .rugby-calendar-match small {grid-column:1/-1;}
+ }
+}

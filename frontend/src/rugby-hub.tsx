@@ -23,6 +23,8 @@ type Competition = {
 type RugbyData = {
   available: boolean; configured: boolean; provider: string;
   league_name: string; season: number; seasons: number[];
+  verified_clubs?: {team:string; group:string}[]; clubs_source_url?:string|null; clubs_note?:string|null;
+  published_schedule?: {round:number; date:string; home:string; away:string}[]; schedule_verified_results?:boolean;
   games: Match[]; official: Position[]; statistics?: MatchStats[];
   updated_at?: string; message?: string | null;
 };
@@ -58,7 +60,9 @@ export function RugbyHub() {
           setYear(null);
         }}>
           {(options.length ? options : [
-            {slug:"urba",name:"URBA · Top 12 (Argentina)"},
+            {slug:"urba",name:"URBA · Top 14 (Argentina, 2026)"},
+            {slug:"interior-a",name:"UAR · Torneo del Interior A"},
+            {slug:"interior-b",name:"UAR · Torneo del Interior B"},
             {slug:"championship",name:"Rugby Championship · Los Pumas"},
             {slug:"six-nations",name:"Seis Naciones"},
             {slug:"super-rugby",name:"Super Rugby"},
@@ -89,6 +93,15 @@ export function RugbyHub() {
         {data?.message || "No hay datos disponibles para esta edición."}
         {!data?.configured && " La clave de API-Rugby debe estar habilitada en la cuenta."}
       </p> : null}
+    {data?.verified_clubs?.length ? <section aria-label="Clubes participantes 2026" class="rugby-clubs-verified">
+      <h2 class="sport-section-title">Clubes participantes · Edición {data.season}</h2>
+      <p class="updated">{data.clubs_note} {data.clubs_source_url && <a href={data.clubs_source_url} target="_blank" rel="noopener noreferrer">Consultar la organización ↗</a>}</p>
+      <div class="rugby-clubs-list">{data.verified_clubs.map(club => <div key={club.group + club.team} class="panel rugby-club-entry">
+        <TeamMark name={club.team} sport="rugby"/>
+        <span><strong>{club.team}</strong><small>{club.group}</small></span>
+      </div>)}</div>
+    </section> : null}
+    {!data?.verified_clubs?.length && data?.clubs_source_url && <p class="updated">Fuente federativa: <a href={data.clubs_source_url} target="_blank" rel="noopener noreferrer">Fixture y cobertura oficial ↗</a></p>}
     <h2 class="sport-section-title">Posiciones oficiales · {data?.league_name || current?.name || "Rugby"}</h2>
     {data?.official?.length ? <div class="panel table-scroll">
       <table><thead><tr>
@@ -113,6 +126,14 @@ export function RugbyHub() {
       </div>}
     </>}
 
+    {Boolean(data?.published_schedule?.length) && <details class="rugby-published-schedule">
+      <summary>Calendario publicado por la UAR · {data?.published_schedule?.length} partidos de fase de grupos (sin marcadores)</summary>
+      <p class="updated">Fechas y emparejamientos publicados para la edición {data?.season}. No son resultados ni partidos en vivo. Consultá la <a href={data?.clubs_source_url || "https://uar.com.ar/categoria/torneos/interior/"} target="_blank" rel="noopener noreferrer">UAR oficial ↗</a> para resultados y modificaciones.</p>
+      <div class="rugby-calendar-rows">{data?.published_schedule?.map((match,i) => <div class="rugby-calendar-match" key={match.date + match.home + match.away + i}>
+        <small>F{match.round} · {match.date.slice(8,10)}/{match.date.slice(5,7)}/{match.date.slice(0,4)}</small>
+        <span>{match.home}</span><span class="rugby-calendar-vs">vs.</span><span>{match.away}</span>
+      </div>)}</div>
+    </details>}
     <h2 class="sport-section-title">Resultados y próximos partidos</h2>
     <div class="sports-tabs" role="group">
       <button class={tab === "past" ? "active" : ""} onClick={()=>setTab("past")}>Resultados</button>
