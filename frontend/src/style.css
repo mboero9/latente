@@ -3129,3 +3129,13 @@
     .rugby-club-entry { padding:9px; gap: 7px; }
   }
 }
+
+
+/* Desktop mouse drag support, while native swipe remains available on touch. */
+@layer components {
+  @media (pointer: fine) {
+    .header .top-nav { cursor: grab; }
+    .header .top-nav.is-dragging { cursor: grabbing; scroll-behavior: auto; scroll-snap-type: none; user-select: none; }
+    .header .top-nav.is-dragging a { pointer-events: none; }
+  }
+}
