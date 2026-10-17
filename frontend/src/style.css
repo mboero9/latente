@@ -3762,3 +3762,32 @@
     .sport-standings-block .table-scroll table {min-width:680px;}
   }
 }
+
+
+/* Promedios LPF: legible on phones, without implying official relegation. */
+@layer components {
+ .promedios-card {display:grid;gap:13px;min-width:0;padding:clamp(12px,3vw,21px);}
+ .promedios-card > p {margin:0;line-height:1.55;}
+ .promedios-data {min-width:0;}
+ .promedios-data > .updated {margin-bottom:10px;}
+ .promedios-table {max-width:100%;overflow-x:auto;overscroll-behavior-inline:contain;
+   -webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:9px;}
+ .promedios-table table {width:100%;min-width:730px;border-collapse:collapse;
+   font-size:.82rem;white-space:nowrap;}
+ .promedios-table th,.promedios-table td {padding:9px 10px;text-align:center;
+   border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;}
+ .promedios-table tbody th,.promedios-table thead th:nth-child(2) {text-align:left;}
+ .promedios-table tbody th {white-space:normal;min-width:140px;max-width:205px;}
+ .promedios-table tbody tr:hover {background:var(--soft);}
+ .promedios-number {font-size:.9rem;font-weight:800;color:var(--green);}
+ .promedios-validation {font-size:.7rem;color:var(--muted);}
+ .promedios-card .coverage-notice {margin:0;}
+}
+@layer responsive {
+ @media(max-width:700px) {
+  .promedios-table table {font-size:.75rem;min-width:690px;}
+  .promedios-table th,.promedios-table td {padding:8px;}
+  .promedios-table tbody th {min-width:110px;max-width:135px;}
+  .promedios-card {padding:12px;}
+ }
+}

@@ -817,6 +817,48 @@ def standings(league_id: int, season: int | None = Query(None, ge=1900, le=2200)
         }
 
 
+@app.get("/api/leagues/128/promedios")
+def argentina_promedios_2026(season: int = Query(2026, ge=2026, le=2026)):
+    """Promedio propio 2024-26 calculado con fixtures YA en PostgreSQL.
+
+    La referencia de la LPF no se consulta por visitante: únicamente se
+    compara con una captura verificada previamente importada como snapshot.
+    Los descensos y desempates NO se infieren del puntaje disponible.
+    """
+    from .promedios import BASE_YEARS, LEAGUE_ID, compute_promedios
+    from .models import SportSnapshot
+    with session_scope() as s:
+        league_or_404(s, LEAGUE_ID)
+        fixtures = list(s.scalars(select(Fixture).where(
+            Fixture.source == settings.mode,
+            Fixture.league_id == LEAGUE_ID,
+            Fixture.season.in_(BASE_YEARS),
+        ).order_by(Fixture.season, Fixture.kickoff, Fixture.id)))
+        current = set(s.scalars(select(Membership.team_id).where(
+            Membership.source == settings.mode,
+            Membership.league_id == LEAGUE_ID,
+            Membership.season == season,
+        )))
+        if not current:
+            current = {team_id for match in fixtures if match.season == season
+                       for team_id in (match.home_id, match.away_id)}
+        teams = {row.id: public(row) for row in s.scalars(select(Team).where(
+            Team.source == settings.mode,
+            Team.id.in_(current),
+        ))} if current else {}
+        official = s.get(SportSnapshot, ("football", "promedios_ref", str(season)))
+        reference = official.data if official and official.provider == "lpf_official" else []
+        result = compute_promedios(fixtures, teams, teams.keys(), reference)
+        return {
+            "data": result,
+            "meta": meta(fixtures, provisional=True,
+                         matches_used=result["matches_used"],
+                         coverage=bool(result["rows"]),
+                         official_reference_updated_at=official.updated_at if official else None,
+                         official_reference_source="Liga Profesional" if reference else None),
+        }
+
+
 @app.get("/api/leagues/{league_id}/analytics")
 def league_analytics(league_id: int, season: int | None = Query(None, ge=1900, le=2200)):
     """Métricas derivadas reproducibles de partidos realmente importados."""
