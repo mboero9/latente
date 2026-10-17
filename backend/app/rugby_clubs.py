@@ -38,16 +38,50 @@ INTERIOR_B_REPECHAJE_2026 = (
     "Tigres RC", "Jockey de Venado Tuerto",
 )
 
+# International 2026/27 entrants from the named competition organizers.
+# These are NOT dynamically refreshed standings, scores or fixtures.
+TOP14_FR_2026_27 = (
+    "LOU Rugby", "Stade Toulousain", "Union Bordeaux-Bègles",
+    "Section Paloise", "Montpellier Hérault Rugby", "Aviron Bayonnais",
+    "Castres Olympique", "Stade Rochelais", "ASM Clermont",
+    "USA Perpignan", "Stade Français Paris", "Racing 92",
+    "RC Toulon", "RC Vannes",
+)
+PREM_2026_27 = (
+    "Bath Rugby", "Bristol Bears", "Exeter Chiefs", "Gloucester Rugby",
+    "Harlequins", "Leicester Tigers", "Newcastle Red Bulls",
+    "Northampton Saints", "Sale Sharks", "Saracens",
+)
+CHAMPIONS_CUP_2026_27 = {
+    "Pool 1": ("Leinster Rugby", "Glasgow Warriors", "Section Paloise",
+               "Sale Sharks", "Leicester Tigers", "ASM Clermont Auvergne"),
+    "Pool 2": ("Stade Toulousain", "Lions", "Saracens", "Stade Rochelais",
+               "Exeter Chiefs", "Connacht Rugby"),
+    "Pool 3": ("Union Bordeaux Bègles", "DHL Stormers", "Racing 92",
+               "Munster Rugby", "Bristol Bears", "Gloucester Rugby"),
+    "Pool 4": ("Northampton Saints", "Bath Rugby", "Cardiff Rugby",
+               "Montpellier Hérault Rugby", "Stade Français Paris", "Vodacom Bulls"),
+}
+CHALLENGE_CUP_2026_27 = {
+    "Pool 1": ("Toyota Cheetahs", "Ulster Rugby", "USAP",
+               "Dragons RFC", "Aviron Bayonnais", "Zebre Parma"),
+    "Pool 2": ("Benetton Rugby", "Lyon Olympique Universitaire",
+               "Newcastle Red Bulls", "Hollywoodbets Sharks",
+               "Castres Olympique", "Scarlets"),
+    "Pool 3": ("Ospreys", "Edinburgh Rugby", "Black Lion",
+               "Harlequins", "RC Toulon", "RC Vannes"),
+}
+
 OFFICIAL_SOURCES = {
     "urba": "https://urba.org.ar/fixture",
     "interior-a": "https://uar.com.ar/se-confirmo-el-fixture-del-torneo-del-interior-2026/",
     "interior-b": "https://uar.com.ar/se-confirmo-el-fixture-del-torneo-del-interior-2026/",
-    "top-14": "https://www.lnr.fr/",
+    "top-14": "https://top14.lnr.fr/classement/2026-2027/j3",
     "pro-d2": "https://www.lnr.fr/",
-    "premiership": "https://www.premiershiprugby.com/",
+    "premiership": "https://www.premiershiprugby.com/match-centre/288986/standings",
     "premiership-cup": "https://www.premiershiprugby.com/",
-    "champions": "https://www.epcrugby.com/",
-    "challenge-cup": "https://www.epcrugby.com/",
+    "champions": "https://www.epcrugby.com/challenge-cup/content/official-investec-champions-cup-and-epcr-challenge-pools-confirmed-for-202627-season",
+    "challenge-cup": "https://www.epcrugby.com/challenge-cup/content/official-investec-champions-cup-and-epcr-challenge-pools-confirmed-for-202627-season",
     "championship": "https://www.sanzarrugby.com/",
     "urc": "https://www.unitedrugby.com/",
 }
@@ -64,6 +98,18 @@ def edition_clubs(slug: str, year: int) -> list[dict[str, str]]:
     if slug == "interior-b":
         return [{"team": name, "group": "Reválida (no plantel definitivo)"}
                 for name in INTERIOR_B_REPECHAJE_2026]
+    if slug == "top-14":
+        return [{"team": name, "group": "Top 14 · Francia (2026/27)"}
+                for name in TOP14_FR_2026_27]
+    if slug == "premiership":
+        return [{"team": name, "group": "Gallagher PREM (2026/27)"}
+                for name in PREM_2026_27]
+    if slug == "champions":
+        return [{"team": name, "group": group}
+                for group, teams in CHAMPIONS_CUP_2026_27.items() for name in teams]
+    if slug == "challenge-cup":
+        return [{"team": name, "group": group}
+                for group, teams in CHALLENGE_CUP_2026_27.items() for name in teams]
     return []
 
 
