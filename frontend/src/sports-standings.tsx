@@ -1,6 +1,8 @@
 import { useState } from "preact/hooks";
 import { useApi } from "./api";
 import { TeamMark } from "./team-mark";
+import { competitionKey, normalizedSportCountry,
+  type SportCompetition } from "./sport-country-explorer";
 
 type Dataset = { kind: string; ref: string; updated_at: string; count: number; note: string };
 type StandRow = { team_id: number | string; team: string; group: string | null;
@@ -14,9 +16,23 @@ function Amount({value}:{value:number|null|undefined}) {
   return <>{value == null ? "—" : value}</>;
 }
 
-export function SportsStandings({sport}:{sport:string}) {
+export function SportsStandings({sport,country="all",leagueSelection="all",competitions=[]}:{
+  sport:string;country?:string;leagueSelection?:string;competitions?:SportCompetition[];
+}) {
   const {result:catalog,loading} = useApi<Dataset[]>(`/api/sports/${sport}/datasets`, 300000);
-  const options = (catalog?.data||[]).filter(d => ["standings","drivers","constructors"].includes(d.kind));
+  const options=(catalog?.data||[])
+    .filter(d => ["standings","drivers","constructors"].includes(d.kind))
+    .filter(d => {
+      if (country==="all"&&leagueSelection==="all") return true;
+      const id=d.ref.split(":")[0];
+      const target=competitions.find(c=>c.provider_id!==null &&
+        String(c.provider_id)===id);
+      const documented=d.note?.match(/^País:\\s*([^.]*)/i)?.[1]?.trim();
+      const actual=target?.country||normalizedSportCountry(documented);
+      if(country!=="all"&&actual!==country) return false;
+      return leagueSelection==="all" ||
+        (target!==undefined && competitionKey(target)===leagueSelection);
+    });
   const [selection,setSelection]=useState("");
   const [group,setGroup]=useState("all");
   const current = options.find(d=>d.kind+":"+d.ref===selection) || options[0];
