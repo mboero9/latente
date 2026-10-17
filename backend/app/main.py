@@ -285,6 +285,33 @@ def fixtures(
         }
 
 
+@app.get("/api/fixtures/live/incidents")
+def live_incident_summary():
+    """Single bounded PostgreSQL read, no vendor API calls per page refresh.
+
+    Events for live matches only. Empty/missing snapshots remain unknown, never
+    inferred from the scoreline (which is a separate provider datum).
+    """
+    from .live_incidents import compact_live_incidents
+    with session_scope() as s:
+        query = (
+            select(FixtureDetails, Fixture)
+            .join(Fixture, (FixtureDetails.source == Fixture.source) &
+                  (FixtureDetails.fixture_id == Fixture.id))
+            .where(Fixture.source == settings.mode, Fixture.status.in_(LIVE))
+        )
+        if settings.mode == "api" and not settings.all_leagues:
+            query = query.where(Fixture.league_id.in_(settings.league_ids))
+        pairs = s.execute(query.order_by(Fixture.updated_at.desc()).limit(300)).all()
+        result = [{
+            "fixture_id": fixture.id,
+            "events": compact_live_incidents(snapshot.events),
+            "checked_at": snapshot.events_checked_at,
+        } for snapshot, fixture in pairs]
+        return {"data": result, "meta": meta([snap for snap, _ in pairs],
+                                               coverage=bool(result))}
+
+
 @app.get("/api/leagues/{league_id}/bracket")
 def league_bracket(league_id: int, season: int | None = None):
     """Bracket de encuentros realmente importados, no un fixture inventado."""
