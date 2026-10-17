@@ -31,7 +31,7 @@ def test_verified_publisher_and_disabled_ad_placements():
     assert f'content="ca-pub-{publisher}"' in home
     assert home.count(f"client=ca-pub-{publisher}") == 1
     assert home.index(f"client=ca-pub-{publisher}") < home.index("</head>")
-    assert seller == f"google.com, pub-{publisher}, DIRECT, f08c47fec0942fa0\\n"
+    assert seller == f"google.com, pub-{publisher}, DIRECT, f08c47fec0942fa0\n"
     assert 'if (verifiedLoader) return Promise.resolve();' in ads
 
     for name in ("deploy/railway/nginx.conf.template", "deploy/nginx/nginx.conf", "frontend/public/_headers"):
