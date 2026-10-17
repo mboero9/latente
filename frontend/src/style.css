@@ -3544,3 +3544,113 @@
     .live-bookmakers-brand .bookmaker-brand > strong {font-size:.66rem;}
   }
 }
+
+
+/* Mobile-first site polish: fluid main content; tables scroll INSIDE their
+   card rather than squeezing athlete names into vertical single letters. */
+@layer components {
+  .sport-landing,.sport-standings-block,.f1-champions,
+  .main-column,.cup-bracket,.panel.table-scroll {min-width:0;max-width:100%;}
+  .f1-standings-scroll {
+    width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;scrollbar-width:thin;
+  }
+  .f1-standings-table {width:100%;table-layout:auto;border-collapse:collapse;}
+  .f1-standings-table--drivers,.f1-standings-table--results {min-width:1000px;}
+  .f1-standings-table--constructors {min-width:690px;}
+  .f1-standings-table th,.f1-standings-table td {
+    word-break:normal;overflow-wrap:normal;white-space:nowrap;vertical-align:middle;
+  }
+  .f1-standings-table th:nth-child(2) {min-width:235px;text-align:left;}
+  .f1-standings-table--constructors th:nth-child(2) {min-width:220px;}
+  .f1-standings-table .f1-identity {display:inline-flex;align-items:center;
+    gap:10px;min-width:max-content;max-width:none;}
+  .f1-standings-table .f1-identity > span:last-child {
+    white-space:nowrap;min-width:max-content;overflow-wrap:normal;word-break:normal;
+  }
+  .f1-standings-table .f1-nationality {white-space:nowrap;}
+  .f1-standings-table tbody tr {height:58px;}
+  .f1-standings-table td:first-child,.f1-standings-table thead th:first-child {
+    position:sticky;left:0;z-index:2;background:var(--surface);
+    min-width:36px;box-shadow:1px 0 0 var(--line);
+  }
+  .f1-standings-table thead th:first-child {background:var(--soft);z-index:3;}
+  .f1-mobile-scroll-hint {display:none;color:var(--muted);font-size:.76rem;
+    line-height:1.45;margin:-3px 0 9px;}
+  .f1-champions-table {max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;}
+  .f1-champions-table table {min-width:750px;table-layout:auto;}
+  .f1-champions-table .f1-identity > span:last-child {
+    overflow-wrap:normal;white-space:nowrap;min-width:max-content;
+  }
+  .home-argentina-shortcuts {
+    display:grid;gap:8px;padding:12px 14px;margin:0 0 15px;
+    border:1px solid var(--line);border-radius:12px;background:var(--surface);
+  }
+  .home-argentina-caption {font-size:.77rem;font-weight:780;color:var(--green);}
+  .home-argentina-links {display:flex;flex-wrap:wrap;gap:7px;}
+  .home-argentina-links a {display:inline-flex;align-items:center;gap:7px;
+    font-size:.77rem;font-weight:680;white-space:nowrap;
+    border-radius:8px;border:1px solid var(--line);background:var(--soft);
+    padding:7px 10px;min-height:39px;}
+  .home-argentina-links a:hover,.home-argentina-links a:focus-visible {
+    border-color:var(--green);}
+  .home-argentina-links .league-flag {width:23px;height:23px;flex:0 0 23px;}
+  /* Two vertical AdSense slots can be configured after publisher approval.
+     These DO NOT appear in production without explicit enable + privacy + IDs.
+     The outer rails never overlap the site at narrower desktop widths. */
+  .latente-outer-ad-rails {display:none;}
+}
+@layer responsive {
+  @media(max-width:1100px) {
+    .sport-landing,.sport-standings-block {max-width:100%;overflow-x:clip;}
+    .sport-landing .panel.table-scroll {overflow-x:auto;max-width:100%;}
+    .sport-landing .panel.table-scroll table:not(.f1-standings-table) {min-width:610px;}
+    .sport-landing .f1-standings-scroll .f1-standings-table--drivers,
+    .sport-landing .f1-standings-scroll .f1-standings-table--results {min-width:1000px;}
+    .sport-landing .f1-standings-scroll .f1-standings-table--constructors {min-width:690px;}
+    .f1-mobile-scroll-hint {display:block;}
+    .sports-tabs {max-width:100%;overflow-x:auto;scrollbar-width:thin;
+      -webkit-overflow-scrolling:touch;flex-wrap:nowrap;}
+    .sports-tabs button {white-space:nowrap;flex-shrink:0;}
+  }
+  @media(max-width:650px) {
+    .view-heading {flex-wrap:wrap;align-items:flex-start;}
+    .view-heading > div {min-width:0;max-width:100%;}
+    .view-heading h1 {font-size:clamp(1.42rem,5.6vw,1.8rem);overflow-wrap:break-word;}
+    .home-argentina-shortcuts {padding:10px;margin-bottom:12px;}
+    .home-argentina-links {display:flex;flex-wrap:nowrap;overflow-x:auto;
+      scrollbar-width:thin;overscroll-behavior-x:contain;padding-bottom:3px;}
+    .home-argentina-links a {flex:0 0 auto;}
+    .f1-standings-table th,.f1-standings-table td {padding:12px 10px;}
+    .f1-standings-table .f1-driver-photo {width:30px;height:30px;flex-basis:30px;}
+    .f1-standings-table .f1-identity {gap:8px;}
+    .f1-standings-table tbody tr {height:54px;}
+    .f1-champions-table th,.f1-champions-table td {white-space:nowrap;}
+    .f1-champions-table tbody th[scope=row] {min-width:205px;text-align:left;}
+    .sport-game-teams {gap:7px;grid-template-columns:minmax(0,1fr) 65px minmax(0,1fr);}
+    .sport-team {min-width:0;overflow-wrap:break-word;}
+    .sport-game {min-width:0;}
+    .cup-bracket .knockout-scroll {touch-action:pan-x pan-y;}
+  }
+  @media(min-width:1980px) and (min-height:720px) {
+    .latente-outer-ad-rails {display:block;position:absolute;top:164px;left:0;
+      width:100%;height:0;pointer-events:none;z-index:2;}
+    .latente-outer-ad-rails > .latente-ad {
+      position:absolute;top:0;width:178px;margin:0;padding:9px 8px;
+      min-height:600px;pointer-events:auto;
+    }
+    .latente-outer-ad-rails .latente-ad--side-left {
+      left:calc(50% - 800px - 188px);
+    }
+    .latente-outer-ad-rails .latente-ad--side-right {
+      right:calc(50% - 800px - 188px);
+    }
+    .latente-outer-ad-rails .latente-ad__unit,
+    .latente-outer-ad-rails .latente-ad__preview {
+      width:100%;min-height:600px;
+    }
+    /* Show two exterior rail ads instead of duplicating a sidebar unit. */
+    .home-right-column .latente-ad--side {display:none;}
+  }
+}
