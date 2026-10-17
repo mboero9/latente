@@ -869,6 +869,37 @@ def argentina_promedios_2026(season: int = Query(2026, ge=2026, le=2026)):
         }
 
 
+@app.get("/api/leagues/{league_id}/points-average")
+def lower_league_points_average(league_id: int, season: int | None = Query(None, ge=1900, le=2100)):
+    """Season-scoped PTS / PJ, not an AFA relegation-average ranking.
+
+    Read persisted standings only, one group at a time; no API provider
+    calls per visitor. For men's Primera D the last edition was 2023.
+    """
+    from .lower_division_averages import lower_division_key, performance_average
+    with session_scope() as s:
+        league = league_or_404(s, league_id)
+        code = lower_division_key(league.name, league.country)
+        if code is None:
+            raise HTTPException(404, "Promedios estadísticos no disponibles para esta competición")
+        year = season if season is not None else (2023 if code == "d" else league.season)
+        records = [] if code == "d" and year > 2023 else list(s.scalars(
+            select(Standing).where(
+                Standing.source == settings.mode,
+                Standing.league_id == league_id,
+                Standing.season == year,
+            ).order_by(Standing.group, Standing.rank, Standing.team_id)
+        ))
+        ids = {row.team_id for row in records}
+        team_map = {team.id: public(team) for team in s.scalars(
+            select(Team).where(Team.source == settings.mode, Team.id.in_(ids))
+        )} if ids else {}
+        data = performance_average(records, team_map, code, year)
+        return {"data": data,
+                "meta": meta(records, provisional=True, coverage=bool(data["groups"]),
+                             note=data["note"], season=year)}
+
+
 @app.get("/api/leagues/{league_id}/analytics")
 def league_analytics(league_id: int, season: int | None = Query(None, ge=1900, le=2200)):
     """Métricas derivadas reproducibles de partidos realmente importados."""
