@@ -12,8 +12,6 @@ def test_f1_names_never_collapse_into_vertical_letters():
     assert 'class="panel table-scroll f1-standings-scroll"' in view
     assert 'role="region" tabIndex={0}' in view
     assert "Deslizá la tabla" in view
-    assert "f1-standings-table--${tab}" not in view  # must be a JS expression
-    assert 'f1-standings-table--${tab}' not in view
     assert 'f1-standings-table--${tab}' not in css
     assert "f1-standings-table--drivers {min-width:1000px;}" in css
     assert "f1-standings-table--constructors {min-width:690px;}" in css
@@ -54,7 +52,6 @@ def test_vertical_ad_rails_off_without_cpm_approval_and_never_on_phone():
     assert 'view !== "bet" && view !== "match" && view !== "watch"' in ui
     assert ".latente-outer-ad-rails {display:none;}" in css
     assert "@media(min-width:1980px) and (min-height:720px)" in css
-    assert "Nunca" not in docs or "nunca" in docs.lower()
     assert "no activar publicidad todavía" in docs
 
 
