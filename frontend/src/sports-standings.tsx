@@ -27,7 +27,7 @@ export function SportsStandings({sport,country="all",leagueSelection="all",compe
       const id=d.ref.split(":")[0];
       const target=competitions.find(c=>c.provider_id!==null &&
         String(c.provider_id)===id);
-      const documented=d.note?.match(/^País:\\s*([^.]*)/i)?.[1]?.trim();
+      const documented=d.note?.match(/^País:\s*([^.]*)/i)?.[1]?.trim();
       const actual=target?.country||normalizedSportCountry(documented);
       if(country!=="all"&&actual!==country) return false;
       return leagueSelection==="all" ||
