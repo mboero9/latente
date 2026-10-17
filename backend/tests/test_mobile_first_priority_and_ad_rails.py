@@ -47,8 +47,10 @@ def test_other_tables_do_not_force_mobile_viewport_to_shrink():
 def test_argentine_and_conmebol_links_and_editorial_priority():
     page=read("frontend/src/main.tsx")
     assert 'const LATENTE_PRIMARY_LEAGUES =' in page
-    for phrase in ('id:128,label:"🇦🇷 Primera División"',
-                   'id:130,label:"🏆 Copa Argentina"',
+    assert 'id:128,label:CURRENT_CLAUSURA_2026?' in page
+    assert '🇦🇷 Torneo Clausura 2026' in page
+    assert 'CURRENT_CLAUSURA_2026' in page
+    for phrase in ('id:130,label:"🏆 Copa Argentina"',
                    'id:13,label:"🏆 Libertadores"',
                    'id:11,label:"🏆 Sudamericana"'):
         assert phrase in page

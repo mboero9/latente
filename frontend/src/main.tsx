@@ -18,6 +18,7 @@ import { MatchExtras } from "./match-extras";
 import { MatchOdds, LiveOddsMini } from "./match-odds";
 import type { LiveOddsSummary } from "./match-odds";
 import { LiveIncidentStrip, type LiveIncidentSnapshot } from "./live-incidents";
+import { LiveRecentForm, type LiveTeamForm } from "./live-form";
 import { LiveBookmakers } from "./live-bookmakers";
 import { readBettingAudience, type BettingAudience } from "./betting-audience";
 import { CupBracket } from "./cup-bracket";
@@ -45,8 +46,14 @@ import { RugbyHomeTables } from "./rugby-home-tables";
 
 // Editorial ordering: Argentine football and CONMEBOL cups before all other
 // leagues in the mobile shortcuts, catalog and home match list.
+const CURRENT_CLAUSURA_2026 = new Date().getFullYear() === 2026 &&
+  new Date().getMonth() >= 6;
+const argentinaLeagueName = (l:League) =>
+  l.id === 128 && l.season === 2026 && CURRENT_CLAUSURA_2026
+    ? "Torneo Clausura 2026 · Liga Profesional"
+    : l.name;
 const LATENTE_PRIMARY_LEAGUES = [
-  {id:128,label:"🇦🇷 Primera División"},
+  {id:128,label:CURRENT_CLAUSURA_2026?"🇦🇷 Torneo Clausura 2026":"🇦🇷 Primera División"},
   {id:130,label:"🏆 Copa Argentina"},
   {id:13,label:"🏆 Libertadores"},
   {id:11,label:"🏆 Sudamericana"},
@@ -558,12 +565,13 @@ function Focus({ match: m, tz }: { match: Match; tz: string }) {
 }
 
 function MatchListing({
-  match: m, tz, odds, incidents, featured = false, audience, geoCountry,
+  match: m, tz, odds, incidents, form, featured = false, audience, geoCountry,
 }: {
   match: Match;
   tz: string;
   odds?: LiveOddsSummary;
   incidents?: LiveIncidentSnapshot;
+  form?: LiveTeamForm;
   featured?: boolean;
   audience?: BettingAudience|null;
   geoCountry?: string|null;
@@ -573,7 +581,9 @@ function MatchListing({
     <MatchRow match={m} tz={tz} />
     {active && <LiveIncidentStrip match={m} snapshot={incidents} />}
     {active && <LiveOddsMini fixtureId={m.id} home={m.home.name}
-      away={m.away.name} entry={odds} />}
+      away={m.away.name} entry={odds}
+      visible={geoCountry==="AR"&&Boolean(audience?.adult)} />}
+    {active && <LiveRecentForm match={m} entry={form} />}
     {active && <LiveBookmakers audience={audience||null} geoCountry={geoCountry}/>} 
   </div>;
 }
@@ -655,6 +665,7 @@ function FixturesView({
     live: Match[]; upcoming: Match[];
   }>("/api/fixtures/focus", 15000);
   const {result: liveOdds} = useApi<LiveOddsSummary[]>("/api/odds/live", 60000);
+  const {result: liveForms} = useApi<LiveTeamForm[]>("/api/fixtures/live/form", 60000);
   // Una consulta por toda la jornada: los eventos se leen de PostgreSQL.
   // Ninguna visita a la página consume una llamada adicional a API-Football.
   const {result: liveIncidents} = useApi<LiveIncidentSnapshot[]>(
@@ -662,6 +673,7 @@ function FixturesView({
   const incidentsByFixture = new Map(
     (liveIncidents?.data || []).map(row => [row.fixture_id, row]));
   const oddsByFixture = new Map((liveOdds?.data || []).map(row => [row.fixture_id, row]));
+  const formByFixture = new Map((liveForms?.data || []).map(row => [row.fixture_id, row]));
   const matches = result?.data || [],
     inPlay = matches.filter((m) => LIVE.has(m.status)),
     spotlight = selectSpotlight(focusCandidates?.data?.live || inPlay,
@@ -761,6 +773,7 @@ function FixturesView({
             <div class="match-group panel">
               {highlighted.map(m => <MatchListing key={m.id}
                 match={m} tz={tz} featured odds={oddsByFixture.get(m.id)}
+                form={formByFixture.get(m.id)}
                 incidents={incidentsByFixture.get(m.id)}
                 audience={audience} geoCountry={visitor?.data?.country} />)}
             </div>
@@ -770,7 +783,7 @@ function FixturesView({
               <header class="league-bar">
                 <LeagueLogo league={rows[0].league} />
                 <a href={link(`/league/${id}`)}>
-                  <strong>{rows[0].league.name}</strong>
+                  <strong>{argentinaLeagueName(rows[0].league)}</strong>
                   <span>
                     {cn(rows[0].league.country)} · {rows.length} partidos
                   </span>
@@ -785,6 +798,7 @@ function FixturesView({
                 .map(m => <MatchListing key={m.id}
                   match={m} tz={tz}
                   odds={oddsByFixture.get(m.id)}
+                  form={formByFixture.get(m.id)}
                   incidents={incidentsByFixture.get(m.id)}
                   audience={audience} geoCountry={visitor?.data?.country} />)}
             </article>
@@ -1628,7 +1642,7 @@ function App() {
                     href={link(`/league/${l.id}`)}
                   >
                     <LeagueLogo league={l} />
-                    <span>{l.name}</span>
+                    <span>{argentinaLeagueName(l)}</span>
                   </a>
                 ))}
             </div>

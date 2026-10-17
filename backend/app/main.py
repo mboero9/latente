@@ -376,6 +376,16 @@ def live_incident_summary():
                                                coverage=bool(result))}
 
 
+@app.get("/api/fixtures/live/form")
+def live_match_recent_form():
+    """Real five-match club form for all current live fixtures, one database batch."""
+    from .live_form import live_form_summaries
+    with session_scope() as s:
+        result = live_form_summaries(s, settings.mode)
+        return {"data": result, "meta": meta([], coverage=bool(result),
+                                               basis="last_five_finished_games")}
+
+
 @app.get("/api/leagues/{league_id}/bracket")
 def league_bracket(league_id: int, season: int | None = None):
     """Bracket de encuentros realmente importados, no un fixture inventado."""
