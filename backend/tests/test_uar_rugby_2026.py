@@ -85,9 +85,11 @@ def test_all_fourteen_urba_clubs_have_verified_public_urba_crests():
         assert club["logo"].endswith(".png")
 
 
-def test_additional_2026_urba_and_regional_leagues_have_official_sources():
+def test_additional_2026_urba_and_regional_leagues_have_official_sources(monkeypatch):
     from app.rugby_clubs import CORDOBA_TOP10_2026, LITORAL_TOP10_2026
-    from app.rugby_api import public_catalog
+    import app.rugby_api as rugby_api
+    monkeypatch.setattr(rugby_api, "_snapshot", lambda *args: None)
+    public_catalog = rugby_api.public_catalog
     slugs = {
         "urba-primera-a", "urba-primera-b", "urba-primera-c",
         "urba-segunda", "urba-tercera", "urba-desarrollo",
