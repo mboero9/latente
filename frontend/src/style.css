@@ -3419,3 +3419,18 @@
  }
  @media(prefers-reduced-motion:reduce) {.f1-home-feature{transition:none;}}
 }
+
+
+@layer components {
+ .f1-home-mobile-link {display:none;}
+}
+@layer responsive {
+ @media(max-width:900px) {
+  .f1-home-mobile-link {display:flex;align-items:center;justify-content:space-between;
+   gap:9px;margin:0 0 12px;padding:10px 13px;color:var(--green);
+   background:var(--surface);border:1px solid var(--line);border-radius:10px;
+   text-decoration:none;font-weight:800;font-size:.8rem;}
+  .f1-home-mobile-link:focus-visible {outline:2px solid var(--green);outline-offset:3px;}
+  .home-right-column .f1-home-feature {display:none;}
+ }
+}
