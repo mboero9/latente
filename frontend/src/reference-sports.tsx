@@ -32,7 +32,7 @@ type Historic = {rows:{team:string;team_id:number;pj:number;pg:number;pe:number;
 const seasons = Array.from({length:12}, (_,i)=>new Date().getFullYear()-i);
 function Status({ stamp, stale }: {stamp?:string;stale?:boolean}) {
   return <p class="updated">{stamp ? `Consulta: ${new Date(stamp).toLocaleString("es-AR")}` : "Datos pendientes"}
-    {stale && " · Se conserva la última actualización válida"}
+    
   </p>;
 }
 function Notice({children}:{children:ComponentChildren}) {
@@ -145,7 +145,10 @@ function F1Content({data,tab,setTab}:{data:F1;tab:"drivers"|"constructors"|"resu
       <button class={tab==="results"?"active":""} onClick={()=>setTab("results")}>Última carrera</button>
     </div>
     <h2 class="sport-section-title">{tab==="drivers"?"Campeonato de pilotos":tab==="constructors"?"Copa de constructores":"Resultado del último GP"} · {data.season}</h2>
-    <div class="panel table-scroll"><table>
+    <p class="f1-mobile-scroll-hint">← Deslizá la tabla para ver escuderías, puntos y victorias →</p>
+    <div class="panel table-scroll f1-standings-scroll" role="region" tabIndex={0}
+      aria-label="Clasificación de Fórmula 1. Desplazamiento horizontal disponible.">
+      <table class="f1-standings-table">
       <thead><tr>
         <th>#</th><th>{tab==="constructors"?"Escudería":"Piloto"}</th>
         {tab!=="constructors"&&<th>Nacionalidad piloto</th>}
