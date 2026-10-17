@@ -1657,7 +1657,7 @@ function App() {
             <span>
               © {new Date().getFullYear()} Latente. Todos los derechos reservados.
             </span>
-            <span class="footer-links"><a href="/sobre-latente.html">Sobre Latente</a><a href="/metodologia.html">Fuentes</a></span>
+            <span class="footer-links"><a href="/sobre-latente.html">Sobre Latente</a><a href="/metodologia.html">Fuentes</a><a href="/publicidad.html">Publicidad</a></span>
             <span>Hecho para seguir el juego.</span>
           </footer>
         </main>
