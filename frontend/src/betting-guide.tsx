@@ -18,7 +18,7 @@ const LICENSED: Record<string,Entry[]>={
   {name:"Codere",url:"https://www.codere.es/",kind:"private",note:"Verificar mercado y licencia vigente en DGOJ"},
  ],
  FR:[
-  {name:"FDJ · Parions Sport",url:"https://www.fdj.fr/",kind:"public",note:"Red estatal de apuestas deportivas presenciales; no equivale a cuotas online de cada casa"},
+  {name:"FDJ · Parions Sport",url:"https://www.fdj.fr/",kind:"public",note:"Apuestas deportivas presenciales bajo derechos exclusivos; FDJ no es necesariamente una empresa estatal ni equivale a cuotas online"},
   {name:"Winamax",url:"https://www.winamax.fr/",kind:"private",note:"Operador listado por ANJ en apuestas deportivas online"},
   {name:"Betclic",url:"https://www.betclic.fr/",kind:"private",note:"Operador listado por ANJ en apuestas deportivas online"},
   {name:"bet365",url:"https://www.bet365.fr/",kind:"private",note:"Operador listado por ANJ en apuestas deportivas online"},
@@ -60,7 +60,7 @@ function OperatorList({items,type}:{items:Entry[];type:"public"|"private"}) {
  const filtered=items.filter(item=>item.kind===type);
  return <section class="licensed-operators">
    <h3>{type==="private"?"Operadores privados · referencias sujetas a licencia":
-     "Opciones estatales · modalidad distinta cuando corresponda"}</h3>
+     "Opciones estatales o de monopolio regulado · modalidades diferentes"}</h3>
    {filtered.length?
      <div class="watch-links bookmaker-directory">{filtered.map(item=>
        <a key={item.name} href={item.url} target="_blank"
@@ -83,7 +83,7 @@ export function BettingGuide({country}:{country:string}) {
    <h2>18+ · Regulación y operadores por país</h2>
    <p class="updated">Directorio informativo, separado de las cuotas y los marcadores.
       Una autoridad pública no es una casa de apuestas; tampoco todos los
-      países cuentan con un operador estatal de cuotas fijas. Las licencias
+      países cuentan con una oferta pública de cuotas fijas. Las licencias
       cambian por jurisdicción y deben revisarse en la fuente oficial.</p>
    {country==="AR"&&<label class="season-label">Jurisdicción argentina
        <select value={province} onChange={e=>setProvince(e.currentTarget.value)}>
