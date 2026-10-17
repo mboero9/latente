@@ -3110,3 +3110,22 @@
     footer .footer-links { width: 100%; order: 3; }
   }
 }
+
+
+/* Verified club rosters: show actual UAR/URBA participants when the rugby
+   feed has no licensed results, never invent tables or scores. */
+@layer components {
+  .rugby-clubs-verified { margin: 22px 0 28px; }
+  .rugby-clubs-verified .updated a { color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
+  .rugby-clubs-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(205px,1fr)); gap: 10px; }
+  .rugby-club-entry { display: flex; align-items: center; gap: 12px; padding: 12px; min-width: 0; }
+  .rugby-club-entry span { min-width: 0; display: flex; flex-direction: column; }
+  .rugby-club-entry strong { font-size: .82rem; overflow-wrap: anywhere; }
+  .rugby-club-entry small { font-size: .71rem; color: var(--muted); }
+}
+@layer responsive {
+  @media (max-width: 560px) {
+    .rugby-clubs-list { grid-template-columns: repeat(2,minmax(0,1fr)); gap:8px; }
+    .rugby-club-entry { padding:9px; gap: 7px; }
+  }
+}
