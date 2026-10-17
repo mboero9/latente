@@ -1572,6 +1572,7 @@ function App() {
           <a class="panel-link" href={link("/leagues")}>
             Explorar todas las ligas ({leagues.length})
           </a>
+          <a class="panel-link" href="/guias-de-futbol.html">Guías para entender cada torneo ↗</a>
           <div class="sidebar-bottom">
             <img class="source-logo" src="/latente-mark.png?v=3" width="40" height="40" alt="" />
             <div>
@@ -1717,7 +1718,7 @@ function App() {
             <span>
               © {new Date().getFullYear()} Latente. Todos los derechos reservados.
             </span>
-            <span class="footer-links"><a href={language === "en" ? "/en/sobre-latente.html" : "/sobre-latente.html"}>Sobre Latente</a><a href={language === "en" ? "/en/metodologia.html" : "/metodologia.html"}>Fuentes</a><a href={language === "en" ? "/en/publicidad.html" : "/publicidad.html"}>Publicidad</a></span>
+            <span class="footer-links"><a href="/guias-de-futbol.html">Guías de fútbol</a><a href={language === "en" ? "/en/sobre-latente.html" : "/sobre-latente.html"}>Sobre Latente</a><a href={language === "en" ? "/en/metodologia.html" : "/metodologia.html"}>Fuentes</a><a href={language === "en" ? "/en/publicidad.html" : "/publicidad.html"}>Publicidad</a></span>
             <span>Hecho para seguir el juego.</span>
           </footer>
         </main>
