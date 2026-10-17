@@ -12,8 +12,8 @@ import re
 import unicodedata
 
 REGULATIONS = {
-    "nacional": "https://www.afa.com.ar/3204/reglaments/reglamento-general?s=1",
-    "b": "https://assets1.afa.com.ar/2026/Lau/Boletin-Especial-6824---Reglamento-del-Campeonato-de-Primera-Division-B-2026.pdf",
+    "nacional": "https://assets1.afa.com.ar/2025/LEA-2026/ENERO/Boletin-Especial-6823---Reglamento-del-Campeonato-de-Primera-Nacional-2026.pdf",
+    "b": "https://assets1.afa.com.ar/2025/LEA-2026/ENERO/Boletin-Especial-6824---Reglamento-del-Campeonato-de-Primera-Division-B-2026.pdf",
     "c": "https://www.afa.com.ar/3204/reglaments/reglamento-general?s=1",
     "d": "https://www.afa.com.ar/3204/reglaments/reglamento-general?s=1",
 }
