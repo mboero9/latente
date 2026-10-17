@@ -8,7 +8,7 @@ type Position = {team:string;team_id?:number|null;logo?:string|null;rank?:number
 type RugbyData = {official:Position[];provider:string;season:number;updated_at?:string|null};
 
 const COUNTRIES:Record<string,{label:string;slug:string}>={
-  AR:{label:"Argentina · URBA Top 12",slug:"urba"},
+  AR:{label:"Argentina · URBA Top 14",slug:"urba"},
   FR:{label:"Francia · Top 14",slug:"top-14"},
   ZA:{label:"Sudáfrica · Currie Cup",slug:"currie-cup"},
   NZ:{label:"Nueva Zelanda · NPC",slug:"npc-nz"},
@@ -68,7 +68,7 @@ export function RugbyHomeTables() {
   return <section class="rugby-home-block" aria-label="Rugby: Argentina y país del visitante">
     <div class="view-heading"><div><span class="eyebrow">RUGBY · POSICIONES</span>
       <h2>Argentina y ligas del mundo</h2></div></div>
-    <MiniRugbyTable slug="urba" title="Argentina · URBA Top 12"/>
+    <MiniRugbyTable slug="urba" title="Argentina · URBA Top 14"/>
     <label class="season-label">Tabla de otro país
       <select value={country} onChange={e=>{setCountry(e.currentTarget.value);setLocal(true);}}>
         {options.map(([code,option])=><option value={code} key={code}>{option.label}</option>)}
