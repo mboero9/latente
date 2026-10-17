@@ -524,10 +524,12 @@ def sync_espn_once(max_leagues=1, fetch=None):
         ref = f"{slug}:{current}"
         games = _snapshot("espn_games", ref)
         table = _snapshot("espn_standings", ref)
-        diag = _snapshot("espn_diagnostic_v3", ref)
+        # v4 marks the new full-calendar scan; v3 diagnosed only short
+        # nearby windows and must not prevent a season-wide backfill.
+        diag = _snapshot("espn_diagnostic_v4", ref)
         if _fresh(diag, ESPN_RETRY):
             continue
-        if _fresh(games, ESPN_REFRESH) and _fresh(table, STANDINGS_TTL):
+        if diag and _fresh(games, ESPN_REFRESH) and _fresh(table, STANDINGS_TTL):
             continue
         # Work on least recently tried competitions before retrying coverage.
         oldest = min((aware(v.updated_at) for v in (games, table, diag) if v),
@@ -559,9 +561,9 @@ def sync_espn_once(max_leagues=1, fetch=None):
             if not games and not official and not partial:
                 report["unavailable"].append(slug)
             # Record last attempt to throttle empty and restricted sources.
-            _write("espn_diagnostic_v3", ref, [{"attempted": True}], 1)
+            _write("espn_diagnostic_v4", ref, [{"attempted": True, "full_season": True}], 1)
         except (ValueError, TypeError, KeyError, ImportError, OSError):
-            _write("espn_diagnostic_v3", ref, [{"attempted": True}], 1)
+            _write("espn_diagnostic_v4", ref, [{"attempted": True, "full_season": True}], 1)
             report["unavailable"].append(slug)
     return report
 

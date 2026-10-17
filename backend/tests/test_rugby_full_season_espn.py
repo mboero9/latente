@@ -55,6 +55,14 @@ def test_espn_full_rugby_season_imports_old_and_future_matches(monkeypatch):
                for _,p in seen)
 
 
+def test_full_calendar_backfill_is_not_blocked_by_old_short_window_diagnostics():
+    from pathlib import Path
+    src=(Path(__file__).resolve().parents[2]/"backend/app/rugby_api.py").read_text()
+    assert src.count('"espn_diagnostic_v4"') == 3
+    assert '"espn_diagnostic_v3"' not in src
+    assert "if diag and _fresh(games, ESPN_REFRESH)" in src
+
+
 def test_extra_rugby_espn_competition_ids_are_verified_and_whitelisted():
     assert espn_scores.RUGBY_LEAGUES["mlr"][1]=="289262"
     assert espn_scores.RUGBY_LEAGUES["challenge-cup"][1]=="272073"
