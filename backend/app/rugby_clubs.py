@@ -69,3 +69,61 @@ def edition_clubs(slug: str, year: int) -> list[dict[str, str]]:
 
 def source_url(slug: str) -> str | None:
     return OFFICIAL_SOURCES.get(slug)
+
+
+# Official 2026 TDI-A *published schedule*, not live scores. Only regulation
+# group-stage rounds, confirmed 22/12/2025 by the UAR.
+INTERIOR_A_SCHEDULE_2026 = (
+    ("2026-03-28", (
+        ("Gimnasia y Esgrima de Rosario", "Marista RC"),
+        ("Tucumán Rugby", "Mendoza RC"), ("Estudiantes de Paraná", "Tala RC"),
+        ("Urú Curé", "CURNE"), ("Universitario de Córdoba", "Jockey Club de Rosario"),
+        ("Santa Fe Rugby", "Córdoba Athletic"),
+        ("Jockey Club de Córdoba", "Duendes RC"), ("Old Resian", "La Tablada"),
+    )),
+    ("2026-04-25", (
+        ("Marista RC", "Tucumán Rugby"), ("Mendoza RC", "Gimnasia y Esgrima de Rosario"),
+        ("Tala RC", "Urú Curé"), ("CURNE", "Estudiantes de Paraná"),
+        ("Jockey Club de Rosario", "Santa Fe Rugby"),
+        ("Córdoba Athletic", "Universitario de Córdoba"),
+        ("Duendes RC", "Old Resian"), ("La Tablada", "Jockey Club de Córdoba"),
+    )),
+    ("2026-05-30", (
+        ("Mendoza RC", "Marista RC"), ("Tucumán Rugby", "Gimnasia y Esgrima de Rosario"),
+        ("CURNE", "Tala RC"), ("Urú Curé", "Estudiantes de Paraná"),
+        ("Córdoba Athletic", "Jockey Club de Rosario"),
+        ("Santa Fe Rugby", "Universitario de Córdoba"),
+        ("La Tablada", "Duendes RC"), ("Old Resian", "Jockey Club de Córdoba"),
+    )),
+    ("2026-06-27", (
+        ("Marista RC", "Mendoza RC"), ("Gimnasia y Esgrima de Rosario", "Tucumán Rugby"),
+        ("Tala RC", "CURNE"), ("Estudiantes de Paraná", "Urú Curé"),
+        ("Jockey Club de Rosario", "Córdoba Athletic"),
+        ("Universitario de Córdoba", "Santa Fe Rugby"),
+        ("Duendes RC", "La Tablada"), ("Jockey Club de Córdoba", "Old Resian"),
+    )),
+    ("2026-07-25", (
+        ("Tucumán Rugby", "Marista RC"), ("Gimnasia y Esgrima de Rosario", "Mendoza RC"),
+        ("Urú Curé", "Tala RC"), ("Estudiantes de Paraná", "CURNE"),
+        ("Santa Fe Rugby", "Jockey Club de Rosario"),
+        ("Universitario de Córdoba", "Córdoba Athletic"),
+        ("Old Resian", "Duendes RC"), ("Jockey Club de Córdoba", "La Tablada"),
+    )),
+    ("2026-08-01", (
+        ("Marista RC", "Gimnasia y Esgrima de Rosario"), ("Mendoza RC", "Tucumán Rugby"),
+        ("Tala RC", "Estudiantes de Paraná"), ("CURNE", "Urú Curé"),
+        ("Jockey Club de Rosario", "Universitario de Córdoba"),
+        ("Córdoba Athletic", "Santa Fe Rugby"),
+        ("Duendes RC", "Jockey Club de Córdoba"), ("La Tablada", "Old Resian"),
+    )),
+)
+
+
+def published_schedule(slug: str, year: int) -> list[dict[str, str | int]]:
+    if slug != "interior-a" or year != 2026:
+        return []
+    return [
+        {"round": round_index, "date": kickoff, "home": home, "away": away}
+        for round_index, (kickoff, pairings) in enumerate(INTERIOR_A_SCHEDULE_2026, start=1)
+        for home, away in pairings
+    ]
