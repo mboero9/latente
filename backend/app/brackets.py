@@ -120,6 +120,10 @@ def bracket_rows(fixtures):
                 for match in group["matches"]:
                     match["next_match_id"] = target["matches"][0]["id"]
                     match["qualified_team_id"] = team_id
+                    # Legacy single-match winner field is reliable only for
+                    # a one-leg series, never from one match of a two-leg tie.
+                    if len(group["matches"]) == 1 and winner_id(match) == team_id:
+                        match["winner_id"] = team_id
 
             current_groups.sort(key=lambda g: (
                 g.get("target_idx", len(next_groups)),
