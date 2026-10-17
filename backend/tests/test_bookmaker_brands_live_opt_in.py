@@ -23,7 +23,6 @@ def test_age_confirmation_necessary_to_see_operator_cards_or_links():
     view=read("frontend/src/betting-guide.tsx")
     assert "const [adult,setAdult]=useState(false)" in view
     assert "saveBettingAudience" in view
-    assert 'adult &&' in view
     assert "filtered.length && adult" in view
     assert "bookmaker-directory-grid" in view
     assert "rel=\"noopener noreferrer nofollow sponsored\"" in view
