@@ -24,6 +24,20 @@ const enabled =
 let adsScript: Promise<void> | null = null;
 
 function loadAdsense() {
+  // The official verification snippet is already in <head>. Reuse it rather
+  // than injecting a second AdSense loader when placements are enabled later.
+  const verifiedLoader = Array.from(
+    document.querySelectorAll<HTMLScriptElement>('script[src*="/pagead/js/adsbygoogle.js?client="]'),
+  ).some((script) => {
+    try {
+      const url = new URL(script.src);
+      return url.hostname === "pagead2.googlesyndication.com" &&
+        url.searchParams.get("client") === publisherId;
+    } catch {
+      return false;
+    }
+  });
+  if (verifiedLoader) return Promise.resolve();
   if (!adsScript) {
     adsScript = new Promise<void>((resolve, reject) => {
       const script = document.createElement("script");
