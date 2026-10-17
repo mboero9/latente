@@ -418,10 +418,13 @@ function DatePicker({
 // Selección editorial: prioridad de competición + popularidad aproximada
 // de clubes reconocidos. No se interpreta como audiencia medida.
 const TOP_LEAGUES: Record<number, number> = {
-  2: 1150, 13: 1040, 11: 1000, 3: 960, 9: 880,
-  128: 1060, 129: 730, 130: 720, 39: 1010,
-  140: 1000, 135: 970, 78: 950, 61: 915,
-  71: 920, 1: 980, 4: 920, 45: 850,
+  // Competición internacional y primeras divisiones de mayor relevancia
+  // editorial. Es un ranking editorial, NO tráfico o ventas medidos.
+  2: 1420, 39: 1380, 140: 1370, 128: 1290,
+  13: 1320, 1: 1270, 11: 1220, 135: 1210,
+  78: 1200, 61: 1170, 71: 1080, 3: 1140,
+  4: 1100, 9: 980, 45: 1020, 253: 1020,
+  129: 830, 130: 790, 262: 910,
 };
 const STAR_CLUBS = [
   "real madrid", "barcelona", "bayern", "manchester united",
@@ -431,6 +434,11 @@ const STAR_CLUBS = [
   "rosario central", "newells", "estudiantes", "velez", "flamengo",
   "palmeiras", "corinthians", "sao paulo", "santos", "gremio",
   "atletico madrid", "borussia dortmund", "benfica", "porto",
+  "man city", "man. city", "manchester city fc", "man united",
+  "fc barcelona", "fc bayern", "bayern munich",
+  "atletico de madrid", "paris saint germain", "paris sg",
+  "real madrid cf", "newcastle", "aston villa", "everton",
+  "leeds", "brentford", "west ham", "brighton",
   "ajax", "al nassr", "al hilal",
   "inter miami", "bayer leverkusen", "galatasaray", "fenerbahce",
   "america", "chivas", "tigres uanl", "cruz azul", "colo colo",
@@ -439,40 +447,47 @@ const STAR_CLUBS = [
   "lanus", "belgrano", "newell", "fluminense",
 ];
 const normalizeForFocus = (v: string) =>
-  v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ").trim();
 function focusPriority(m: Match): number {
   const league = normalizeForFocus(m.league.name);
   let score = TOP_LEAGUES[m.league_id] ?? (
-    /champions league/.test(league) ? 1150 :
-    /libertadores/.test(league) ? 1040 :
-    /liga profesional argentina|primera division.*argentina/.test(league) ? 1060 :
-    /premier league/.test(league) ? 1010 :
-    /la liga|laliga/.test(league) ? 1000 :
-    /serie a|bundesliga/.test(league) ? 960 :
-    /ligue 1/.test(league) ? 925 :
-    /europa league|sudamericana/.test(league) ? 900 :
-    /world cup|copa america|euro championship/.test(league) ? 1010 :
+    /champions league/.test(league) ? 1420 :
+    /libertadores/.test(league) ? 1320 :
+    /liga profesional argentina|primera division.*argentina/.test(league) ? 1290 :
+    /premier league/.test(league) ? 1380 :
+    /la liga|laliga/.test(league) ? 1370 :
+    /serie a|bundesliga/.test(league) ? 1200 :
+    /ligue 1/.test(league) ? 1170 :
+    /europa league|sudamericana/.test(league) ? 1220 :
+    /world cup|copa america|euro championship/.test(league) ? 1270 :
     70
   );
   // Dos clubes conocidos vuelven el duelo más destacado, sin vencer una
   // competición grande por un torneo marginal.
   for (const team of [m.home, m.away]) {
     const name = normalizeForFocus(team.name);
-    if (STAR_CLUBS.some(club => name === club || name.startsWith(club + " "))) score += 85;
+    if (STAR_CLUBS.some(club => name === club || name.startsWith(club + " "))) score += 135;
   }
   // Fases decisivas y partido avanzado como desempate secundario.
   const round = normalizeForFocus(m.round || "");
   if (/final|semi.final|quarter.final|octavos|round of 16/.test(round)) score += 35;
   if (m.status === "2H" || m.status === "ET" || m.status === "P") score += 8;
+  if (m.stale) score -= 120;
   return score;
 }
 // Primero buscar el partido en vivo más relevante. Si no existe, mostrar
 // el próximo encuentro importante de las próximas 36 horas, nunca uno
 // terminado ni uno de una fecha seleccionada en el pasado.
 function selectSpotlight(liveMatches: Match[], upcoming: Match[] = []): Match | undefined {
-  const active = liveMatches.filter(m => LIVE.has(m.status));
-  const highlyRelevant = active.filter(m => focusPriority(m) >= 900);
   const now = Date.now();
+  // Nunca mostrar como "en vivo" un fixture abandonado por el proveedor:
+  // una duración superior a 8h no corresponde a un partido de fútbol actual.
+  const active = liveMatches.filter(m =>
+    LIVE.has(m.status) &&
+    Number.isFinite(new Date(m.kickoff).getTime()) &&
+    now - new Date(m.kickoff).getTime() <= 8 * 3600000
+  );
   const next = upcoming.filter(m =>
     ["NS", "TBD"].includes(m.status) &&
     Number.isFinite(new Date(m.kickoff).getTime()) &&
@@ -480,8 +495,9 @@ function selectSpotlight(liveMatches: Match[], upcoming: Match[] = []): Match | 
     new Date(m.kickoff).getTime() <= now + 36 * 3600000 &&
     focusPriority(m) >= 900
   );
-  const selection = highlyRelevant.length ? highlyRelevant
-    : next.length ? next : active;
+  // En vivo SIEMPRE tiene prioridad sobre un futuro, incluso si no
+  // pertenece a una liga TOP. Entre vivos, gana el más relevante.
+  const selection = active.length ? active : next;
   return [...selection].sort((a,b) =>
     focusPriority(b) - focusPriority(a) ||
     a.kickoff.localeCompare(b.kickoff) || a.id - b.id
@@ -600,20 +616,11 @@ function FixturesView({
     `/api/fixtures?date=${day}&tz=${encodeURIComponent(tz)}&offset=${page * pageSize}&limit=${pageSize}${league ? `&league_id=${league.id}` : ""}${live ? "&live=true" : ""}`,
     DISPLAY_REFRESH_MS,
   );
-  // Spotlight global independiente de fecha, liga elegida y paginación.
-  const { result: globalLive } = useApi<Match[]>(
-    `/api/fixtures?date=${day}&live=true&limit=300`,
-    DISPLAY_REFRESH_MS,
-  );
-  // Las vistas de hoy y mañana son caché propio de Latente: no suman
-  // solicitudes al proveedor externo ni dependen del calendario elegido.
-  const currentDay = new Intl.DateTimeFormat("en-CA", { timeZone: argentina,
-    year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
-  const nextDay = shiftDay(currentDay, 1);
-  const { result: todayForFocus } = useApi<Match[]>(
-    `/api/fixtures?date=${currentDay}&limit=300`, DISPLAY_REFRESH_MS);
-  const { result: tomorrowForFocus } = useApi<Match[]>(
-    `/api/fixtures?date=${nextDay}&limit=300`, DISPLAY_REFRESH_MS);
+  // En foco usa los candidatos globales priorizados desde PostgreSQL,
+  // no los primeros 300 por kickoff. Independiente de fecha, liga y página.
+  const { result: focusCandidates } = useApi<{
+    live: Match[]; upcoming: Match[];
+  }>("/api/fixtures/focus", 15000);
   const {result: liveOdds} = useApi<LiveOddsSummary[]>("/api/odds/live", 60000);
   // Una consulta por toda la jornada: los eventos se leen de PostgreSQL.
   // Ninguna visita a la página consume una llamada adicional a API-Football.
@@ -624,8 +631,8 @@ function FixturesView({
   const oddsByFixture = new Map((liveOdds?.data || []).map(row => [row.fixture_id, row]));
   const matches = result?.data || [],
     inPlay = matches.filter((m) => LIVE.has(m.status)),
-    spotlight = selectSpotlight(globalLive?.data || inPlay,
-      [...(todayForFocus?.data || []), ...(tomorrowForFocus?.data || [])]),
+    spotlight = selectSpotlight(focusCandidates?.data?.live || inPlay,
+      focusCandidates?.data?.upcoming || []),
     // Este orden es editorial (torneos y popularidad aproximada), no
     // una estimación de ventas ni una medición de audiencia.
     highlighted = live && !league && page === 0
