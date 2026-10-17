@@ -16,17 +16,27 @@ const VERIFIED_LOGOS: Record<string,string> = {
  "williams racing":"Williams F1 logo 2026.png",
  "audi":"Audif1.com logo17 (cropped).svg",
  "cadillac":"Cadillac Formula 1 Team logo.png",
- "red bull racing":"Red Bull Racing-Logo.png",
- "red bull":"Red Bull Racing-Logo.png",
+
 };
 const EXTERNAL_VERIFIED_LOGOS:Record<string,string> = {
   // Independently catalogued CC0 artwork, not an F1 corporate asset.
   "ferrari":"https://www.svgrepo.com/show/303485/ferrari-logo.svg",
+  // Distinct constructors: Red Bull Racing (UK) and Racing Bulls (Italy).
+  // Identification only; image rights and team trademarks remain with owners.
+  "red bull":"https://upload.wikimedia.org/wikipedia/en/f/fa/Red_Bull_Racing_Logo_2026.svg",
+  "red bull racing":"https://upload.wikimedia.org/wikipedia/en/f/fa/Red_Bull_Racing_Logo_2026.svg",
+  "oracle red bull racing":"https://upload.wikimedia.org/wikipedia/en/f/fa/Red_Bull_Racing_Logo_2026.svg",
+  "racing bulls":"https://upload.wikimedia.org/wikipedia/en/2/2b/VCARB_F1_logo.svg",
+  "rb f1 team":"https://upload.wikimedia.org/wikipedia/en/2/2b/VCARB_F1_logo.svg",
+  "visa cash app racing bulls":"https://upload.wikimedia.org/wikipedia/en/2/2b/VCARB_F1_logo.svg",
+  "visa cash app rb":"https://upload.wikimedia.org/wikipedia/en/2/2b/VCARB_F1_logo.svg",
+  "rb":"https://upload.wikimedia.org/wikipedia/en/2/2b/VCARB_F1_logo.svg",
 };
 const TEAM_COLOURS:Record<string,string>={
  "ferrari":"#e80020","red bull":"#3671c6",
  "red bull racing":"#3671c6", "rb f1 team":"#4681d7",
- "racing bulls":"#4681d7", "mercedes":"#00a19c",
+ "racing bulls":"#4681d7", "visa cash app racing bulls":"#4681d7",
+ "visa cash app rb":"#4681d7", "rb":"#4681d7", "mercedes":"#00a19c",
  "mclaren":"#f58020", "alpine":"#0090ff",
  "haas f1 team":"#666666","williams":"#005aff",
  "audi":"#f50537","cadillac":"#555555",
@@ -78,7 +88,9 @@ export function F1TeamLogo({name}:{name:string}) {
  const url=filename?
   `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}`:
   EXTERNAL_VERIFIED_LOGOS[key] || null;
- return <span class="f1-team-logo" title={name}>
+ const redBullGroup = ["red bull","red bull racing","oracle red bull racing",
+    "racing bulls","rb f1 team","visa cash app racing bulls","visa cash app rb","rb"].includes(key);
+ return <span class={redBullGroup?"f1-team-logo f1-redbull-logo":"f1-team-logo"} title={name}>
   {url&&!bad?<img alt="" src={url} loading="lazy" decoding="async"
     referrerPolicy="no-referrer" onError={()=>setBad(true)}/>:
     <span class="f1-team-fallback" style={{borderColor:colour,color:colour}}
