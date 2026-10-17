@@ -581,7 +581,8 @@ function MatchListing({
     <MatchRow match={m} tz={tz} />
     {active && <LiveIncidentStrip match={m} snapshot={incidents} />}
     {active && <LiveOddsMini fixtureId={m.id} home={m.home.name}
-      away={m.away.name} entry={odds} />}
+      away={m.away.name} entry={odds}
+      visible={geoCountry==="AR"&&Boolean(audience?.adult)} />}
     {active && <LiveRecentForm match={m} entry={form} />}
     {active && <LiveBookmakers audience={audience||null} geoCountry={geoCountry}/>} 
   </div>;
