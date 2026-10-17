@@ -29,20 +29,24 @@ AUTO_LEAGUES = {
     "nhl": ("nhl",),
     "mlb": ("mlb",),
     "nfl": ("nfl",),
-    "basketball": ("euroleague", "liga acb", "liga nacional"),
-    "handball": ("bundesliga", "champions league", "liga asobal"),
-    "volleyball": ("superlega", "plusliga", "champions league"),
+    "basketball": ("liga nacional", "liga argentina", "euroleague", "liga acb",
+                   "basketball champions league americas"),
+    "handball": ("nacional de clubes adultos a", "nacional de clubes a",
+                 "liga de honor", "bundesliga", "champions league", "liga asobal"),
+    "volleyball": ("superliga argentina", "liga de voleibol argentina",
+                   "liga argentina femenina", "liga nacional masculina",
+                   "superlega", "plusliga", "champions league"),
 }
 COUNTRY_PREFERENCE = {
     "nhl": ("usa", "world"), "mlb": ("usa", "world"),
     "nfl": ("usa", "world"), "basketball": ("world", "europe", "argentina", "spain"),
-    "handball": ("germany", "europe", "spain", "world"),
-    "volleyball": ("italy", "poland", "europe", "world"),
+    "handball": ("argentina", "germany", "europe", "spain", "world"),
+    "volleyball": ("argentina", "italy", "poland", "europe", "world"),
 }
 
 
 def automatic_targets(sport, catalogue, year):
-    """Return up to 2 verified active league-season pairs per supported sport."""
+    """Return up to three verified league-season pairs per supported sport."""
     goals = AUTO_LEAGUES.get(sport, ())
     pref = COUNTRY_PREFERENCE.get(sport, ())
     options = []
@@ -53,6 +57,15 @@ def automatic_targets(sport, catalogue, year):
         country = str(row.get("country") or "").casefold().strip()
         if title not in goals:
             continue
+        # "Liga Nacional" and "Liga Argentina" also name tournaments
+        # elsewhere; require an Argentine country match, never guess ID.
+        if title in {"liga nacional", "liga argentina", "liga de honor",
+                     "liga argentina femenina", "liga nacional masculina",
+                     "liga de voleibol argentina", "superliga argentina",
+                     "nacional de clubes adultos a", "nacional de clubes a",
+                     "basketball champions league americas"}:
+            if title != "basketball champions league americas" and country != "argentina":
+                continue
         years = []
         for entry in row.get("seasons") or []:
             raw = entry.get("season", entry.get("year")) if isinstance(entry, dict) else entry
@@ -75,7 +88,7 @@ def automatic_targets(sport, catalogue, year):
             continue
         seen.add(candidate["league"])
         out.append(candidate)
-        if len(out) == (1 if sport in {"nhl", "mlb", "nfl"} else 2):
+        if len(out) == (1 if sport in {"nhl", "mlb", "nfl"} else 3):
             break
     return out
 
@@ -117,15 +130,29 @@ def due_jobs(today=None):
     enabled = list(dict.fromkeys([*enabled, "handball", "volleyball"]))
     jobs = []
     targets = configured_targets()
-    # Supplement explicit targets from catalogue snapshots discovered by the
-    # cron; don't guess league IDs or the start year for seasonal standings.
+    # Supplement explicit targets using catalogue snapshots already imported.
+    # Do not remove caller-configured targets, but do include verified Argentine
+    # leagues even when an older Railway SPORTS_TARGETS_JSON has only Euroleague.
     with session_scope() as db:
         for sport in enabled:
-            if targets.get(sport) or sport not in AUTO_LEAGUES:
+            if sport not in AUTO_LEAGUES:
                 continue
             snap = db.get(SportSnapshot, (sport, "leagues", "catalog"))
-            if snap and snap.data:
-                targets[sport] = automatic_targets(sport, snap.data, today.year)
+            if not snap or not snap.data:
+                continue
+            discovered = automatic_targets(sport, snap.data, today.year)
+            existing = targets.get(sport, [])
+            if sport in {"basketball", "volleyball", "handball"}:
+                combined = []
+                for candidate in [*discovered, *existing]:
+                    if all(str(item["league"]) != str(candidate["league"])
+                           for item in combined):
+                        combined.append(candidate)
+                # Bounded standings calls: 5 + 1 league discovery + <=5 tables
+                # each day, still within the conservative 20-call sport cap.
+                targets[sport] = combined[:5]
+            elif not existing:
+                targets[sport] = discovered
     # Estas ligas tienen identificadores oficiales estables. Si el usuario no
     # definió SPORTS_TARGETS_JSON, probar sus posiciones actuales una vez/día.
     # Los errores de cobertura se preservan como no disponibles.

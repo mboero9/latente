@@ -6,6 +6,8 @@ import { RugbyCompetitions } from "./rugby-competitions";
 import { ReferenceSportPage } from "./reference-sports";
 import { RugbyHub } from "./rugby-hub";
 import { TeamMark } from "./team-mark";
+import { SportCountryExplorer, countryForGame, matchesCompetition,
+  normalizedSportCountry, type SportCompetition } from "./sport-country-explorer";
 import type { League, Team } from "./types";
 export const sports = [
   { slug: "nhl", name: "NHL · Hockey", emoji: "🏒" },
@@ -23,11 +25,17 @@ export const sports = [
 /** Consultas oficiales: no se conoce la señal del partido individual. */
 type SportStatus = { name: string; configured: boolean; note: string };
 type Archive = { season: number; matches_loaded: number; official_leader: {team: Team;group: string}|null;leading_scorer:{name:string;goals:number;team:Team}|null;complete:boolean };
-type OtherGame = {id:number|null;home_id?:number|null;away_id?:number|null;league:string;date:string|{start?:string};home:string;away:string;home_logo?:string|null;away_logo?:string|null;league_logo?:string|null;home_score:number|null;away_score:number|null;status:string};
+type OtherGame = {id:number|null;league_id?:number|string|null;country?:string|null;home_id?:number|null;away_id?:number|null;league:string;date:string|{start?:string};home:string;away:string;home_logo?:string|null;away_logo?:string|null;league_logo?:string|null;home_score:number|null;away_score:number|null;status:string};
 type OtherGamesResponse = {configured:boolean;games:OtherGame[];message:string|null};
 export function SportPage({ slug }: { slug: string }) {
   const sport = sports.find(x => x.slug === slug);
   const [tab, setTab] = useState<"past" | "today" | "future">("today");
+  const multiCountry = ["basketball", "volleyball", "handball"].includes(slug);
+  const [country, setCountry] = useState("Argentina");
+  const [competition, setCompetition] = useState("all");
+  const {result:leagueCatalog,loading:catalogLoading} = useApi<SportCompetition[]>(
+    multiCountry ? `/api/sports/${slug}/competitions` : null, 300000);
+  const competitions=leagueCatalog?.data||[];
   const localToday = new Date().toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
   const shift = (days: number) => {
     const date = new Date(localToday + "T12:00:00Z");
@@ -39,11 +47,17 @@ export function SportPage({ slug }: { slug: string }) {
     period: {from:string;to:string};
   }>(sport && !["f1", "nba", "cricket", "mlb", "nhl", "nfl", "wnba"].includes(slug) ? `/api/sports/${sport.slug}/overview` : null, 120000);
   const all = result?.data.matches || [];
+  // Only imported fixtures, scoped to the explicitly chosen country/league.
+  // A federation link alone never becomes a fake schedule or league table.
+  const filtered = all.filter(game =>
+    (!multiCountry || country==="all" ||
+      countryForGame(game,competitions)===normalizedSportCountry(country)) &&
+    (!multiCountry || matchesCompetition(game,competition,competitions)));
   const dateOf = (game: OtherGame) =>
     typeof game.date === "string"
       ? game.date.slice(0,10)
       : game.date?.start?.slice(0,10) || "";
-  const visible = all.filter(game => {
+  const visible = filtered.filter(game => {
     const day = dateOf(game);
     if (tab === "past") return day < localToday;
     if (tab === "future") return day > localToday;
@@ -52,13 +66,13 @@ export function SportPage({ slug }: { slug: string }) {
     ? dateOf(b).localeCompare(dateOf(a))
     : dateOf(a).localeCompare(dateOf(b)));
   const clubs = new Map<string, string | null>();
-  for (const game of all) {
+  for (const game of filtered) {
     if (game.home && game.home !== "Local") clubs.set(game.home, game.home_logo || clubs.get(game.home) || null);
     if (game.away && game.away !== "Visitante") clubs.set(game.away, game.away_logo || clubs.get(game.away) || null);
   }
   // Estadísticas derivadas exclusivamente de resultados finales reales
   // presentes en la ventana de ayer/hoy/mañana. No son tablas oficiales.
-  const results = all.filter(game =>
+  const results = filtered.filter(game =>
     typeof game.home_score === "number" &&
     typeof game.away_score === "number" &&
     /(^ft$|final|finished|ended|completed|after overtime|after penalties|full time)/i.test(game.status || "")
@@ -88,6 +102,9 @@ export function SportPage({ slug }: { slug: string }) {
     <div class="view-heading"><div><span class="eyebrow">LATENTE · DEPORTES</span>
       <h1>{sport.emoji} {sport.name}</h1>
       <p>Partidos, equipos y resultados recientes con información real del proveedor.</p></div></div>
+    {multiCountry && <SportCountryExplorer sport={slug} country={country}
+      onCountry={setCountry} league={competition} onLeague={setCompetition}
+      competitions={competitions} loading={catalogLoading} numberOfGames={filtered.length}/>}
     <div class="sports-tabs" role="group" aria-label="Elegir fecha de partidos">
       <button class={tab === "past" ? "active" : ""} onClick={() => setTab("past")}>Resultados</button>
       <button class={tab === "today" ? "active" : ""} onClick={() => setTab("today")}>Hoy</button>
@@ -95,7 +112,7 @@ export function SportPage({ slug }: { slug: string }) {
     </div>
     {loading ? <p>Cargando partidos del archivo…</p> : error ? <p>{error} <button onClick={retry}>Reintentar</button></p>
     : <>
-      <p class="updated">Partidos reales disponibles: {all.length} · fechas consultadas: {result?.data.dates_checked.length ?? 0}. La importación gratuita se completa progresivamente.</p>
+      <p class="updated">Partidos reales disponibles para la selección: {filtered.length} · fechas consultadas: {result?.data.dates_checked.length ?? 0}. La importación gratuita se completa progresivamente.</p>
       <h2 class="sport-section-title">{tab === "past" ? "Últimos resultados" : tab === "today" ? "Partidos de hoy" : "Próximos encuentros"}</h2>
       {visible.length ? <div class="sports-games">{visible.map((game, idx) => <article class="panel sport-game" key={game.id ?? idx}>
         <small class="sport-game-league">{game.league_logo && <img src={game.league_logo} alt="" loading="lazy" onError={e => {e.currentTarget.style.display = "none";}}/>}{game.league || "Competición"}</small>
@@ -123,7 +140,9 @@ export function SportPage({ slug }: { slug: string }) {
       </div> : <p class="match-details-unavailable">No hay suficientes resultados finales en la ventana para calcular estadísticas fiables.</p>}
       </>
       {slug === "rugby" && <RugbyCompetitions />}
-      <SportsStandings sport={sport.slug} />
+      <SportsStandings sport={sport.slug} country={multiCountry?country:"all"}
+        leagueSelection={multiCountry?competition:"all"}
+        competitions={multiCountry?competitions:[]}/>
       <WatchGuide initialSport={slug} />
     </>}
   </section>;
