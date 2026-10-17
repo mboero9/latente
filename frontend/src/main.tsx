@@ -1591,7 +1591,7 @@ function App() {
               </select>
             </label>
           </div>
-          {view !== "bet" && <AdPlacement placement="top" />}
+          {view !== "bet" && view !== "match" && <AdPlacement placement="top" />}
           {mode === "demo" && (
             <div class="notice demo-notice">
               <strong>Modo demostración</strong>
@@ -1702,7 +1702,7 @@ function App() {
               <a href="#/">Volver a partidos</a>
             </Empty>
           )}
-          {view !== "bet" && <AdPlacement placement="bottom" />}
+          {view !== "bet" && view !== "match" && <AdPlacement placement="bottom" />}
           <footer>
             <a href="#/" class="footer-brand">
               latente.
