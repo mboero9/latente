@@ -42,6 +42,18 @@ import { WorldScorersPage, WorldScorersSection } from "./world-scorers";
 import { ClubHonours, NationalHonours } from "./historical-honours";
 import { RugbyHomeTables } from "./rugby-home-tables";
 
+// Editorial ordering: Argentine football and CONMEBOL cups before all other
+// leagues in the mobile shortcuts, catalog and home match list.
+const LATENTE_PRIMARY_LEAGUES = [
+  {id:128,label:"🇦🇷 Primera División"},
+  {id:129,label:"🏆 Copa Argentina"},
+  {id:13,label:"🏆 Libertadores"},
+  {id:11,label:"🏆 Sudamericana"},
+] as const;
+const leaguePriority = (id:number) => {
+  const priority=LATENTE_PRIMARY_LEAGUES.findIndex(item=>item.id===id);
+  return priority<0?100:priority;
+};
 const LIVE = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT"]);
 const labels: Record<string, string> = {
   NS: "Por jugar",
@@ -427,11 +439,11 @@ function DatePicker({
 const TOP_LEAGUES: Record<number, number> = {
   // Competición internacional y primeras divisiones de mayor relevancia
   // editorial. Es un ranking editorial, NO tráfico o ventas medidos.
-  2: 1420, 39: 1380, 140: 1370, 128: 1290,
-  13: 1320, 1: 1270, 11: 1220, 135: 1210,
+  2: 1420, 39: 1380, 140: 1370, 128: 1620,
+  13: 1650, 1: 1270, 11: 1580, 135: 1210,
   78: 1200, 61: 1170, 71: 1080, 3: 1140,
   4: 1100, 9: 980, 45: 1020, 253: 1020,
-  129: 830, 130: 790, 262: 910,
+  129: 1560, 130: 790, 262: 910,
 };
 const STAR_CLUBS = [
   "real madrid", "barcelona", "bayern", "manchester united",
@@ -460,13 +472,15 @@ function focusPriority(m: Match): number {
   const league = normalizeForFocus(m.league.name);
   let score = TOP_LEAGUES[m.league_id] ?? (
     /champions league/.test(league) ? 1420 :
-    /libertadores/.test(league) ? 1320 :
-    /liga profesional argentina|primera division.*argentina/.test(league) ? 1290 :
+    /libertadores/.test(league) ? 1650 :
+    /liga profesional argentina|primera division.*argentina/.test(league) ? 1620 :
+    /copa argentina/.test(league) ? 1560 :
     /premier league/.test(league) ? 1380 :
     /la liga|laliga/.test(league) ? 1370 :
     /serie a|bundesliga/.test(league) ? 1200 :
     /ligue 1/.test(league) ? 1170 :
-    /europa league|sudamericana/.test(league) ? 1220 :
+    /sudamericana/.test(league) ? 1580 :
+    /europa league/.test(league) ? 1220 :
     /world cup|copa america|euro championship/.test(league) ? 1270 :
     70
   );
@@ -663,8 +677,10 @@ function FixturesView({
   for (const m of matches.filter(m => !highlightedIds.has(m.id)))
     groups.set(m.league_id, [...(groups.get(m.league_id) || []), m]);
   const leagueOrder = (id: number) => {
+    const editorial=leaguePriority(id);
+    if (editorial < 100) return editorial;
     const pos = leagues.findIndex(l => l.id === id);
-    return pos < 0 ? Number.MAX_SAFE_INTEGER : pos;
+    return pos < 0 ? Number.MAX_SAFE_INTEGER : 100 + pos;
   };
   const sorted = [...groups].sort((a, b) => live
     ? Math.max(...b[1].map(focusPriority)) - Math.max(...a[1].map(focusPriority))
@@ -688,6 +704,13 @@ function FixturesView({
             </div>
           )}
           {league && <LeagueRecent id={league.id} season={league.season} />}
+          {!league && <nav class="argentina-conmebol-shortcuts"
+            aria-label="Acceso rápido a fútbol argentino y copas CONMEBOL">
+            {LATENTE_PRIMARY_LEAGUES.filter(item=>leagues.some(l=>l.id===item.id))
+              .map(item=><a href={link(`/league/${item.id}`)} key={item.id}>
+                {item.label}
+              </a>)}
+          </nav>}
           {!league && <a class="f1-home-mobile-link" href={link("/sport/f1")}>
             🏎️ F1 · Posiciones, fotos y campeones históricos <span aria-hidden="true">↗</span>
           </a>}
@@ -1369,7 +1392,8 @@ function LeaguesView({ leagues }: { leagues: League[] }) {
   useEffect(() => setVisible(60), [query]);
   const list = leagues.filter((l) =>
     `${l.name} ${cn(l.country)}`.toLowerCase().includes(query.toLowerCase()),
-  );
+  ).sort((a,b)=>leaguePriority(a.id)-leaguePriority(b.id)||
+    a.name.localeCompare(b.name,"es"));
   return (
     <>
       <div class="view-heading">
@@ -1441,7 +1465,7 @@ function App() {
   const [, view = "", rawId = ""] = route.split("/"),
     id = Number(rawId),
     league = leagues.find((l) => l.id === id),
-    first = leagues[0]?.id || 128;
+    first = leagues.find(l=>l.id===128)?.id || leagues[0]?.id || 128;
   const isLeagueView = ["league", "table", "scorers", "assists", "teams", "fixtures", "bracket", "history", "promedios", "annual", "alltime", "analytics"].includes(view);
   useEffect(() => {
     // Per-section metadata improves sharing and browser navigation.
@@ -1510,6 +1534,8 @@ function App() {
             {[
               ["/", "Partidos"],
               ["/leagues", "Ligas"],
+              ...LATENTE_PRIMARY_LEAGUES.filter(item=>leagues.some(l=>l.id===item.id))
+                .map(item=>[`/league/${item.id}`,item.label]),
               [`/table/${first}`, "Posiciones"],
               [`/scorers/${first}`, "Goleadores"],
               ["/league/253", "🇺🇸 MLS"],
@@ -1519,7 +1545,7 @@ function App() {
                 SPORT_NAV_ORDER.indexOf(b.slug))
                 .map(sport => [`/sport/${sport.slug}`, `${sport.emoji} ${sport.name}`]),
             ].map(([path, label]) => {
-              const active = path.startsWith("/sport/") || path === "/league/253"
+              const active = path.startsWith("/sport/") || path.startsWith("/league/")
                 ? route === path
                 : ((view === "" && path === "/") || path.split("/")[1] === view);
               return <a key={path} class={active ? "active" : ""}
@@ -1551,6 +1577,12 @@ function App() {
           </div>
         </div>
       </header>
+      {/* Vertical inventory is responsive and opt-in. On mobile and while
+          AdSense approval is pending, these produce no visible advertisements. */}
+      {view !== "bet" && view !== "match" && <>
+        <AdPlacement placement="rail-left"/>
+        <AdPlacement placement="rail-right"/>
+      </>}
       <div class="app-shell">
         <aside class="sidebar">
           <div class="sidebar-heading">
@@ -1580,6 +1612,8 @@ function App() {
                       : l.country !== "Argentina") &&
                     `${l.name} ${cn(l.country)}`.toLowerCase().includes(leagueSearch.toLowerCase()),
                 )
+                .sort((a,b)=>leaguePriority(a.id)-leaguePriority(b.id)||
+                  a.name.localeCompare(b.name,"es"))
                 .slice(0, leagueSearch ? 30 : 12)
                 .map((l) => (
                   <a

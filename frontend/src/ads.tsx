@@ -1,19 +1,21 @@
 import { useEffect, useRef } from "preact/hooks";
 
 /**
- * Three intentionally quiet ad spaces.
+ * Optional ad spaces (including two desktop-only vertical rails).
  *
  * No ad vendor is contacted until the site has an approved publisher account,
  * individual placement IDs, and an explicitly enabled privacy setup.
  * See docs/MONETIZACION-PUBLICIDAD.md before enabling production requests.
  */
-export type AdPlacementName = "top" | "side" | "bottom";
+export type AdPlacementName = "top" | "side" | "bottom" | "rail-left" | "rail-right";
 
 const publisherId = (import.meta.env.VITE_ADSENSE_CLIENT || "").trim();
 const placementIds: Record<AdPlacementName, string> = {
   top: (import.meta.env.VITE_ADSENSE_SLOT_TOP || "").trim(),
   side: (import.meta.env.VITE_ADSENSE_SLOT_SIDE || "").trim(),
   bottom: (import.meta.env.VITE_ADSENSE_SLOT_BOTTOM || "").trim(),
+  "rail-left": (import.meta.env.VITE_ADSENSE_SLOT_RAIL_LEFT || "").trim(),
+  "rail-right": (import.meta.env.VITE_ADSENSE_SLOT_RAIL_RIGHT || "").trim(),
 };
 const preview = import.meta.env.DEV || import.meta.env.VITE_AD_SLOTS_PREVIEW === "true";
 const enabled =
@@ -70,6 +72,7 @@ export function AdPlacement({ placement }: { placement: AdPlacementName }) {
   const alreadyRequested = useRef(false);
   const slotId = placementIds[placement];
   const serveAds = enabled && /^\d+$/.test(slotId);
+  const isRail=placement==="rail-left" || placement==="rail-right";
   const showPreview = preview && !serveAds;
 
   useEffect(() => {
@@ -116,8 +119,8 @@ export function AdPlacement({ placement }: { placement: AdPlacementName }) {
           style={{ display: "block" }}
           data-ad-client={publisherId}
           data-ad-slot={slotId}
-          data-ad-format={placement === "side" ? "rectangle" : "horizontal"}
-          data-full-width-responsive="true"
+          data-ad-format={isRail ? "vertical" : placement === "side" ? "rectangle" : "horizontal"}
+          data-full-width-responsive={isRail?"false":"true"}
         />
       ) : (
         <div class="latente-ad__preview" aria-label="Previsualización, no es un anuncio real">
