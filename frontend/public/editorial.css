@@ -8,3 +8,6 @@ h1{font-size:clamp(1.8rem,4vw,2.4rem);line-height:1.2}h2{font-size:1.15rem;margi
 .site-header{display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}
 .editorial-language{font-size:.85rem;font-weight:750;text-decoration:none;padding:7px 12px;border-radius:8px;border:1px solid #d7e9f6;color:#0879b8}
 .editorial-language:hover,.editorial-language:focus-visible{background:#eef8ff;text-decoration:underline}
+
+/* Navigation for original indexable sports guides, no JS or third-party calls. */
+.guide-actions{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0 24px}.guide-actions a{padding:9px 13px;border:1px solid #c6e3f5;background:#f0faff;border-radius:9px;font-weight:700;text-decoration:none;font-size:.88rem}.guide-actions a:hover{background:#dff3ff}.guide-index{columns:2;column-gap:24px;list-style:none;padding:0}.guide-index li{break-inside:avoid;border-bottom:1px solid #e0eef5;padding:12px 0}.guide-index span{display:block;color:#58748b;font-size:.8rem}main section{margin:24px 0}@media(max-width:600px){.guide-index{columns:1}.guide-actions{flex-direction:column}.guide-actions a{text-align:center}}
