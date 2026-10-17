@@ -101,7 +101,6 @@ def test_api_promedios_queries_persisted_fixtures_only(db,monkeypatch):
     year2024=fixture(id=122,status="FT",goals={"home":2,"away":0})
     year2024["league"]["season"]=2024
     year2024["league"]["round"]="Regular Season - 1"
-    year2024["league"]["round"]="Regular Season - 1"
     year2024["fixture"]["date"]="2024-09-01T20:00:00+00:00"
     year2024["league"]["id"]=128
     year2024["league"]["round"]="Regular Season - 1"
@@ -117,7 +116,6 @@ def test_api_promedios_queries_persisted_fixtures_only(db,monkeypatch):
     assert obj["data"]["provisional"] is True
     assert obj["meta"]["provider"]=="API-Football"
     assert obj["data"]["reference_count"]==0
-    assert client.get if True else True
 
 
 def test_promedios_page_is_connected_and_mobile_scroll_safe():
