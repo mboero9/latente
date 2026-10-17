@@ -1,17 +1,19 @@
 # Monetización publicitaria de Latente
 
-## Etapa inicial: tres espacios discretos
+## Etapa inicial: cinco espacios preparados, tres originales y dos laterales
 
-Este cambio prepara **tres ubicaciones** en el frontend, sin afectar el contenido deportivo:
+El código prepara **cinco ubicaciones** (solo se activan tras aprobación y consentimiento) en el frontend, sin afectar el contenido deportivo:
 1. `top`: horizontal debajo de la barra de utilidades y antes de los resultados.
 2. `side`: rectángulo en la columna de resúmenes, solo en la vista de partidos en escritorio.
 3. `bottom`: horizontal antes del pie de página.
+4. `side-left`: vertical a la izquierda, **solo** en pantallas desde 1980 px con altura mínima 720 px.
+5. `side-right`: vertical a la derecha bajo idénticas condiciones; ambos quedan fuera del ancho central sin tapar marcadores.
 
 La vista móvil muestra dos espacios horizontales y oculta el lateral. No se agregan anuncios en `#/bet`, por la sensibilidad de las secciones de apuestas. Los anuncios se etiquetan **Anuncios**, se mantienen separados de enlaces y botones, y se cargan solo al acercarse al viewport. Los demás módulos de deportes y estadísticas no se alteran.
 
 ## Estado actual y activación
 
-**La verificación del sitio AdSense está instalada con el publisher ID que entregó el propietario; las tres ubicaciones de anuncios permanecen apagadas por defecto.**
+**La verificación del sitio AdSense está instalada con el publisher ID que entregó el propietario; las cinco ubicaciones de anuncios permanecen apagadas por defecto.**
 Durante `npm run dev` se muestra una representación neutral para comprobar ubicaciones. En producción permanece invisible hasta una aprobación real y configuración explícita.
 
 Valores de compilación (públicos, jamás inventar ni usar claves privadas):
@@ -22,6 +24,8 @@ VITE_ADSENSE_CLIENT=ca-pub-9760821039036895
 VITE_ADSENSE_SLOT_TOP=XXXXXXXXXX
 VITE_ADSENSE_SLOT_SIDE=XXXXXXXXXX
 VITE_ADSENSE_SLOT_BOTTOM=XXXXXXXXXX
+VITE_ADSENSE_SLOT_SIDE_LEFT=XXXXXXXXXX
+VITE_ADSENSE_SLOT_SIDE_RIGHT=XXXXXXXXXX
 VITE_ADS_PRIVACY_READY=false
 VITE_ADSENSE_ENABLED=false
 ```
@@ -72,3 +76,22 @@ Comparar semanalmente: páginas vistas totales, orgánicas vs. pagas, porcentaje
 - Integrar AdSense con CSP: https://support.google.com/adsense/answer/16283098
 - Requisitos CMP: https://support.google.com/adsense/answer/13554116
 - Partners certificados: https://www.google.com/ads/publisher/partners/find-a-partner/
+
+## Ajuste de responsive y posición lateral (17/10/2026)
+
+- Las posiciones laterales externas se renderizan únicamente en escritorios
+  de **1980 px o más**, nunca en celular, tablet ni pantallas angostas.
+  En desktop extraancho se oculta el anuncio rectangular interno de la
+  columna derecha para evitar duplicaciones.
+- Los bloques laterales permanecen totalmente invisibles en producción
+  hasta completar **aprobación del sitio**, consentimiento/CMP y CSP,
+  ID de cada uno de ambos espacios y flags `VITE_ADSENSE_ENABLED=true`
+  + `VITE_ADS_PRIVACY_READY=true`.
+- La captura de usuario del 17/10 mostró `Preparando` y `ads.txt no se encuentra`.
+  Aunque el registro ads.txt se corrigió en servidor y se desplegó,
+  **no hay aprobación real verificada**; no activar publicidad todavía.
+- Los espacios están excluidos de las rutas `#/bet`, `#/match/...` y
+  `#/watch/...`. También se debe comprobar las políticas de Google ante
+  contenido relacionado con apuestas antes de monetizar otras rutas.
+- No se ha emitido ningún bloque publicitario nuevo en producción,
+  contratado suscripciones ni cambiado el plan de Railway.
