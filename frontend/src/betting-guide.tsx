@@ -94,9 +94,12 @@ function OperatorList({items,type,adult}:{
        :"No se confirmó una casa estatal que publique cuotas deportivas comparables. El regulador público se presenta aparte: no es una casa de apuestas."}</p>}
  </section>;
 }
-export function BettingGuide({country,province,onProvinceChange,adult}:{
- country:string;province:string;onProvinceChange:(next:string)=>void;adult:boolean;
+export function BettingGuide({country,province:externalProvince,onProvinceChange:externalChange,adult=false}:{
+ country:string;province?:string;onProvinceChange?:(next:string)=>void;adult?:boolean;
 }) {
+ const [fallbackProvince,setFallbackProvince]=useState("CABA");
+ const province=externalProvince||fallbackProvince;
+ const onProvinceChange=externalChange||setFallbackProvince;
  const regulator=AUTHORITIES[country];
  const blocked=country==="BR";
  const offers=country==="AR"?
