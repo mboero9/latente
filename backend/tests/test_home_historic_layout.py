@@ -57,11 +57,16 @@ def test_right_sidebar_independent_scroll_cards_and_mobile_fallback():
     assert 'min-width: 620px' in css
     assert 'scrollbar-width: thin' in css
 
-def test_home_hides_only_generic_refresh_notice_and_keeps_critical_alerts():
+def test_home_omits_generic_delay_but_keeps_actionable_alerts():
     main = (ROOT / "frontend/src/main.tsx").read_text(encoding="utf-8")
-    assert 'const hideGenericHomeDelay = view === ""' in main
-    assert '{warning && !hideGenericHomeDelay && (' in main
-    assert 'status.configured && status.worker_online && !status.quota_exhausted' in main
-    assert 'Algunas actualizaciones están demoradas' in main
-    assert 'Mostramos los últimos datos recibidos. Revisá la hora de actualización.' in main
+    assert 'const hideGenericHomeDelay' not in main
+    assert '{warning && (' in main
+    assert 'status.failed_jobs > 0 ||' not in main
+    assert '!status.worker_online ||' in main
+    assert 'status.quota_exhausted ||' in main
+    assert 'No hay partidos disponibles para hoy' in main
+    assert 'Cuota de consultas agotada' in main
+    assert 'Actualización automática detenida' in main
+    assert 'Algunas actualizaciones están demoradas' not in main
+    assert 'meta.updated_at' in main
 
