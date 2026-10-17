@@ -3630,3 +3630,30 @@
     .sport-landing {padding:10px 2px;}
   }
 }
+
+/* Optional monetization. Nothing renders in production until AdSense is
+   explicitly approved and both privacy and individual slot IDs are enabled. */
+@layer components {
+  .latente-ad--rail-left,.latente-ad--rail-right {display:none;}
+}
+@layer responsive {
+  /* The main shell is max 1600px wide. Vertical rails fit only when
+     the viewport leaves more than 140px of free margin on EACH side. */
+  @media(min-width:1920px) and (min-height:680px) {
+    .latente-ad--rail-left,.latente-ad--rail-right {
+      position:fixed;display:block;top:110px;
+      width:clamp(120px,calc((100vw - 1600px) / 2 - 24px),155px);
+      max-height:calc(100vh - 126px);overflow:hidden;
+      z-index:2; margin:0;padding:7px 5px 8px;
+    }
+    .latente-ad--rail-left {left:max(10px,calc((100vw - 1600px) / 4 - 65px));}
+    .latente-ad--rail-right {right:max(10px,calc((100vw - 1600px) / 4 - 65px));}
+    .latente-ad--rail-left .latente-ad__unit,
+    .latente-ad--rail-right .latente-ad__unit,
+    .latente-ad--rail-left .latente-ad__preview,
+    .latente-ad--rail-right .latente-ad__preview {width:100%;min-height:480px;}
+  }
+  @media(max-width:1919px), (max-height:679px) {
+    .latente-ad--rail-left,.latente-ad--rail-right {display:none!important;}
+  }
+}
