@@ -470,6 +470,15 @@ function focusPriority(m: Match): number {
     /world cup|copa america|euro championship/.test(league) ? 1270 :
     70
   );
+  // Latente prioriza el fútbol argentino y las copas de CONMEBOL.
+  // Orden editorial; nunca modifica los datos deportivos ni representa audiencia medida.
+  if (/liga profesional|primera division argentina|torneo apertura|torneo clausura/.test(league)
+      && m.league.country === "Argentina") score=Math.max(score,2190);
+  else if (/libertadores/.test(league)) score=Math.max(score,2170);
+  else if (/copa argentina/.test(league)) score=Math.max(score,2150);
+  else if (/sudamericana/.test(league)) score=Math.max(score,2130);
+  else if (/primera nacional/.test(league) && m.league.country === "Argentina")
+    score=Math.max(score,2030);
   // Dos clubes conocidos vuelven el duelo más destacado, sin vencer una
   // competición grande por un torneo marginal.
   for (const team of [m.home, m.away]) {
@@ -486,6 +495,36 @@ function focusPriority(m: Match): number {
 // Primero buscar el partido en vivo más relevante. Si no existe, mostrar
 // el próximo encuentro importante de las próximas 36 horas, nunca uno
 // terminado ni uno de una fecha seleccionada en el pasado.
+// Orden editorial de competiciones para portada y menú lateral.
+function editorialLeaguePriority(l: League): number {
+  const name=normalizeForFocus(l.name);
+  if (l.country === "Argentina" && /liga profesional|primera division|torneo apertura|torneo clausura/.test(name)) return 0;
+  if (/libertadores/.test(name)) return 1;
+  if (l.country === "Argentina" && /copa argentina/.test(name)) return 2;
+  if (/sudamericana/.test(name)) return 3;
+  if (l.country === "Argentina" && /primera nacional/.test(name)) return 4;
+  if (l.country === "Argentina") return 5;
+  return 20;
+}
+function ArgentinaFootballLinks({leagues}:{leagues:League[]}) {
+  const choices=[
+    {text:"Liga Argentina",find:(l:League)=>l.id===128 || (l.country==="Argentina" && /liga profesional|primera division/.test(normalizeForFocus(l.name)))},
+    {text:"Libertadores",find:(l:League)=>/libertadores/.test(normalizeForFocus(l.name))},
+    {text:"Copa Argentina",find:(l:League)=>l.country==="Argentina" && /copa argentina/.test(normalizeForFocus(l.name))},
+    {text:"Sudamericana",find:(l:League)=>/sudamericana/.test(normalizeForFocus(l.name))},
+    {text:"Primera Nacional",find:(l:League)=>l.country==="Argentina" && /primera nacional/.test(normalizeForFocus(l.name))},
+  ];
+  const available=choices.map(item=>({label:item.text,league:leagues.find(item.find)}))
+    .filter((item):item is {label:string;league:League}=>Boolean(item.league));
+  if (!available.length) return null;
+  return <nav class="home-argentina-shortcuts" aria-label="Fútbol argentino y copas CONMEBOL">
+    <span class="home-argentina-caption">🇦🇷 Fútbol argentino y CONMEBOL</span>
+    <div class="home-argentina-links">{available.map(({label,league})=>
+      <a href={link(`/league/${league.id}`)} key={league.id}>
+        <LeagueLogo league={league}/><span>{label}</span>
+      </a>)}</div>
+  </nav>;
+}
 function selectSpotlight(liveMatches: Match[], upcoming: Match[] = []): Match | undefined {
   const now = Date.now();
   // Nunca mostrar como "en vivo" un fixture abandonado por el proveedor:
@@ -669,7 +708,8 @@ function FixturesView({
   const sorted = [...groups].sort((a, b) => live
     ? Math.max(...b[1].map(focusPriority)) - Math.max(...a[1].map(focusPriority))
       || leagueOrder(a[0]) - leagueOrder(b[0])
-    : leagueOrder(a[0]) - leagueOrder(b[0]));
+    : editorialLeaguePriority(a[1][0].league)-editorialLeaguePriority(b[1][0].league)
+      || leagueOrder(a[0])-leagueOrder(b[0]));
   return (
     <>
       <div class={"content-columns" + (!league ? " home-content-columns" : "")}>
@@ -688,6 +728,7 @@ function FixturesView({
             </div>
           )}
           {league && <LeagueRecent id={league.id} season={league.season} />}
+          {!league && <ArgentinaFootballLinks leagues={leagues}/>}
           {!league && <a class="f1-home-mobile-link" href={link("/sport/f1")}>
             🏎️ F1 · Posiciones, fotos y campeones históricos <span aria-hidden="true">↗</span>
           </a>}
@@ -1580,6 +1621,7 @@ function App() {
                       : l.country !== "Argentina") &&
                     `${l.name} ${cn(l.country)}`.toLowerCase().includes(leagueSearch.toLowerCase()),
                 )
+                .sort((a,b)=>editorialLeaguePriority(a)-editorialLeaguePriority(b))
                 .slice(0, leagueSearch ? 30 : 12)
                 .map((l) => (
                   <a
