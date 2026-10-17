@@ -35,8 +35,13 @@ ARGENTINE_LEAGUES = {
         ("Nacional de Clubes Adultos B", "https://handballargentina.org/cah/calendario-de-competencias-2026/",
          ("nacional de clubes adultos b", "nacional de clubes b",
           "torneo nacional b", "torneo nacional de clubes b")),
-        ("Liga de Honor Metropolitana (FeMeBal)", "https://www.femebal.com/",
-         ("liga de honor", "liga de honor metropolitana", "liga de honor femebal")),
+        ("Liga de Honor Hipotecario Seguros (FeMeBal)",
+         "https://femebal.com/fixtures-disponibles-para-la-liga-hipotecario-seguros-y-la-liga-plata/",
+         ("liga de honor", "liga de honor metropolitana", "liga de honor femebal",
+          "liga de honor hipotecario seguros")),
+        ("Liga de Honor Plata (FeMeBal)",
+         "https://femebal.com/fixtures-disponibles-para-la-liga-hipotecario-seguros-y-la-liga-plata/",
+         ("liga de honor plata",)),
     ),
 }
 
