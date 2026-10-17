@@ -58,3 +58,17 @@ def test_navigation_drag_does_not_open_links():
     assert "onClickCapture" in nav
     assert "blockDraggedClick" in nav
     assert 'event.pointerType !== "mouse"' in nav
+
+
+def test_verified_european_and_premiership_clubs_for_2026_27():
+    from app.rugby_clubs import TOP14_FR_2026_27, PREM_2026_27
+    from app.rugby_clubs import CHAMPIONS_CUP_2026_27, CHALLENGE_CUP_2026_27
+    assert len(edition_clubs("top-14", 2026)) == len(TOP14_FR_2026_27) == 14
+    assert len(edition_clubs("premiership", 2026)) == len(PREM_2026_27) == 10
+    assert len(edition_clubs("champions", 2026)) == 24
+    assert len(edition_clubs("challenge-cup", 2026)) == 18
+    assert set(CHAMPIONS_CUP_2026_27) == {"Pool 1", "Pool 2", "Pool 3", "Pool 4"}
+    assert set(CHALLENGE_CUP_2026_27) == {"Pool 1", "Pool 2", "Pool 3"}
+    assert edition_clubs("top-14", 2025) == []
+    assert edition_clubs("champions", 2025) == []
+    assert source_url("champions").startswith("https://www.epcrugby.com/")
