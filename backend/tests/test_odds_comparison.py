@@ -104,6 +104,12 @@ def test_frontend_odds_are_reachable_from_live_and_fixture_detail():
     odds_file = (root/"frontend/src/match-odds.tsx").read_text(encoding="utf-8")
     assert "<MatchOdds id={m.id}" in main_file
     assert "<LiveOddsMini fixtureId={m.id}" in main_file
-    assert "https://www.betano.bet.ar/" in odds_file
-    assert "https://www.bplay.bet.ar/deportes/" in odds_file
+    brand_file = (root/"frontend/src/bookmaker-brands.tsx").read_text(encoding="utf-8")
+    directory = (root/"frontend/src/betting-guide.tsx").read_text(encoding="utf-8")
+    assert "www.betano.bet.ar" in brand_file
+    assert "caba.bplay.bet.ar" in directory
+    assert "BookmakerComparison" in odds_file
+    assert "payoutUplift" in odds_file
+    assert "closest" not in odds_file
+    assert 'country==="BR"' in directory
     assert "sin casa identificada" in odds_file
