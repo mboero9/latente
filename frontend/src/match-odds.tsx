@@ -1,5 +1,7 @@
 import { useApi } from "./api";
+import { BookmakerMark } from "./bookmaker-brands";
 
+type Outcome = "home" | "draw" | "away";
 type Market = { home: number; draw: number; away: number };
 type Quote = {
   bookmaker: string | null;
@@ -20,57 +22,108 @@ export type LiveOddsSummary = {
   source: string;
 };
 const LIVE = new Set(["1H", "HT", "2H", "ET", "BT", "P", "INT", "LIVE"]);
+const OUTCOMES: {key:Outcome; label:string}[] = [
+  {key:"home",label:"Local · 1"},
+  {key:"draw",label:"Empate · X"},
+  {key:"away",label:"Visitante · 2"},
+];
 
+/** Same-market, same-stake gross-return uplift relative to lowest quote.
+ * This is NOT the implied probability or an expected investment return.
+ */
+export function payoutUplift(offer: number, lowest: number): number {
+  if (!Number.isFinite(offer) || !Number.isFinite(lowest) || offer <= 1 || lowest <= 1)
+    return 0;
+  return Math.max(0, (offer / lowest - 1) * 100);
+}
+function PercentBar({value,max}:{value:number;max:number}) {
+  const safe = Math.max(0, Math.min(100, max > 0 ? value/max*100 : 0));
+  return <span class="odds-percent">
+    <span class="odds-percent-track" aria-hidden="true"><span style={{width:`${safe}%`}} /></span>
+    <strong>+{value.toFixed(1)}%</strong>
+  </span>;
+}
 function OddsDisclaimer() {
   return <p class="odds-warning">
-    Solo mayores de 18 años y en jurisdicciones donde esté permitido.
-    El juego compulsivo es perjudicial para vos y tu familia. Latente no recibe apuestas.
-    Las probabilidades implícitas incluyen margen y no representan predicciones.
+    Solo mayores de 18 años o la edad legal aplicable. Las cuotas y operadores dependen
+    de la jurisdicción. Los porcentajes son comparaciones matemáticas, no predicciones
+    ni garantías de ganancias. La apuesta puede implicar perder todo el dinero.
   </p>;
 }
-function ExternalOperators() {
-  return <div class="odds-external">
-    <span>Consultar plataformas externas · cuotas propias, no necesariamente iguales a estas:</span>
-    <a href="https://www.betano.bet.ar/" target="_blank" rel="noopener noreferrer nofollow sponsored">
-      Betano <span aria-hidden="true">↗</span>
-    </a>
-    <a href="https://www.bplay.bet.ar/deportes/" target="_blank" rel="noopener noreferrer nofollow sponsored">
-      bplay <span aria-hidden="true">↗</span>
-    </a>
-    <small>Disponibilidad según la provincia y verificación geográfica del operador.</small>
+function BookmakerComparison({quotes,stale}: {quotes:Quote[];stale:boolean}) {
+  // Only a named bookmaker from the provider can own a price.
+  const named = quotes.filter(q => q.bookmaker && OUTCOMES.every(o =>
+    Number.isFinite(q.prices?.[o.key]) && q.prices[o.key] > 1));
+  // Do not compare samples that may represent different moments.
+  const latest = Math.max(...named.map(q => q.captured_at ?
+    new Date(q.captured_at).getTime() : 0).filter(Number.isFinite), 0);
+  const comparable = named.filter(q => !latest || !q.captured_at ||
+    Math.abs(new Date(q.captured_at).getTime() - latest) <= 15 * 60_000);
+  const bestByName = new Map<string,Quote>();
+  for (const quote of comparable) {
+    const name = quote.bookmaker!.trim();
+    if (!bestByName.has(name.toLowerCase())) bestByName.set(name.toLowerCase(), quote);
+  }
+  const offers = [...bestByName.values()];
+  if (!offers.length) return <p class="coverage-notice">
+    Sin cuotas 1X2 identificadas por casa para este partido. No asignamos
+    porcentajes ni logos a operadores que la API no identifica.
+  </p>;
+  if (stale) return <div class="odds-bookmakers">
+    <p class="coverage-notice">Últimas cuotas registradas: datos anteriores, no aptos
+    para comparar ofertas actuales. Verificá directamente el mercado y la licencia local.</p>
+    {offers.slice(0,8).map(q => <div class="odds-house" key={q.bookmaker!}>
+      <BookmakerMark name={q.bookmaker!}/>
+      <span class="updated">Cuotas históricas sin comparación vigente</span>
+    </div>)}
   </div>;
-}
-function PercentBar({value}:{value:number}) {
-  const safe=Math.max(0,Math.min(100,value));
-  return <span class="odds-percent"><span class="odds-percent-track" aria-hidden="true">
-    <span style={{width:`${safe}%`}}/></span><strong>{value.toFixed(1)}%</strong></span>;
-}
-function NamedBookmakerComparison({quotes}:{quotes:Quote[]}) {
+  const lowest = Object.fromEntries(OUTCOMES.map(o => [
+    o.key, Math.min(...offers.map(q => q.prices[o.key])),
+  ])) as Record<Outcome,number>;
+  const maxUplift = Math.max(0,...offers.flatMap(q =>
+    OUTCOMES.map(o => payoutUplift(q.prices[o.key], lowest[o.key]))));
   return <div class="odds-bookmakers">
-    {(["Betano","bplay"] as const).map(name=>{
-      const found=quotes.find(q=>q.bookmaker &&
-        (name==="Betano"?/\bbetano\b/i:/\bbplay\b/i).test(q.bookmaker));
-      return <div class="odds-house" key={name}>
-        <strong>{name}</strong>
-        {found?<div class="odds-choices">
-          <div><small>Local · 1</small><PercentBar value={found.implied.home}/></div>
-          <div><small>Empate · X</small><PercentBar value={found.implied.draw}/></div>
-          <div><small>Visitante · 2</small><PercentBar value={found.implied.away}/></div>
-        </div>:<span class="coverage-notice">Sin porcentaje verificado de esta casa para el partido.</span>}
-      </div>;
-    })}
+    <p class="updated">Cuota decimal · Barra: cuánto más paga cada casa por el
+      mismo resultado y apuesta, frente a la cuota más baja registrada en esta captura.</p>
+    {offers.slice(0,12).map(q => <div class="odds-house" key={q.bookmaker!}>
+      <div class="odds-house-title">
+        <BookmakerMark name={q.bookmaker!}/>
+        <small>Fuente: API-Football · {q.captured_at
+          ? new Date(q.captured_at).toLocaleString("es-AR") : "hora no disponible"}</small>
+      </div>
+      <div class="odds-choices">
+        {OUTCOMES.map(o => {
+          const price = q.prices[o.key];
+          const gain = payoutUplift(price, lowest[o.key]);
+          return <div key={o.key} class={gain > 0 && gain ===
+            Math.max(...offers.map(candidate => payoutUplift(candidate.prices[o.key],lowest[o.key])))
+            ? "odds-best-choice" : ""}>
+            <small>{o.label} · cuota {price.toFixed(2)}</small>
+            {offers.length > 1
+              ? <PercentBar value={gain} max={maxUplift}/>
+              : <span class="coverage-notice">Se necesita otra casa para comparar</span>}
+          </div>;
+        })}
+      </div>
+    </div>)}
+    <p class="updated">El cálculo es (cuota de la casa ÷ cuota mínima − 1) × 100.
+      Ejemplo: cuota 2,20 frente a 2,00 = +10% de pago bruto, antes de impuestos.
+      No es la probabilidad de acertar ni el retorno esperado.</p>
   </div>;
 }
 
-export function LiveOddsMini({fixtureId,home,away,entry}:{
-  fixtureId:number; home:string; away:string; entry?:LiveOddsSummary;
+export function LiveOddsMini({fixtureId,home,away,entry}: {
+  fixtureId:number;home:string;away:string;entry?:LiveOddsSummary;
 }) {
   if (!entry) return <a class="live-odds-teaser" href={`#/match/${fixtureId}`}>
-    Ver cuotas y probabilidades · datos sujetos a cobertura ↗
+    Ver información de cuotas · cobertura del proveedor ↗
   </a>;
   return <div class="live-odds-mini">
-    <span class="live-odds-label">Mercado en vivo · API-Football (sin casa identificada) · Capturado {new Date(entry.updated_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})} · 18+</span>
-    <a href={`#/match/${fixtureId}`} aria-label={`Ver cuotas de ${home} contra ${away}`}>
+    <span class="live-odds-label">
+      Mercado en vivo · API-Football (sin casa identificada) ·
+      Capturado {new Date(entry.updated_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})} · 18+
+    </span>
+    <a href={`#/match/${fixtureId}`} aria-label={`Ver datos de cuotas de ${home} contra ${away}`}>
       <span>1 <b>{entry.implied.home.toFixed(1)}%</b></span>
       <span>X <b>{entry.implied.draw.toFixed(1)}%</b></span>
       <span>2 <b>{entry.implied.away.toFixed(1)}%</b></span>
@@ -78,41 +131,42 @@ export function LiveOddsMini({fixtureId,home,away,entry}:{
     </a>
   </div>;
 }
-
-export function MatchOdds({id,status,home,away}:{
+export function MatchOdds({id,status,home,away}: {
   id:number;status:string;home:string;away:string;
 }) {
-  const liveMatch = LIVE.has(status);
-  const relevant = liveMatch || ["NS","TBD"].includes(status);
-  const {result,loading,error,retry} = useApi<OddsData>(
-    relevant ? `/api/fixtures/${id}/odds` : null, 60000
-  );
+  const liveMatch=LIVE.has(status);
+  const relevant=liveMatch || ["NS","TBD"].includes(status);
+  const {result,loading,error,retry}=useApi<OddsData>(
+    relevant ? `/api/fixtures/${id}/odds` : null,60000);
+  const {result:visitor}=useApi<{country:string|null}>(
+    relevant ? "/api/visitor/country" : null,3600000);
   if (!relevant) return null;
-  const data = result?.data;
-  const prematchQuotes=data?.prematch?.quotes||[];
-  const namedOffers=prematchQuotes.filter(q=>q.bookmaker &&
-    /\b(betano|bplay)\b/i.test(q.bookmaker));
+  const regionBlocked = visitor?.data?.country === "BR";
+  const data=result?.data;
+  const prematch=data?.prematch;
   const liveAvailable=Boolean(liveMatch && data?.live?.quotes.length && !data?.live?.stale);
   return <article class="panel match-odds" aria-label="Información sobre cuotas de apuestas">
     <div class="match-odds-heading">
-      <h2>Cuotas 1X2 · ¿cuánto paga cada resultado?</h2>
+      <h2>Cuotas 1X2 · Comparación entre casas</h2>
       <small>{liveMatch?"Partido en vivo":"Próximo partido"}</small>
     </div>
-    <p class="updated">1: {home} · X: empate · 2: {away} · resultado del tiempo reglamentario.</p>
-    {loading?<p>Consultando últimas capturas…</p>:error?
-      <p class="coverage-notice">No se pudieron obtener las cuotas. <button onClick={retry}>Reintentar</button></p>:
-      <>
-        <p class="updated">
-          Comparación de probabilidades implícitas (%) exclusivamente de Betano y bplay cuando el proveedor identifica esas casas.
-          {data?.prematch?.updated_at&&` Última captura previa: ${new Date(data.prematch.updated_at).toLocaleString("es-AR")}.`}
-          {liveMatch&&" El partido está en vivo: las capturas identificadas son previas al encuentro y NO son cuotas en vivo."}
-        </p>
-        <NamedBookmakerComparison quotes={namedOffers}/>
-        {liveAvailable&&<p class="coverage-notice">API-Football también registra cuotas en vivo del mercado, pero no identifica la casa. No las atribuimos a Betano ni a bplay.</p>}
-        {!namedOffers.length&&<p class="updated">No hay porcentajes confirmados por estas dos casas para este encuentro. Los enlaces externos permiten consultar sus ofertas actuales.</p>}
-        <p class="updated">Cada barra representa 100 ÷ cuota decimal. El margen de la casa está incluido y no es un pronóstico.</p>
-      </>}
-    <ExternalOperators/>
+    {regionBlocked ? <p class="coverage-notice">
+      Comparación y referencias comerciales no disponibles en Brasil debido
+      a las restricciones locales de apuestas deportivas vigentes.
+    </p> : <>
+      <p class="updated">1: {home} · X: empate · 2: {away}. Solo tiempo reglamentario.</p>
+      {loading ? <p>Consultando últimas capturas…</p> : error ?
+        <p class="coverage-notice">No se pudieron obtener las cuotas.
+          <button onClick={retry}>Reintentar</button></p> : <>
+          {liveMatch && <p class="updated">Estas son cuotas previas al partido,
+            no precios ofrecidos en vivo. Nunca se atribuyen las cuotas en vivo sin
+            casa identificada a Betano, bplay u otro operador.</p>}
+          <BookmakerComparison quotes={prematch?.quotes || []} stale={prematch?.stale ?? true}/>
+          {liveAvailable && <p class="coverage-notice">API-Football ofrece porcentajes
+            implícitos para el mercado en vivo, pero no identifica qué casa los publica.</p>}
+        </>}
+      <a class="odds-directory" href="#/bet">Ver información legal por país y organismos reguladores ↗</a>
+    </>}
     <OddsDisclaimer/>
   </article>;
 }
