@@ -2593,16 +2593,16 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    height: 68px;
+    height: 74px;
     position: relative;
   }
   .header .nav-rail-row {
     display:flex;
     align-items: stretch;
-    gap: 4px;
+    gap: 7px;
     min-width: 0;
     width: 100%;
-    height: 50px;
+    height: 44px;
   }
   .header .top-nav {
     min-width: 0;
@@ -2620,6 +2620,7 @@
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
+    scroll-padding-inline: 12px;
   }
   .header .top-nav::-webkit-scrollbar { display: none; }
   .header .top-nav-items {
@@ -2628,17 +2629,39 @@
     height: 100%;
     display: flex;
     align-items: stretch;
-    gap: clamp(12px,1.4vw,25px);
+    gap: clamp(5px,.7vw,13px);
   }
+  /* A selected sport is a distinct, rounded tab. The separate scrubber
+     below shows horizontal *scroll position*, not the selected activity. */
   .header .top-nav-items > a {
     display: inline-flex;
     flex: 0 0 auto;
-    align-items:center;
-    height: 100%;
-    padding: 0 3px;
+    align-self: center;
+    align-items: center;
+    justify-content: center;
+    height: 35px;
+    padding: 0 13px;
     white-space: nowrap;
-    scroll-snap-align: start;
+    scroll-snap-align: center;
     font-weight: 650;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    transition: background-color .18s ease, color .18s ease, box-shadow .18s ease;
+  }
+  .header .top-nav-items > a.active {
+    background: var(--green-soft);
+    color: var(--green);
+    border-color: var(--line);
+    border-bottom-color: var(--line);
+    box-shadow: 0 2px 7px #0879b814;
+  }
+  .header .top-nav-items > a:not(.active):hover {
+    background: var(--soft);
+    color: var(--green);
+  }
+  .header .top-nav-items > a:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
   }
   .header .nav-rail-arrow {
     flex: 0 0 30px;
@@ -2662,18 +2685,23 @@
   .header .nav-rail-arrow:disabled { opacity: .24; cursor:default; }
   .header .nav-rail:not(.nav-rail-overflow) .nav-rail-arrow { display: none; }
   .header .nav-rail-slider {
-    flex: 0 0 13px;
-    height: 13px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding: 0 36px;
-    margin-top: 0;
+    flex: 0 0 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 39px;
+    margin-top: 6px;
   }
+  /* A small, right-aligned progress scrubber with generous breathing room.
+     Its 22px hit area preserves pointer and keyboard control. */
   .header .nav-rail-slider input[type="range"] {
     display: block;
-    width: 100%;
-    height: 12px;
+    flex: 0 1 220px;
+    width: min(35%, 220px);
+    min-width: 90px;
+    max-width: 220px;
+    height: 22px;
     margin: 0;
     cursor: pointer;
     appearance: none;
@@ -2681,31 +2709,36 @@
     background: transparent;
   }
   .header .nav-rail-slider input[type="range"]::-webkit-slider-runnable-track {
-    background: var(--line);
+    background: linear-gradient(to right,
+      var(--green) 0, var(--green) var(--nav-progress, 0%),
+      var(--line) var(--nav-progress, 0%), var(--line) 100%);
     border-radius: 999px;
-    height: 4px;
+    height: 3px;
   }
   .header .nav-rail-slider input[type="range"]::-moz-range-track {
-    background: var(--line);
+    background: linear-gradient(to right,
+      var(--green) 0, var(--green) var(--nav-progress, 0%),
+      var(--line) var(--nav-progress, 0%), var(--line) 100%);
     border-radius: 999px;
-    height: 4px;
+    height: 3px;
   }
   .header .nav-rail-slider input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 36px;
-    height: 11px;
-    border-radius: 999px;
-    border: 0;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    border: 2px solid var(--header);
     background: var(--green);
-    margin-top: -3.5px;
-    box-shadow: 0 0 0 3px var(--header);
+    margin-top: -5px;
+    box-shadow: 0 0 0 1px var(--line);
   }
   .header .nav-rail-slider input[type="range"]::-moz-range-thumb {
-    width: 36px;
-    height: 11px;
-    border: 0;
-    border-radius: 999px;
+    width: 13px;
+    height: 13px;
+    border: 2px solid var(--header);
+    border-radius: 50%;
     background: var(--green);
+    box-shadow: 0 0 0 1px var(--line);
   }
   .header .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px;
     overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
@@ -2713,21 +2746,25 @@
 @layer responsive {
   @media (max-width: 800px) {
     .header .header-inner { gap: 0 8px; padding-bottom: 0; }
-    .header .nav-rail { order: 3; flex: 1 0 100%; width: 100%; height: 65px; margin-top: 8px; }
-    .header .nav-rail-row { height: 47px; }
+    .header .nav-rail { order: 3; flex: 1 0 100%; width: 100%; height: 73px; margin-top: 8px; }
+    .header .nav-rail-row { height: 43px; }
     .header .top-nav { height:100%; margin:0; width:auto; }
-    .header .top-nav-items { gap:18px; }
+    .header .top-nav-items { gap:7px; }
+    .header .top-nav-items > a { height: 33px; padding: 0 11px; }
     .header .header-actions { margin-left: auto; }
   }
   @media (max-width: 560px) {
-    .header .nav-rail { height: 61px; margin-top: 7px; }
-    .header .nav-rail-row { height: 44px; }
+    .header .nav-rail { height: 68px; margin-top: 7px; }
+    .header .nav-rail-row { height: 40px; }
     .header .nav-rail-arrow { flex-basis: 26px; font-size:1.55rem; }
-    .header .nav-rail-slider { padding:0 30px; }
-    .header .top-nav-items { gap: 16px; }
+    .header .nav-rail-slider { height: 19px; flex-basis: 19px; padding:0 29px; margin-top:6px; }
+    .header .nav-rail-slider input[type="range"] { max-width: 144px; min-width: 80px; }
+    .header .top-nav-items { gap: 5px; }
+    .header .top-nav-items > a { height: 31px; padding: 0 10px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .header .top-nav { scroll-behavior: auto; }
+    .header .top-nav-items > a { transition: none; }
   }
 }
 

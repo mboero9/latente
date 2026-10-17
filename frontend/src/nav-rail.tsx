@@ -112,7 +112,8 @@ export function NavRail({ children, activePath }: NavRailProps) {
     {overflow && <div class="nav-rail-slider">
       <label class="sr-only" for="sports-nav-position">Deslizar actividades deportivas</label>
       <input id="sports-nav-position" type="range" min={0} max={100} step={1}
-        value={percentage} aria-label="Deslizar actividades deportivas"
+        value={percentage} style={`--nav-progress:${percentage}%`}
+        aria-label="Deslizar actividades deportivas"
         onInput={event => {
           const nav = navRef.current;
           if (!nav) return;
