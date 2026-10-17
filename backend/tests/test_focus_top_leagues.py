@@ -15,7 +15,7 @@ def test_spotlight_candidates_are_database_only_and_unpaginated():
     assert "Fixture.league_id.in_(settings.league_ids)" in block
     assert "Fixture.kickoff <= now + timedelta(hours=36)" in block
     assert ".order_by(priority, Fixture.kickoff.desc(), Fixture.id)" in block
-    assert ".limit(400)" in block
+    assert ".limit(160)" in block
     assert "match_payload(s, live_rows)" in block
     assert "client.get" not in block  # no API-Football call per visitor
 
