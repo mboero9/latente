@@ -112,23 +112,38 @@ function BookmakerComparison({quotes,stale}: {quotes:Quote[];stale:boolean}) {
   </div>;
 }
 
-export function LiveOddsMini({fixtureId,home,away,entry}: {
+export function LiveOddsMini({fixtureId,home,away,entry,visible}: {
   fixtureId:number;home:string;away:string;entry?:LiveOddsSummary;
+  visible?:boolean;
 }) {
-  if (!entry) return <a class="live-odds-teaser" href={`#/match/${fixtureId}`}>
-    Ver información de cuotas · cobertura del proveedor ↗
-  </a>;
-  return <div class="live-odds-mini">
-    <span class="live-odds-label">
-      Mercado en vivo · API-Football (sin casa identificada) ·
-      Capturado {new Date(entry.updated_at).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"})} · 18+
-    </span>
-    <a href={`#/match/${fixtureId}`} aria-label={`Ver datos de cuotas de ${home} contra ${away}`}>
-      <span>1 <b>{entry.implied.home.toFixed(1)}%</b></span>
-      <span>X <b>{entry.implied.draw.toFixed(1)}%</b></span>
-      <span>2 <b>{entry.implied.away.toFixed(1)}%</b></span>
-      <span class="odds-more">Detalle ↗</span>
-    </a>
+  // Only show 1X2 references to adults in an eligible jurisdiction.
+  // Market-implied percentages are not forecasts; remove overround before
+  // sizing the bar so its three segments always total 100.
+  if (!visible || !entry) return null;
+  const values=[entry.implied?.home,entry.implied?.draw,entry.implied?.away];
+  if (!values.every(n=>typeof n==="number"&&Number.isFinite(n)&&n>0))
+    return null;
+  const total=values.reduce((a,b)=>a+b,0);
+  if(total<=0) return null;
+  const normalized=values.map(n=>n/total*100);
+  return <div class="live-odds-mini live-odds-preview">
+    <div class="live-odds-preview-title">
+      <strong>Referencia 1X2 · mercado en vivo</strong>
+      <a href={`#/match/${fixtureId}`} aria-label={`Ver datos de cuotas de ${home} contra ${away}`}>
+        Detalle ↗
+      </a>
+    </div>
+    <div class="live-odds-preview-bars" role="img"
+      aria-label={`Porcentajes implícitos sin margen: local ${normalized[0].toFixed(0)}%, empate ${normalized[1].toFixed(0)}%, visitante ${normalized[2].toFixed(0)}%`}>
+      {normalized.map((value,i)=><span key={i} style={{width:`${value}%`}}>
+        {value>=11?`${value.toFixed(0)}%`:""}
+      </span>)}
+    </div>
+    <div class="live-odds-preview-legend">
+      <span>1 · {home}</span><span>X · Empate</span><span>2 · {away}</span>
+    </div>
+    <small>Probabilidades implícitas normalizadas de cuotas API-Football, sin casa
+      identificada · 18+. No es un pronóstico ni garantiza resultados.</small>
   </div>;
 }
 export function MatchOdds({id,status,home,away}: {
