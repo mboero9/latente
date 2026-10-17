@@ -1,5 +1,14 @@
 /** Static ES → EN UI catalogue. Club and legal-entity names are deliberately unchanged. */
 export const EXTENDED_EN: Record<string,string> = {
+  "Confirmo que soy mayor de 18 años. Consultaré las autorizaciones aplicables en mi jurisdicción antes de acceder a un operador.": "I confirm I am at least 18 years old. I will check the legal authorizations applicable in my location before accessing any operator.",
+  "Para consultar operadores, confirmá primero que sos mayor de 18 años. No se muestran ofertas ni enlaces comerciales antes de esa confirmación.": "To view operators, first confirm that you are at least 18. Offers and commercial links remain hidden until then.",
+  "Sitio del operador ↗": "Operator website ↗",
+  "18+ · Referencias CABA": "18+ · Buenos Aires City references",
+  "18+ · Referencias PBA": "18+ · Buenos Aires Province references",
+  "Consultar licencias ↗": "Check licences ↗",
+  "No patrocinado · Sin cuotas atribuidas": "Not sponsored · No assigned odds",
+  "Operador con licencia provincial publicada · confirmar vigencia": "Operator with published provincial licence · confirm current validity",
+  "Confirmo que soy mayor de 18 años.": "I confirm I am at least 18 years old.",
   "18+ · Regulación y operadores por país": "18+ · Regulation and operators by country",
   "18+ · Información legal de casas por país": "18+ · Legal bookmaker information by country",
   "LATENTE · MAYORES DE EDAD": "LATENTE · ADULTS ONLY",
