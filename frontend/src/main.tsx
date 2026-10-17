@@ -620,7 +620,7 @@ function FixturesView({
   // no los primeros 300 por kickoff. Independiente de fecha, liga y página.
   const { result: focusCandidates } = useApi<{
     live: Match[]; upcoming: Match[];
-  }>("/api/fixtures/focus", DISPLAY_REFRESH_MS);
+  }>("/api/fixtures/focus", 15000);
   const {result: liveOdds} = useApi<LiveOddsSummary[]>("/api/odds/live", 60000);
   // Una consulta por toda la jornada: los eventos se leen de PostgreSQL.
   // Ninguna visita a la página consume una llamada adicional a API-Football.
