@@ -3,9 +3,11 @@ import type { ComponentChildren } from "preact";
 import { useApi } from "./api";
 import { ScoreboardPanel } from "./scoreboards";
 import { TeamMark } from "./team-mark";
+import { F1CountryFlag, F1Portrait, F1TeamLogo } from "./f1-media";
+import { F1Champions } from "./f1-champions";
 
 type F1 = { available:boolean; message?:string; season:number; round?:string;
-  drivers:{rank:number;name:string;nationality?:string|null;team:string;team_nationalities?:(string|null)[];points:number;wins:number}[];
+  drivers:{rank:number;name:string;nationality?:string|null;team:string;family_name?:string|null;photo?:string|null;team_colour?:string|null;team_nationalities?:(string|null)[];points:number;wins:number}[];
   constructors:{rank:number;name:string;nationality?:string|null;points:number;wins:number}[];
   upcoming?:{name:string;date:string;circuit:string}|null;
   last_race?:{name:string;date:string;circuit:string;
@@ -76,6 +78,7 @@ export function ReferenceSportPage({slug}:{slug:string}) {
       <Notice>La API no responde: {error} <button onClick={retry}>Reintentar</button></Notice> :
       !data?.available ? <Notice>{data?.message || "No hay posiciones verificadas disponibles para esta selección."}</Notice> : null}
     {isF1 && data?.available && <F1Content data={data as F1} tab={f1Tab} setTab={setF1Tab}/>}
+    {isF1 && <F1Champions/>}
     {(isNba||isUS) && data?.available && <NBAContent data={data as NBA} sort={nbaSort} setSort={setNbaSort}/>}
     {isNba && <div class="panel sport-intro"><h2>Archivo NBA</h2>
       <p>Seleccioná una temporada anterior para comparar posiciones, victorias y porcentaje de triunfos.
@@ -116,7 +119,7 @@ function F1Nationality({value}:{value?:string|null}) {
   const raw=value?.trim();
   const known=raw ? F1_COUNTRIES[raw.toLowerCase()] : undefined;
   return <span class="f1-nationality" title={raw||"Nacionalidad no informada"}>
-    {known ? <><span aria-hidden="true" class="f1-nationality-flag">{known[0]}</span>{known[1]}</> : raw||"—"}
+    {known ? <><F1CountryFlag name={known[1]}/>{known[1]}</> : raw||"—"}
   </span>;
 }
 function F1TeamNationalities({values}:{values?:(string|null)[]}) {
@@ -134,7 +137,7 @@ function F1Content({data,tab,setTab}:{data:F1;tab:"drivers"|"constructors"|"resu
       <h2>{data.last_race.name} · {data.last_race.date}</h2>
       <p>{data.last_race.circuit}</p>
       <div class="sports-clubs">{data.last_race.podium.map(p=><span class="sports-club" key={p.position}>
-        {p.position===1?"🏆 ":""}{p.position}º {p.name} <F1Nationality value={p.nationality}/> · {p.team} <F1Nationality value={p.team_nationality}/></span>)}</div>
+        {p.position===1?"🏆 ":""}<F1Portrait name={p.name} photo={data.drivers.find(d=>d.name===p.name)?.photo}/>{p.position}º {p.name} <F1Nationality value={p.nationality}/> · <F1TeamLogo name={p.team}/>{p.team} <F1Nationality value={p.team_nationality}/></span>)}</div>
     </article>}
     <div class="sports-tabs" role="group" aria-label="Clasificación F1">
       <button class={tab==="drivers"?"active":""} onClick={()=>setTab("drivers")}>Pilotos</button>
@@ -152,19 +155,19 @@ function F1Content({data,tab,setTab}:{data:F1;tab:"drivers"|"constructors"|"resu
       </tr></thead>
       <tbody>
         {tab==="drivers"&&data.drivers.map(d=><tr key={d.rank}>
-          <td>{d.rank}</td><th scope="row">{d.name}</th>
+          <td>{d.rank}</td><th scope="row"><span class="f1-identity"><F1Portrait name={d.name} photo={d.photo}/><span>{d.name}</span></span></th>
           <td><F1Nationality value={d.nationality}/></td>
-          <td><span class="sport-team-inline"><TeamMark name={d.team}/>{d.team}</span></td>
+          <td><span class="f1-identity"><F1TeamLogo name={d.team}/>{d.team}</span></td>
           <td><F1TeamNationalities values={d.team_nationalities}/></td>
           <td>{d.points}</td><td>{d.wins}</td>
         </tr>)}
         {tab==="constructors"&&data.constructors.map(t=><tr key={t.rank}>
-          <td>{t.rank}</td><th scope="row"><span class="sport-team-inline"><TeamMark name={t.name}/>{t.name}</span></th>
+          <td>{t.rank}</td><th scope="row"><span class="f1-identity"><F1TeamLogo name={t.name}/>{t.name}</span></th>
           <td><F1Nationality value={t.nationality}/></td><td>{t.wins}</td><td>{t.points}</td>
         </tr>)}
         {tab==="results"&&data.last_race?.results.map(d=><tr key={d.position}>
-          <td>{d.position}</td><th scope="row">{d.driver}</th>
-          <td><F1Nationality value={d.nationality}/></td><td>{d.team}</td>
+          <td>{d.position}</td><th scope="row"><span class="f1-identity"><F1Portrait name={d.driver} photo={data.drivers.find(p=>p.name===d.driver)?.photo}/>{d.driver}</span></th>
+          <td><F1Nationality value={d.nationality}/></td><td><span class="f1-identity"><F1TeamLogo name={d.team}/>{d.team}</span></td>
           <td><F1Nationality value={d.team_nationality}/></td><td>{d.time||"—"}</td>
         </tr>)}
       </tbody>
