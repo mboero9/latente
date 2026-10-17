@@ -19,6 +19,10 @@ const VERIFIED_LOGOS: Record<string,string> = {
  "red bull racing":"Red Bull Racing-Logo.png",
  "red bull":"Red Bull Racing-Logo.png",
 };
+const EXTERNAL_VERIFIED_LOGOS:Record<string,string> = {
+  // Independently catalogued CC0 artwork, not an F1 corporate asset.
+  "ferrari":"https://www.svgrepo.com/show/303485/ferrari-logo.svg",
+};
 const TEAM_COLOURS:Record<string,string>={
  "ferrari":"#e80020","red bull":"#3671c6",
  "red bull racing":"#3671c6", "rb f1 team":"#4681d7",
@@ -72,7 +76,8 @@ export function F1TeamLogo({name}:{name:string}) {
  const initials=name.split(/\s+/).slice(0,2).map(s=>s[0]).join("").toUpperCase();
  const colour=TEAM_COLOURS[key]||"#5e86a5";
  const url=filename?
-  `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}`:null;
+  `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}`:
+  EXTERNAL_VERIFIED_LOGOS[key] || null;
  return <span class="f1-team-logo" title={name}>
   {url&&!bad?<img alt="" src={url} loading="lazy" decoding="async"
     referrerPolicy="no-referrer" onError={()=>setBad(true)}/>:
