@@ -323,7 +323,7 @@ def fixture_focus_candidates():
                 Fixture.kickoff <= now + timedelta(hours=36),
             )
             .order_by(priority, Fixture.kickoff, Fixture.id)
-            .limit(150)
+            .limit(80)
         ))
         return {
             "data": {
