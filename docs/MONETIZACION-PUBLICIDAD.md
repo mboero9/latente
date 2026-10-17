@@ -11,14 +11,14 @@ La vista móvil muestra dos espacios horizontales y oculta el lateral. No se agr
 
 ## Estado actual y activación
 
-**El código se integra con AdSense, pero NO se solicita publicidad por defecto.**
+**La verificación del sitio AdSense está instalada con el publisher ID que entregó el propietario; las tres ubicaciones de anuncios permanecen apagadas por defecto.**
 Durante `npm run dev` se muestra una representación neutral para comprobar ubicaciones. En producción permanece invisible hasta una aprobación real y configuración explícita.
 
 Valores de compilación (públicos, jamás inventar ni usar claves privadas):
 
 ```dotenv
 VITE_AD_SLOTS_PREVIEW=false
-VITE_ADSENSE_CLIENT=ca-pub-XXXXXXXXXXXXXXXX
+VITE_ADSENSE_CLIENT=ca-pub-9760821039036895
 VITE_ADSENSE_SLOT_TOP=XXXXXXXXXX
 VITE_ADSENSE_SLOT_SIDE=XXXXXXXXXX
 VITE_ADSENSE_SLOT_BOTTOM=XXXXXXXXXX
@@ -29,12 +29,22 @@ VITE_ADSENSE_ENABLED=false
 `VITE_ADSENSE_ENABLED=true` + `VITE_ADS_PRIVACY_READY=true` + ID publicador y ID del espacio válidos activan solicitudes de publicidad en el frontend. **No cambies esos dos flags aún**.
 
 Antes de activarlos:
-- Registrar/aprobar `https://latente.cfd/` en Google AdSense y obtener los cuatro IDs reales del panel. Google Ads (campañas pagas) y AdSense (ingresos del sitio) son servicios separados.
-- Publicar `/ads.txt` con la línea real indicada por AdSense o el partner. No existe un `ads.txt` simulado porque no tenemos el ID ni la relación de ventas.
+- Completar la verificación/revisión de `https://latente.cfd/` en Google AdSense. ID del publicador ya confirmado: `ca-pub-9760821039036895`; faltan los IDs reales de los tres espacios. Google Ads (campañas pagas) y AdSense (ingresos del sitio) son servicios separados.
+- `/ads.txt` está publicado con el registro directo Google para `pub-9760821039036895`. Validar en Google AdSense si se exige alguna otra línea o corrección.
 - Crear o adaptar una **política de privacidad** y configurar una CMP certificada por Google cuando corresponda a tráfico EEE, Reino Unido o Suiza; la bandera `VITE_ADS_PRIVACY_READY` no reemplaza la implementación de consentimiento.
-- Resolver la **Content Security Policy** de Nginx y de Cloudflare antes de habilitar scripts de AdSense. La configuración CSP actual es estricta y bloquea su JavaScript. Google indica que para AdSense con CSP se debe implementar una CSP estricta compatible con nonces, por eso no cambiamos silenciosamente `script-src` a una lista amplia de dominios.
+- Para verificación, CSP de Nginx/Cloudflare **solo habilita el script inicial** `pagead2.googlesyndication.com` y se agregó meta de propiedad adicional. Para servir anuncios completos hay que migrar a la **CSP estricta con nonces por respuesta** recomendada por Google; una simple lista de dominios no es suficiente. No habilitar los tres bloques aún.
 - Comprobar la experiencia real en móvil, la estabilidad visual, carga y la política de ubicaciones publicitarias; usar report-only durante la puesta en marcha.
 - Configurar los `VITE_` durante **build**, no después de generar `frontend/dist`. Si se usa Docker, pasar `--build-arg` o usar argumentos de build del proveedor; nunca añadir una cuenta inventada al código.
+
+
+### Estado de verificación (17/10/2026)
+
+- Código en el `<head>` de `frontend/index.html`:
+  `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9760821039036895`.
+- Verificación adicional con meta `google-adsense-account`.
+- Archivo `frontend/public/ads.txt`: `google.com, pub-9760821039036895, DIRECT, f08c47fec0942fa0`.
+- **Acción del titular:** en AdSense > Sitios > `latente.cfd`, marcar que ya instalaste el código, elegir `Verificar` y luego `Solicitar revisión`. Si AdSense dice que falla, guardar captura o mensaje exacto. No se puede aprobar el sitio desde GitHub/Railway.
+- **Advertencia:** el código AdSense global puede llegar a mostrar anuncios automáticos si el usuario habilitó *Auto ads* en el panel; dejar apagada esa opción y no activar los tres slots hasta completar privacidad/CMP y la CSP estricta. Los componentes manuales están deshabilitados mediante flags.
 
 ## Estrategia de comercialización
 
