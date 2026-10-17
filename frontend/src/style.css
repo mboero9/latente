@@ -3712,3 +3712,53 @@
     .header .sport-nav-logo--shield {width:20px;height:20px;}
   }
 }
+
+
+/* Country-first navigation for basketball, volleyball and handball */
+@layer components {
+  .sport-country-explorer {padding:clamp(14px,3vw,22px);display:grid;gap:12px;
+    min-width:0;border:1px solid var(--line);border-radius:12px;}
+  .sport-country-header {display:flex;flex-wrap:wrap;align-items:end;gap:12px;
+    justify-content:space-between;min-width:0;}
+  .sport-country-header>div:first-child {flex:1 1 210px;min-width:0;}
+  .sport-country-header h2 {font-size:1.12rem;margin:4px 0;}
+  .sport-country-header p {font-size:.8rem;color:var(--muted);line-height:1.55;margin:0;}
+  .sport-country-selectors {display:flex;flex-wrap:wrap;gap:10px;flex:1 1 300px;min-width:0;}
+  .sport-country-selectors label {display:grid;gap:5px;flex:1 1 145px;min-width:0;
+    font-weight:700;color:var(--ink);font-size:.78rem;}
+  .sport-country-selectors select {min-width:0;width:100%;padding:10px 11px;
+    border-radius:8px;border:1px solid var(--line);background:var(--surface);
+    color:var(--ink);font-size:.82rem;}
+  .sport-competition-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;min-width:0;}
+  .sport-competition-card {display:flex;flex-direction:column;gap:9px;justify-content:space-between;
+    min-width:0;padding:12px;border:1px solid var(--line);border-radius:9px;
+    background:var(--surface);}
+  .sport-competition-card h3 {font-size:.85rem;line-height:1.35;margin:4px 0;
+    overflow-wrap:break-word;color:var(--ink);}
+  .sport-competition-card small {font-size:.69rem;color:var(--muted);line-height:1.4;}
+  .sport-competition-card a,.sport-competition-card button {align-self:flex-start;
+    background:none;border:0;padding:0;color:var(--green);text-decoration:underline;
+    text-underline-offset:3px;font-size:.73rem;font-weight:750;cursor:pointer;}
+  .sport-competition-country {font-size:.65rem;color:var(--green);font-weight:800;}
+  .sport-country-more {justify-self:center;background:var(--surface);border:1px solid var(--line);
+    padding:9px 14px;border-radius:7px;color:var(--green);font-weight:800;cursor:pointer;}
+  .sport-country-note {color:var(--muted);font-size:.72rem;line-height:1.6;margin:0;}
+}
+@layer responsive {
+  @media (max-width:700px) {
+    .sport-country-explorer {padding:12px;}
+    .sport-country-header {display:grid;grid-template-columns:minmax(0,1fr);}
+    .sport-country-selectors {display:grid;grid-template-columns:minmax(0,1fr);width:100%;}
+    .sport-competition-grid {grid-template-columns:minmax(0,1fr);}
+    .sport-landing {min-width:0;max-width:100%;padding:12px;gap:13px;}
+    .sport-landing h1 {font-size:clamp(1.35rem,5vw,1.85rem);}
+    .sport-game {padding:11px;}
+    .sport-game-teams {grid-template-columns:minmax(0,1fr) 56px minmax(0,1fr);gap:6px;}
+    .sport-game-teams span {font-size:.93rem;}
+    .sport-team {font-size:.75rem;overflow-wrap:anywhere;}
+    .sport-team img {width:24px;height:24px;}
+    .sport-standings-block .table-scroll {max-width:100%;overflow-x:auto;}
+    .sport-standings-block .table-scroll table {min-width:680px;}
+  }
+}
