@@ -62,6 +62,11 @@ local de logos, confirmar autorización correspondiente.
 - Unión Cordobesa Top 10 A, **10 clubes confirmados** en el
   fixture oficial, y Super 9 B con enlace a la Unión:
   https://unioncordobesaderugby.com.ar/fixtures-2026/
+- Regional del NOA 2026 (torneos A y B), Torneo Anual Tucumano,
+  con la fuente oficial de la Unión de Rugby de Tucumán:
+  https://www.urtuc.com/ . El sitio federativo publica tablas propias,
+  pero no hay una API pública de terceros documentada con permiso de
+  redistribución comercial confirmada.
 - Los clubes de Litoral/Córdoba solo muestran escudo cuando se puede
   enlazar uno verificado mediante una instantánea de encuentro o tabla.
 
