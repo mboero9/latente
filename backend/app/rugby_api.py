@@ -273,6 +273,7 @@ def public_catalog():
                 "urba-primera-b", "urba-primera-c", "urba-segunda",
                 "urba-tercera", "urba-desarrollo", "litoral-top10",
                 "litoral-segunda", "cordoba-top10", "cordoba-super9",
+                "noa-regional-a", "noa-regional-b", "tucumano-anual",
             } else set()),reverse=True)
         })
     for row in discovered:
