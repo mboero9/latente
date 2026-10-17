@@ -962,6 +962,13 @@ def team_detail(team_id: int):
         }
 
 
+@app.get("/api/f1/champions")
+def f1_champions_archive():
+    """F1 world title winners, all *finished* seasons; cached Jolpica data."""
+    from .f1_history import f1_champions
+    return {"data": f1_champions(), "meta": meta([], source="jolpica_archive")}
+
+
 @app.get("/api/reference/{sport}")
 def reference_sport(sport: str, season: int | None = Query(None, ge=1950, le=2100),
                     competition: str = Query("ipl", max_length=32)):

@@ -670,6 +670,9 @@ function FixturesView({
             </div>
           )}
           {league && <LeagueRecent id={league.id} season={league.season} />}
+          {!league && <a class="f1-home-mobile-link" href={link("/sport/f1")}>
+            🏎️ F1 · Posiciones, fotos y campeones históricos <span aria-hidden="true">↗</span>
+          </a>}
           <DatePicker day={day} setDay={setDay} tz={tz} />
           <div class="match-controls">
             <div class="segmented">
@@ -763,6 +766,16 @@ function FixturesView({
         </section>
         <aside class={"right-column" + (!league ? " home-right-column" : "")} aria-label="Resumen de la jornada e históricos">
           {spotlight && <Focus match={spotlight} tz={tz} />}
+          {!league && <a class="f1-home-feature panel" href={link("/sport/f1")}
+            aria-label="Abrir Fórmula 1, campeonato 2026 y campeones históricos">
+            <span class="f1-home-icon" aria-hidden="true">🏎️</span>
+            <span class="f1-home-copy">
+              <span class="eyebrow">LATENTE · AUTOMOVILISMO</span>
+              <strong>Fórmula 1 · Pilotos y constructores</strong>
+              <small>Clasificaciones 2026, fotos, calendario y campeones históricos</small>
+            </span>
+            <span class="f1-home-arrow" aria-hidden="true">↗</span>
+          </a>}
           <MiniTable league={league || leagues.find(l => l.id === 128) || leagues.find(l => l.country === "Argentina" && l.kind?.toLowerCase() === "league") || leagues[0]} />
           {!league && <AdPlacement placement="side" />}
           {!league && <RugbyHomeTables/>}
