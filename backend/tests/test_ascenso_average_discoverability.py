@@ -50,7 +50,7 @@ def test_regulation_links_and_relegation_distinction():
     from app.lower_division_averages import REGULATIONS, RULES
     assert "Boletin-Especial-6823" in REGULATIONS["nacional"]
     assert "Boletin-Especial-6824" in REGULATIONS["b"]
-    assert "descenso" in RULES["nacional"].lower()
+    assert "dos últimos equipos de cada zona" in RULES["nacional"].lower()
     d=performance_average([],{},"d",2026)
     assert d["historic_only"] and not d["groups"]
     assert "2026" in d["note"]
