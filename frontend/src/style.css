@@ -3544,3 +3544,89 @@
     .live-bookmakers-brand .bookmaker-brand > strong {font-size:.66rem;}
   }
 }
+
+
+/* Responsive audit 2026-10-17: F1 must not letter-wrap driver surnames.
+   Keep the complete wide table accessible on desktop while giving phones
+   a source-backed card list with every pilot's name, flag and team. */
+@layer components {
+  .f1-mobile-rows {display:none;}
+  .f1-desktop-standings {width:100%;max-width:100%;overscroll-behavior-inline:contain;}
+  .f1-desktop-standings table {min-width:860px;}
+  .f1-desktop-standings th:nth-child(2) {min-width:215px;text-align:left;}
+  .f1-desktop-standings .f1-identity > span:last-child {
+    min-width:0;overflow-wrap:normal;word-break:normal;hyphens:none;
+    white-space:normal;
+  }
+  .f1-desktop-standings td:not(:nth-child(2)) {white-space:nowrap;}
+  .argentina-conmebol-shortcuts {display:flex;align-items:center;gap:8px;
+    overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:thin;
+    -webkit-overflow-scrolling:touch;padding:2px 2px 9px;margin:0 0 13px;}
+  .argentina-conmebol-shortcuts > a {flex:0 0 auto;display:inline-flex;
+    align-items:center;gap:6px;border:1px solid var(--line);
+    background:var(--surface);border-radius:999px;padding:9px 12px;
+    text-decoration:none;color:var(--ink);font-weight:750;font-size:.78rem;}
+  .argentina-conmebol-shortcuts > a:first-child {
+    border-color:var(--green);color:var(--green);}
+  .argentina-conmebol-shortcuts > a:focus-visible {
+    outline:2px solid var(--green);outline-offset:2px;}
+}
+@layer responsive {
+  @media(max-width:760px) {
+    /* Replace the actual F1 rankings on phones instead of shrinking them. */
+    .sport-landing {width:100%;max-width:100%;min-width:0;padding:14px 6px;gap:15px;}
+    .sport-landing > .view-heading h1 {font-size:clamp(1.3rem,5vw,1.8rem);}
+    .sport-landing .view-heading {min-width:0;flex-wrap:wrap;gap:10px;}
+    .f1-desktop-standings {display:none;}
+    .f1-mobile-rows {display:grid;gap:9px;min-width:0;}
+    .f1-mobile-row {display:grid;align-items:center;
+      grid-template-columns:22px 43px minmax(0,1fr) 62px;
+      gap:9px;min-width:0;padding:12px 11px;
+      background:var(--surface);border:1px solid var(--line);border-radius:11px;}
+    .f1-mobile-rank {font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;}
+    .f1-mobile-portrait {display:flex;align-items:center;justify-content:center;min-width:0;}
+    .f1-mobile-portrait .f1-driver-photo {width:39px;height:39px;flex-basis:39px;}
+    .f1-mobile-driver {min-width:0;display:grid;gap:4px;align-content:center;}
+    .f1-mobile-driver > strong {font-size:.87rem;line-height:1.27;font-weight:800;
+      min-width:0;overflow-wrap:normal;word-break:normal;hyphens:none;}
+    .f1-mobile-sub {min-width:0;}
+    .f1-mobile-sub .f1-nationality {white-space:normal;line-height:1.2;font-size:.72rem;}
+    .f1-mobile-sub .f1-flag {flex:0 0 25px;}
+    .f1-mobile-team {display:flex;align-items:center;gap:5px;min-width:0;
+      font-size:.72rem;color:var(--muted);overflow-wrap:normal;word-break:normal;}
+    .f1-mobile-team .f1-team-logo {flex-basis:24px;width:24px;height:25px;}
+    .f1-mobile-team .f1-team-logo img {max-width:24px;max-height:24px;}
+    .f1-mobile-team .f1-team-fallback {width:23px;height:23px;font-size:.54rem;}
+    .f1-mobile-points {display:grid;justify-items:end;align-content:center;
+      min-width:0;font-variant-numeric:tabular-nums;gap:2px;}
+    .f1-mobile-points b {font-size:1.04rem;color:var(--green);}
+    .f1-mobile-points small {color:var(--muted);font-size:.67rem;}
+    .f1-mobile-points > span {color:var(--muted);font-size:.65rem;white-space:nowrap;}
+    .f1-mobile-race-time b {font-size:.8rem;overflow-wrap:break-word;text-align:right;}
+    /* Other sports, archives and score tables keep all columns via contained
+       horizontal swipe, never force the page itself to zoom out. */
+    main,.sport-landing,.sport-intro,.table-scroll,.sports-games,
+    .sports-clubs,.home-historics,.world-scorers-page {min-width:0;max-width:100%;}
+    .sport-landing .table-scroll,.history-section .table-scroll,
+    .home-historics .table-scroll,.rugby-league-card .table-scroll {
+      overflow-x:auto;overscroll-behavior-inline:contain;
+      -webkit-overflow-scrolling:touch;}
+    .sport-landing .table-scroll > table {min-width:560px;}
+    .sport-landing .table-scroll th[scope="row"],
+    .sport-landing .table-scroll td {word-break:normal;overflow-wrap:normal;}
+    .sport-landing .sports-tabs {gap:6px;}
+    .sport-landing .sports-tabs button {padding:9px 11px;min-height:42px;font-size:.78rem;}
+    .sport-landing .sports-club {max-width:100%;overflow-wrap:break-word;}
+    .view-heading,.view-heading > div {min-width:0;}
+    .view-heading h1,.view-heading h2 {overflow-wrap:break-word;word-break:normal;}
+    .utility-bar {min-width:0;}
+  }
+  @media(max-width:360px) {
+    .f1-mobile-row {grid-template-columns:17px 35px minmax(0,1fr) 47px;
+      gap:6px;padding:10px 8px;}
+    .f1-mobile-portrait .f1-driver-photo {width:34px;height:34px;flex-basis:34px;}
+    .f1-mobile-driver > strong {font-size:.8rem;}
+    .f1-mobile-points b {font-size:.94rem;}
+    .sport-landing {padding:10px 2px;}
+  }
+}
