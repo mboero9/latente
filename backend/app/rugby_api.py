@@ -43,6 +43,7 @@ COMPETITIONS = (
     ("noa-regional-a", "Regional del NOA · Torneo A", ("regional del noa a",), ("argentina",)),
     ("noa-regional-b", "Regional del NOA · Torneo B", ("regional del noa b",), ("argentina",)),
     ("tucumano-anual", "Torneo Anual Tucumano", ("anual tucumano",), ("argentina",)),
+    ("super-rugby-americas", "Súper Rugby Américas · Pampas, Dogos y Tarucas", ("super rugby americas",), ("south america",)),
     ("championship", "Rugby Championship · Los Pumas", ("rugby championship",), ("world",)),
     ("six-nations", "Seis Naciones", ("six nations",), ("europe",)),
     ("super-rugby", "Super Rugby", ("super rugby",), ("world",)),
@@ -274,6 +275,7 @@ def public_catalog():
                 "urba-tercera", "urba-desarrollo", "litoral-top10",
                 "litoral-segunda", "cordoba-top10", "cordoba-super9",
                 "noa-regional-a", "noa-regional-b", "tucumano-anual",
+                "super-rugby-americas",
             } else set()),reverse=True)
         })
     for row in discovered:
@@ -391,8 +393,8 @@ def read_competition(slug, season=None):
         ("rugbyAPI.com", rugbyapi_table if rugbyapi_table and rugbyapi_table.data else None),
         ("API-Rugby", primary_games if game_source == primary_games and primary_games and primary_games.data else None),
         ("API-Rugby", primary_table if table_source == primary_table and primary_table and primary_table.data else None),
-        ("ESPN", backup_games if game_source == backup_games and backup_games and backup_games.data else None),
-        ("TheSportsDB", sportsdb_games if game_source == sportsdb_games and sportsdb_games and sportsdb_games.data else None),
+        ("ESPN", backup_games if backup_games and backup_games.data else None),
+        ("TheSportsDB", sportsdb_games if sportsdb_games and sportsdb_games.data else None),
         ("ESPN", backup_table if table_source == backup_table and backup_table and backup_table.data else None),
     ) if row is not None]
     provider = " + ".join(dict.fromkeys(sources)) if sources else "API-Rugby / ESPN / rugbyAPI.com"
@@ -475,11 +477,13 @@ def sync_once(max_calls=3, fetch=None):
 # Independent, documented fallback from the existing ESPN rugby provider adapter.
 # ESPN's public feeds are unofficial/undocumented and may stop working; snapshots
 # have source labels and stay empty rather than supplying imaginary league points.
-ESPN_REFRESH = timedelta(hours=8)
-ESPN_RETRY = timedelta(hours=6)
-ESPN_PRIORITY = ("top-14", "urba", "championship", "premiership",
+# Full-season ESPN backfills can require ~14 bounded API calls.
+# Keep ESPN server polling once daily, and never per web visitor.
+ESPN_REFRESH = timedelta(hours=24)
+ESPN_RETRY = timedelta(hours=20)
+ESPN_PRIORITY = ("urba", "championship", "top-14", "premiership",
                  "six-nations", "urc", "super-rugby", "champions",
-                 "test-matches", "world-cup")
+                 "mlr", "challenge-cup", "test-matches", "world-cup")
 
 
 def espn_standings(rows):
@@ -490,14 +494,14 @@ def espn_standings(rows):
             continue
         points = _num(row.get("points"))
         rank = _num(row.get("rank"))
-        if points is None and rank is None:
-            # Records with neither rank nor league points are team stats,
-            # not an official table. Do not pass them off as standings.
+        if points is None or rank is None:
+            # Do not invent position or rugby league points from a partial
+            # ESPN team-stat summary; both must be provider-supplied.
             continue
         parsed.append({
             "team": row["name"], "team_id": row.get("id"),
             "logo": row.get("logo"), "group": row.get("group") or "General",
-            "rank": rank or i + 1, "played": None,
+            "rank": rank, "played": None,
             "won": _num(row.get("wins")), "lost": _num(row.get("losses")),
             "drawn": None, "points": points,
             "for": None, "against": None,
