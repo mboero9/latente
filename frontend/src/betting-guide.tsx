@@ -1,6 +1,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { useApi } from "./api";
 import { BookmakerMark } from "./bookmaker-brands";
+import { readBettingAudience, saveBettingAudience } from "./betting-audience";
 
 type Entry={name:string;url:string;note:string;kind:"private"|"public"};
 const AR_CABA:Entry[]=[
@@ -10,6 +11,13 @@ const AR_CABA:Entry[]=[
  {name:"Betsson",url:"https://www.betsson.bet.ar/",kind:"private",note:"Confirmar licencia y restricciones territoriales"},
  {name:"BetWarrior",url:"https://caba.betwarrior.bet.ar/",kind:"private",note:"Dominio específico de CABA"},
  {name:"Codere",url:"https://m.caba.codere.bet.ar/",kind:"private",note:"Dominio específico de CABA"},
+];
+// PBA-only: the operators below publish licensing details for the province.
+const AR_PBA:Entry[]=[
+  {name:"Sportsbet",url:"https://sports.bet.ar/",kind:"private",
+   note:"Operador con licencia provincial publicada · confirmar vigencia"},
+  {name:"Stake",url:"https://pba.stake.bet.ar/",kind:"private",
+   note:"Operador con licencia provincial publicada · confirmar vigencia"},
 ];
 const LICENSED: Record<string,Entry[]>={
  ES:[
@@ -56,29 +64,46 @@ const COUNTRY_CHOICES=[
  ["PY","Paraguay"],["EC","Ecuador"],["BO","Bolivia"],["VE","Venezuela"],
  ["DO","República Dominicana"]
 ] as const;
-function OperatorList({items,type}:{items:Entry[];type:"public"|"private"}) {
+function OperatorList({items,type,adult}:{
+  items:Entry[];type:"public"|"private";adult:boolean;
+}) {
  const filtered=items.filter(item=>item.kind===type);
  return <section class="licensed-operators">
    <h3>{type==="private"?"Operadores privados · referencias sujetas a licencia":
      "Opciones estatales o de monopolio regulado · modalidades diferentes"}</h3>
-   {filtered.length?
-     <div class="watch-links bookmaker-directory">{filtered.map(item=>
-       <a key={item.name} href={item.url} target="_blank"
-         rel="noopener noreferrer nofollow sponsored">
-         {type==="private"?<BookmakerMark name={item.name}/>:
-           <strong class="public-operator-mark">🏛️ {item.name}</strong>}
-         <small>{item.note} · Confirmar permiso local antes de acceder.</small>
-       </a>)}</div>:
+   {filtered.length && adult ?
+     <div class="bookmaker-directory-grid">{filtered.map(item=>
+       <div key={item.name} class="bookmaker-directory-card">
+         <div class="bookmaker-directory-head">
+           {type==="private"?<BookmakerMark name={item.name}/>:
+             <strong class="public-operator-mark">🏛️ {item.name}</strong>}
+         </div>
+         <p>{item.note}</p>
+         <a href={item.url} target="_blank"
+           rel="noopener noreferrer nofollow sponsored"
+           aria-label={`Sitio del operador ${item.name} · confirmar autorización local`}>
+           Sitio del operador ↗
+         </a>
+       </div>)}</div>:
+     filtered.length ? <p class="coverage-notice">
+       Para consultar operadores, confirmá primero que sos mayor de 18 años.
+       No se muestran ofertas ni enlaces comerciales antes de esa confirmación.
+     </p>:
      <p class="coverage-notice">{type==="private"
        ?"Todavía no tenemos dos operadores independientes con licencia verificada para esta jurisdicción. No incluimos sitios no confirmados."
        :"No se confirmó una casa estatal que publique cuotas deportivas comparables. El regulador público se presenta aparte: no es una casa de apuestas."}</p>}
  </section>;
 }
-export function BettingGuide({country}:{country:string}) {
- const [province,setProvince]=useState("CABA");
+export function BettingGuide({country,province:externalProvince,onProvinceChange:externalChange,adult=false}:{
+ country:string;province?:string;onProvinceChange?:(next:string)=>void;adult?:boolean;
+}) {
+ const [fallbackProvince,setFallbackProvince]=useState("CABA");
+ const province=externalProvince||fallbackProvince;
+ const onProvinceChange=externalChange||setFallbackProvince;
  const regulator=AUTHORITIES[country];
  const blocked=country==="BR";
- const offers=country==="AR"?(province==="CABA"?AR_CABA:[]):LICENSED[country] || [];
+ const offers=country==="AR"?
+   (province==="CABA"?AR_CABA:province==="PBA"?AR_PBA:[]):LICENSED[country] || [];
  return <section class="betting-guide" aria-label="Información legal sobre operadores por país">
    <h2>18+ · Regulación y operadores por país</h2>
    <p class="updated">Directorio informativo, separado de las cuotas y los marcadores.
@@ -86,7 +111,7 @@ export function BettingGuide({country}:{country:string}) {
       países cuentan con una oferta pública de cuotas fijas. Las licencias
       cambian por jurisdicción y deben revisarse en la fuente oficial.</p>
    {country==="AR"&&<label class="season-label">Jurisdicción argentina
-       <select value={province} onChange={e=>setProvince(e.currentTarget.value)}>
+       <select value={province} onChange={e=>onProvinceChange(e.currentTarget.value)}>
          <option value="CABA">Ciudad de Buenos Aires</option>
          <option value="PBA">Provincia de Buenos Aires</option>
          <option value="otras">Otra provincia</option>
@@ -102,8 +127,8 @@ export function BettingGuide({country}:{country:string}) {
       1.394/2026 no mostramos operadores comerciales, logos ni enlaces
       promocionales de apuestas de cuota fija para esta jurisdicción.</p>:
       <>
-        <OperatorList items={offers} type="public"/>
-        <OperatorList items={offers} type="private"/>
+        <OperatorList items={offers} type="public" adult={adult}/>
+        <OperatorList items={offers} type="private" adult={adult}/>
       </>}
    <p class="odds-warning">Solo mayores de 18 años o edad superior exigida.
      Apostar puede ocasionar pérdidas. No hay ganancias garantizadas.
@@ -113,7 +138,13 @@ export function BettingGuide({country}:{country:string}) {
 export function BettingView() {
  const [country,setCountry]=useState<string>("AR");
  const [manual,setManual]=useState(false);
+ const [province,setProvince]=useState("CABA");
+ const [adult,setAdult]=useState(false);
  const {result}=useApi<{country:string|null}>("/api/visitor/country",0);
+ useEffect(()=>{
+   const stored=readBettingAudience();
+   if(stored) {setProvince(stored.province);setAdult(true);}
+ },[]);
  useEffect(()=>{
   const found=result?.data?.country;
   if(!manual&&found&&COUNTRY_CHOICES.some(([id])=>id===found))setCountry(found);
@@ -122,10 +153,27 @@ export function BettingView() {
   <div class="view-heading"><div><span class="eyebrow">LATENTE · MAYORES DE EDAD</span>
     <h1>18+ · Información legal de casas por país</h1></div></div>
   <label class="season-label">País
-   <select value={country} onChange={e=>{setCountry(e.currentTarget.value);setManual(true);}}>
+   <select value={country} onChange={e=>{
+    setCountry(e.currentTarget.value);setManual(true);setAdult(false);
+    saveBettingAudience(null);
+   }}>
     {COUNTRY_CHOICES.map(([id,name])=><option key={id} value={id}>{name}</option>)}
    </select>
   </label>
-  <BettingGuide country={country}/>
+  <label class="betting-adult-confirmation">
+   <input type="checkbox" checked={adult} onChange={e=>{
+     const checked=e.currentTarget.checked;
+     setAdult(checked);
+     saveBettingAudience(checked&&country==="AR"&&
+       (province==="CABA"||province==="PBA")?
+       {adult:true,country:"AR",province:province as "CABA"|"PBA"}:null);
+   }}/>
+   Confirmo que soy mayor de 18 años. Consultaré las autorizaciones aplicables
+   en mi jurisdicción antes de acceder a un operador.
+  </label>
+  <BettingGuide country={country} province={province} adult={adult}
+    onProvinceChange={next=>{
+      setProvince(next);setAdult(false);saveBettingAudience(null);
+    }}/>
  </section>;
 }
