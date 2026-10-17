@@ -13,7 +13,7 @@ def test_f1_names_never_collapse_into_vertical_letters():
     assert 'role="region" tabIndex={0}' in view
     assert "Deslizá la tabla" in view
     assert 'f1-standings-table--${tab}' not in css
-    assert "f1-standings-table--drivers {min-width:1000px;}" in css
+    assert ".f1-standings-table--drivers,.f1-standings-table--results {min-width:1000px;}" in css
     assert "f1-standings-table--constructors {min-width:690px;}" in css
     assert ".f1-standings-table th:nth-child(2) {min-width:235px;" in css
     assert "overflow-wrap:normal;word-break:normal;" in css
