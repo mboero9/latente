@@ -17,13 +17,17 @@ from .ingest import upsert
 from .sports_sources import extract, SourceUnavailable
 from .sports_scheduler import reserve_quota
 from .provider import aware
+from .rugby_clubs import edition_clubs, source_url
 
 log = logging.getLogger("latente.rugby")
 
 # Names are used ONLY to resolve verified IDs from GET /leagues.
-# URBA is called Top 12 in API-Rugby's published catalogue.
+# API-Sports still calls the historic competition Top 12 in its catalogue.
+# Argentina URBA 2026 fields 14 clubs; keep France separate.
 COMPETITIONS = (
-    ("urba", "URBA · Top 12 (Argentina)", ("top 12", "top12", "top 14"), ("argentina",)),
+    ("urba", "URBA · Top 14 (Argentina, 2026)", ("top 12", "top12", "top 14"), ("argentina",)),
+    ("interior-a", "UAR · Torneo del Interior A", ("torneo del interior a",), ("argentina",)),
+    ("interior-b", "UAR · Torneo del Interior B", ("torneo del interior b",), ("argentina",)),
     ("championship", "Rugby Championship · Los Pumas", ("rugby championship",), ("world",)),
     ("six-nations", "Seis Naciones", ("six nations",), ("europe",)),
     ("super-rugby", "Super Rugby", ("super rugby",), ("world",)),
@@ -248,7 +252,8 @@ def public_catalog():
             "rugbyapi_id":mapped.get("competition_id"),
             "region":mapped.get("region") or mapped.get("country"),
             "source_coverage":bool(mapped),
-            "seasons":sorted(set(from_api.get("seasons") or []).union(seasons_by_slug.get(slug,set())),reverse=True)
+            "official_url":source_url(slug),
+            "seasons":sorted(set(from_api.get("seasons") or []).union(seasons_by_slug.get(slug,set())).union({2026} if slug in {"urba","interior-a","interior-b"} else set()),reverse=True)
         })
     for row in discovered:
         if not isinstance(row,dict) or not row.get("slug") or row["slug"] in BY_SLUG:
@@ -325,10 +330,14 @@ def read_competition(slug, season=None):
         "provider": provider, "league_name": title,
         "season": year, "seasons": sorted(set([*available, *([year] if games or official else [])]), reverse=True),
         "games": games, "official": official,
+        "verified_clubs": edition_clubs(slug, year),
+        "clubs_source_url": source_url(slug),
+        "clubs_note": ("Participantes de la edición 2026, verificados contra la unión organizadora. No equivalen a una tabla de posiciones ni a resultados."
+                        if edition_clubs(slug, year) else None),
         "statistics": backup_stats.data if backup_stats else [],
         "updated_at": max((aware(row.updated_at) for row in (game_source, table_source, backup_stats) if row), default=None),
         "message": None if games or official else
-            "Sin partidos o clasificaciones verificadas en las fuentes disponibles para esta temporada.",
+            "Sin partidos o clasificaciones verificadas en las fuentes disponibles para esta temporada. Consultá el calendario de la organización.",
     }
 
 
