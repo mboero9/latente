@@ -1656,13 +1656,23 @@ function App() {
                   a.name.localeCompare(b.name,"es"))
                 .slice(0, leagueSearch ? 30 : 12)
                 .map((l) => (
-                  <a
-                    class={l.id === id && isLeagueView ? "selected" : ""}
-                    href={link(`/league/${l.id}`)}
-                  >
-                    <LeagueLogo league={l} />
-                    <span>{argentinaLeagueName(l)}</span>
-                  </a>
+                  <div class="league-nav-item" key={l.id}>
+                    <a
+                      class={l.id === id && isLeagueView ? "selected" : ""}
+                      href={link(`/league/${l.id}`)}
+                    >
+                      <LeagueLogo league={l} />
+                      <span>{argentinaLeagueName(l)}</span>
+                    </a>
+                    {lowerLeagueCode(l) && <a class="league-nav-average"
+                      href={link(`/promedios/${l.id}`)}
+                      aria-label={`Promedios de puntos por partido: ${l.name}`}
+                      title={lowerLeagueCode(l)==="d"
+                        ? "PTS/PJ · Primera D histórica (hasta 2023)"
+                        : "PTS/PJ · Promedios estadísticos (no oficiales de descenso)"}>
+                      PTS/PJ
+                    </a>}
+                  </div>
                 ))}
             </div>
           ))}
