@@ -20,6 +20,14 @@
 | **Premiership Rugby / EPCR** https://www.premiershiprugby.com/ / https://www.epcrugby.com/ | Fixtures, scores, clubes, EPCR Champions/Challenge | Páginas oficiales de referencia; no se confirmó API pública documentada con permiso comercial. Preferir proveedor con licencia. |
 | **ESPN público / TheSportsDB** | Algunas ligas, temporadas y scores | Fallback no contractual, puede fallar o variar; marcar cobertura y no depender de ellos para datos en vivo. |
 
+## Proveedores premium y acceso federativo (investigación complementaria)
+
+- **Sportradar Rugby Union v3** documenta `GET /rugby-union/{trial|production}/v3/en/competitions.json`, calendario, temporadas, jugadores, resultados y push de eventos. Es un candidato **empresarial** para ampliar cobertura y SLA, pero hay que solicitar trial/cotización y comprobar mediante catálogo si URBA y UAR están incluidos: https://developer.sportradar.com/rugby/reference/rugby-competitions. No se contratará ahora.
+- **URBA, 31/08/2026** anunció una plataforma nueva de video y estadísticas utilizada por clubes/URBA, también para Top14 y Primera A/B/C. Esto crea una vía concreta para **solicitar acceso comercial a datos** directamente a la Unión: https://urba.org.ar/noticias/nueva-plataforma-de-analisis-de-video-y-estadisticas-de-la-urba. No se verificó API pública ni licencia para terceros.
+- **LNR** manifestó que su operador de estadísticas suministra datos estructurados a sus socios autorizados mediante API/portales. Eso no equivale a una API anónima de libre consumo para Latente: https://www.lnr.fr/actualite/consultation-pour-la-selection-de-loperateur-de-statistiques-sportives-de-la-lnr.
+- rugbyAPI.com es ideal para ligas internacionales de clubes; no muestra URBA/TDI en su catálogo de 41 competiciones.
+- Para competencia nacional conviene primero **API-Sports Rugby**, validar si su antiguo rótulo `Top12` tiene partidos nuevos de URBA 2026 sin asumir que cambió automáticamente a 14 participantes.
+
 ## Prioridad técnica 30 días
 
 1. Conectar Free API-Sports Rugby **con autorización válida** y validar `GET /leagues`, `/games?league=...&season=2026`, `/standings` contra URBA, Top14 francés, Premiership, EPCR y URC; verificar primer snapshot en PostgreSQL. Si la URBA no publica el Top14 2026 actualizado, no mostrar Top12 histórico como torneo vigente.
