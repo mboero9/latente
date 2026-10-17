@@ -128,6 +128,42 @@ function F1TeamNationalities({values}:{values?:(string|null)[]}) {
     : <F1Nationality/>}</span>;
 }
 
+/** Compact, legible mobile cards. Desktop retains the complete table.
+ * Do not create duplicated API queries or change Jolpica's classifications.
+ */
+function F1MobileRows({data,tab}:{data:F1;tab:"drivers"|"constructors"|"results"}) {
+  return <div class="f1-mobile-rows" aria-label="Clasificación F1 para celulares">
+    {tab==="drivers"&&data.drivers.map(d=><article class="f1-mobile-row" key={d.rank}>
+      <span class="f1-mobile-rank">{d.rank}</span>
+      <div class="f1-mobile-portrait"><F1Portrait name={d.name} photo={d.photo}/></div>
+      <div class="f1-mobile-driver">
+        <strong>{d.name}</strong>
+        <span class="f1-mobile-sub"><F1Nationality value={d.nationality}/></span>
+        <span class="f1-mobile-team"><F1TeamLogo name={d.team}/>{d.team}</span>
+      </div>
+      <div class="f1-mobile-points"><b>{d.points}</b><small>pts</small>
+        <span>{d.wins} vic.</span></div>
+    </article>)}
+    {tab==="constructors"&&data.constructors.map(t=><article class="f1-mobile-row f1-mobile-constructor" key={t.rank}>
+      <span class="f1-mobile-rank">{t.rank}</span>
+      <div class="f1-mobile-portrait"><F1TeamLogo name={t.name}/></div>
+      <div class="f1-mobile-driver"><strong>{t.name}</strong>
+        <span class="f1-mobile-sub"><F1Nationality value={t.nationality}/></span>
+        <small>{t.wins} victorias</small></div>
+      <div class="f1-mobile-points"><b>{t.points}</b><small>pts</small></div>
+    </article>)}
+    {tab==="results"&&data.last_race?.results.map(d=><article class="f1-mobile-row" key={d.position}>
+      <span class="f1-mobile-rank">{d.position}</span>
+      <div class="f1-mobile-portrait"><F1Portrait name={d.driver} photo={data.drivers.find(p=>p.name===d.driver)?.photo}/></div>
+      <div class="f1-mobile-driver"><strong>{d.driver}</strong>
+        <span class="f1-mobile-sub"><F1Nationality value={d.nationality}/></span>
+        <span class="f1-mobile-team"><F1TeamLogo name={d.team}/>{d.team}</span></div>
+      <div class="f1-mobile-points f1-mobile-race-time"><b>{d.time||"—"}</b><small>resultado</small></div>
+    </article>)}
+    {tab==="results"&&!data.last_race?.results.length&&<Notice>No hay resultados completos para la última carrera.</Notice>}
+  </div>;
+}
+
 function F1Content({data,tab,setTab}:{data:F1;tab:"drivers"|"constructors"|"results";setTab:(value:"drivers"|"constructors"|"results")=>void}) {
   return <>
     {data.upcoming && <article class="panel sport-intro"><span class="eyebrow">PRÓXIMO GRAN PREMIO</span>
@@ -145,7 +181,10 @@ function F1Content({data,tab,setTab}:{data:F1;tab:"drivers"|"constructors"|"resu
       <button class={tab==="results"?"active":""} onClick={()=>setTab("results")}>Última carrera</button>
     </div>
     <h2 class="sport-section-title">{tab==="drivers"?"Campeonato de pilotos":tab==="constructors"?"Copa de constructores":"Resultado del último GP"} · {data.season}</h2>
-    <div class="panel table-scroll"><table>
+    <F1MobileRows data={data} tab={tab}/>
+    <div class="panel table-scroll f1-desktop-standings" role="region"
+      aria-label={`Tabla completa de ${tab==="drivers"?"pilotos":tab==="constructors"?"constructores":"última carrera"}`}
+      tabIndex={0}><table>
       <thead><tr>
         <th>#</th><th>{tab==="constructors"?"Escudería":"Piloto"}</th>
         {tab!=="constructors"&&<th>Nacionalidad piloto</th>}
