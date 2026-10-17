@@ -394,7 +394,7 @@ def league_bracket(league_id: int, season: int | None = None):
             "data": {"stages": stages, "season": year, "league": league.name},
             "meta": meta(fixtures, coverage=bool(stages),
                          verified_matches=sum(len(x["matches"]) for x in stages),
-                         note="Etapas verificadas; conexiones entre cruces no inferidas"),
+                         note="Conexiones verificadas por clubes presentes en rondas consecutivas; sin sorteos futuros inventados"),
         }
 
 
