@@ -48,7 +48,7 @@ def test_argentine_and_conmebol_links_and_editorial_priority():
     page=read("frontend/src/main.tsx")
     assert 'const LATENTE_PRIMARY_LEAGUES =' in page
     for phrase in ('id:128,label:"🇦🇷 Primera División"',
-                   'id:129,label:"🏆 Copa Argentina"',
+                   'id:130,label:"🏆 Copa Argentina"',
                    'id:13,label:"🏆 Libertadores"',
                    'id:11,label:"🏆 Sudamericana"'):
         assert phrase in page
@@ -58,7 +58,7 @@ def test_argentine_and_conmebol_links_and_editorial_priority():
     assert 'leaguePriority(id)' in page
     assert 'a.name.localeCompare(b.name,"es")' in page
     assert "128: 1620" in page and "13: 1650" in page
-    assert "129: 1560" in page and "11: 1580" in page
+    assert "130: 1560" in page and "11: 1580" in page
     # Keep global football, NBA and F1: this is navigation priority only.
     assert '...sports].sort(' in page
     assert 'href={link("/sport/f1")}' in page
