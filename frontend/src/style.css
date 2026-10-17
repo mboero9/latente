@@ -3459,3 +3459,59 @@
     .f1-identity .f1-redbull-logo img {max-width:40px;max-height:29px;}
   }
 }
+
+
+/* Identifying logos, not advertising inventory: no fake partner badges.
+   The mini-strip is displayed only after an explicit 18+ and province choice. */
+@layer components {
+  .bookmaker-brand-mark {
+    flex:0 0 38px;width:38px;height:38px;
+    display:inline-grid;place-items:center;border-radius:10px;
+    border:1px solid var(--line);background:var(--surface);overflow:hidden;
+  }
+  .bookmaker-brand-mark img {width:34px;height:34px;object-fit:contain;border-radius:7px;}
+  .bookmaker-brand-mark .bookmaker-brand-initials {width:100%;height:100%;border:0;border-radius:0;}
+  .bookmaker-brand-compact {gap:5px;}
+  .bookmaker-brand-compact .bookmaker-brand-mark {
+    flex-basis:24px;width:24px;height:24px;border-radius:6px;
+  }
+  .bookmaker-brand-compact .bookmaker-brand-mark img {width:22px;height:22px;border-radius:4px;}
+  .bookmaker-brand-compact > strong {font-size:.7rem;font-weight:750;}
+  .bookmaker-directory-grid {
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:10px;margin-top:10px;
+  }
+  .bookmaker-directory-card {
+    display:flex;flex-direction:column;gap:9px;min-width:0;
+    padding:14px;border:1px solid var(--line);border-radius:12px;
+    background:var(--surface);box-shadow:0 3px 12px #0b375006;
+  }
+  .bookmaker-directory-card .bookmaker-brand > strong {font-size:1rem;}
+  .bookmaker-directory-card p {margin:0;color:var(--muted);font-size:.77rem;line-height:1.5;flex:1;}
+  .bookmaker-directory-card > a {color:var(--green);font-size:.76rem;text-decoration:underline;
+    text-underline-offset:3px;font-weight:700;align-self:start;}
+  .bookmaker-directory-head {display:flex;align-items:center;min-height:38px;}
+  .betting-adult-confirmation {display:flex;align-items:flex-start;gap:11px;
+    font-size:.84rem;line-height:1.5;border:1px solid var(--line);padding:11px 13px;
+    border-radius:10px;background:var(--soft);}
+  .betting-adult-confirmation input[type=checkbox] {flex:0 0 17px;width:17px;height:17px;
+    margin-top:3px;accent-color:var(--green);}
+  .live-bookmakers {display:flex;flex-wrap:wrap;align-items:center;gap:5px 10px;
+    padding:3px 13px 10px;margin-top:-1px;color:var(--muted);font-size:.7rem;
+    border-bottom:1px solid var(--line);}
+  .live-bookmakers-intro {font-size:.68rem;font-weight:800;color:var(--green);white-space:nowrap;}
+  .live-bookmakers-brands {display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap;}
+  .live-bookmakers-brand {display:inline-flex;align-items:center;}
+  .live-bookmakers a {color:var(--green);font-weight:700;text-decoration:underline;
+    text-underline-offset:2px;white-space:nowrap;}
+  .live-bookmakers small {font-size:.64rem;color:var(--muted);}
+}
+@layer responsive {
+  @media(max-width:650px) {
+    .bookmaker-directory-grid {grid-template-columns:1fr;}
+    .live-bookmakers {padding:5px 11px 10px;gap:6px 9px;}
+    .live-bookmakers small {width:100%;}
+    .live-bookmakers-brand .bookmaker-brand {gap:4px;}
+    .live-bookmakers-brand .bookmaker-brand > strong {font-size:.66rem;}
+  }
+}
