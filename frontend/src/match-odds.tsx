@@ -143,7 +143,7 @@ export function LiveOddsMini({fixtureId,home,away,entry,visible}: {
       <span>1 · {home}</span><span>X · Empate</span><span>2 · {away}</span>
     </div>
     <small>Probabilidades implícitas normalizadas de cuotas API-Football, sin casa
-      identificada · 18+. No es un pronóstico ni garantiza resultados.</small>
+      identificada · 18+. No es un pronóstico ni garantiza resultados. Sin oferta ni cuota de casa concreta: sin casa identificada.</small>
   </div>;
 }
 export function MatchOdds({id,status,home,away}: {
