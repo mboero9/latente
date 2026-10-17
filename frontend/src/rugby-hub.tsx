@@ -24,6 +24,7 @@ type RugbyData = {
   available: boolean; configured: boolean; provider: string;
   league_name: string; season: number; seasons: number[];
   verified_clubs?: {team:string; group:string}[]; clubs_source_url?:string|null; clubs_note?:string|null;
+  published_schedule?: {round:number; date:string; home:string; away:string}[]; schedule_verified_results?:boolean;
   games: Match[]; official: Position[]; statistics?: MatchStats[];
   updated_at?: string; message?: string | null;
 };
@@ -125,6 +126,14 @@ export function RugbyHub() {
       </div>}
     </>}
 
+    {Boolean(data?.published_schedule?.length) && <details class="rugby-published-schedule">
+      <summary>Calendario publicado por la UAR · {data?.published_schedule?.length} partidos de fase de grupos (sin marcadores)</summary>
+      <p class="updated">Fechas y emparejamientos publicados para la edición {data?.season}. No son resultados ni partidos en vivo. Consultá la <a href={data?.clubs_source_url || "https://uar.com.ar/categoria/torneos/interior/"} target="_blank" rel="noopener noreferrer">UAR oficial ↗</a> para resultados y modificaciones.</p>
+      <div class="rugby-calendar-rows">{data?.published_schedule?.map((match,i) => <div class="rugby-calendar-match" key={match.date + match.home + match.away + i}>
+        <small>F{match.round} · {match.date.slice(8,10)}/{match.date.slice(5,7)}/{match.date.slice(0,4)}</small>
+        <span>{match.home}</span><span class="rugby-calendar-vs">vs.</span><span>{match.away}</span>
+      </div>)}</div>
+    </details>}
     <h2 class="sport-section-title">Resultados y próximos partidos</h2>
     <div class="sports-tabs" role="group">
       <button class={tab === "past" ? "active" : ""} onClick={()=>setTab("past")}>Resultados</button>
