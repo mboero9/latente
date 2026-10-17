@@ -3434,3 +3434,28 @@
   .home-right-column .f1-home-feature {display:none;}
  }
 }
+
+
+/* Two Red Bull-owned F1 constructors have distinct, wide logo assets.
+   Slightly wider space is local to their identity only, not the header. */
+@layer components {
+  .f1-identity .f1-redbull-logo {
+    flex: 0 0 52px;
+    width: 52px;
+    max-width: 52px;
+    height: 35px;
+  }
+  .f1-identity .f1-redbull-logo img {
+    max-width: 50px;
+    max-height: 32px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+}
+@layer responsive {
+  @media(max-width:600px) {
+    .f1-identity .f1-redbull-logo {flex-basis:42px;width:42px;max-width:42px;}
+    .f1-identity .f1-redbull-logo img {max-width:40px;max-height:29px;}
+  }
+}

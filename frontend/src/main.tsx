@@ -29,6 +29,12 @@ import { ArgentinaAlltime } from "./reference-sports";
 import { FootballAnalytics } from "./football-analytics";
 import { sports, SportPage, HistoryPage } from "./other-sports";
 import { NavRail } from "./nav-rail";
+// Only the HEADER order changes. Keep the sport catalog and its routes intact.
+// Editorial prominence is not claimed to be a measured global audience ranking.
+const SPORT_NAV_ORDER: string[] = [
+  "nba", "f1", "cricket", "nfl", "rugby", "mlb", "nhl",
+  "wnba", "basketball", "volleyball", "handball",
+];
 import { AdPlacement } from "./ads";
 import { WorldScorersPage, WorldScorersSection } from "./world-scorers";
 import { ClubHonours, NationalHonours } from "./historical-honours";
@@ -1502,12 +1508,14 @@ function App() {
             {[
               ["/", "Partidos"],
               ["/leagues", "Ligas"],
-              ["/tv", "📺 Dónde ver"],
-              ["/bet", "18+ Dónde apostar"],
               [`/table/${first}`, "Posiciones"],
               [`/scorers/${first}`, "Goleadores"],
               ["/league/253", "🇺🇸 MLS"],
-              ...sports.map(sport => [`/sport/${sport.slug}`, `${sport.emoji} ${sport.name}`]),
+              ["/tv", "📺 Dónde ver"],
+              ["/bet", "18+ Dónde apostar"],
+              ...[...sports].sort((a,b) => SPORT_NAV_ORDER.indexOf(a.slug) -
+                SPORT_NAV_ORDER.indexOf(b.slug))
+                .map(sport => [`/sport/${sport.slug}`, `${sport.emoji} ${sport.name}`]),
             ].map(([path, label]) => {
               const active = path.startsWith("/sport/") || path === "/league/253"
                 ? route === path

@@ -8,7 +8,9 @@ def test_header_renders_all_sports_in_scrollable_rail():
     sports=(ROOT/"frontend/src/other-sports.tsx").read_text(encoding="utf-8")
     assert 'import { NavRail } from "./nav-rail";' in main
     assert '<NavRail activePath={route}>' in main
-    assert '...sports.map(sport =>' in main
+    assert '...[...sports].sort(' in main
+    assert 'SPORT_NAV_ORDER.indexOf(a.slug)' in main
+    assert '.map(sport =>' in main
     assert 'aria-current={active ? "page" : undefined}' in main
     assert '["/league/253", "🇺🇸 MLS"]' in main
     for key in ["nhl","mlb","nba","wnba","basketball","handball",
