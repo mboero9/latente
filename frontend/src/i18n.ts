@@ -1,5 +1,6 @@
-// Lightweight bilingual presentation layer; original Spanish content remains canonical.
-// Avoids extra translation services or external API usage.
+// Bilingual presentation: Spanish content remains canonical, with explicit English
+// phrases and safe rules for dynamic UI strings. No paid translation API.
+import { EXTENDED_EN } from "./i18n-extended";
 const dictionary: Record<string, string> = {
   "LATENTE.CFD - Clubes, Fútbol y Deportes": "LATENTE.CFD - Clubs, Football and Sports",
   "Dónde ver el partido": "Where to watch the match",
@@ -136,47 +137,92 @@ const dictionary: Record<string, string> = {
   "Gol en contra": "Own goal",
   "Cambio": "Substitution",
   "Incidencia": "Event",
-  "Último dato": "Last update"
+  "Último dato": "Last update",
+  ...EXTENDED_EN,
 };
 // Brand copyright refers to the Latente website, not ownership of third-party club marks.
 const originals = new WeakMap<Text, { original: string; translated: string }>();
-const placeholders = new WeakMap<Element, string>();
-const translate = (value: string) => {
-  const trim = value.trim();
-  if (!trim) return value;
-  let target = dictionary[trim];
-  if (!target) {
-    target = trim.replace(/(\d+) partidos\b/g, "$1 matches")
+const attributeOriginals = new WeakMap<Element, Map<string,string>>();
+export function translateText(value: string): string {
+  const trimmed=value.trim();
+  if (!trimmed) return value;
+  let translation=dictionary[trimmed];
+  if (!translation) {
+    translation=trimmed
+      .replace(/(\d+) partidos\b/g, "$1 matches")
       .replace(/(\d+) torneos\b/g, "$1 tournaments")
+      .replace(/(\d+) competiciones\b/g, "$1 competitions")
+      .replace(/(\d+) goles\b/g, "$1 goals")
+      .replace(/(\d+) más\b/g, "$1 more")
       .replace(/^Página (\d+)$/, "Page $1")
       .replace(/^Temporada (\d+)$/, "Season $1")
+      .replace(/^Edición (\d+)$/, "Edition $1")
+      .replace(/^Clubes participantes · Edición /, "Participating clubs · Season ")
+      .replace(/^Resultados y próximos partidos/, "Results and upcoming fixtures")
+      .replace(/^Posiciones oficiales · /, "Official standings · ")
+      .replace(/^Fuente: /, "Source: ")
+      .replace(/^Última importación: /, "Last import: ")
       .replace(/^Último dato: /, "Last update: ")
-      .replace(/^Explorar todas las ligas \((\d+)\)$/, "Explore all leagues ($1)");
+      .replace(/^Última consulta: /, "Last request: ")
+      .replace(/^Última captura previa: /, "Last pre-match snapshot: ")
+      .replace(/^Actualizado: /, "Updated: ")
+      .replace(/^Importación pendiente\./, "Import pending.")
+      .replace(/^Cuota decimal · /, "Decimal odds · ")
+      .replace(/^Local · 1 · cuota /, "Home · 1 · odds ")
+      .replace(/^Empate · X · cuota /, "Draw · X · odds ")
+      .replace(/^Visitante · 2 · cuota /, "Away · 2 · odds ")
+      .replace(/^M(\d+) · /, "R$1 · ")
+      .replace(/^Partidos reales disponibles: /, "Available verified matches: ")
+      .replace(/ · fechas consultadas: /, " · dates checked: ")
+      .replace(/^La importación gratuita se completa progresivamente\./,
+        "Free-tier imports are completed progressively.")
+      .replace(/^Sin tabla oficial sincronizada /, "No official standings synchronized ")
+      .replace(/^Esperando datos del proveedor/, "Waiting for provider data")
+      .replace(/^Ver información de cuotas/, "View odds information")
+      .replace(/^Catálogo temporalmente no disponible: /, "Catalogue temporarily unavailable: ")
+      .replace(/^No hay partidos finalizados disponibles/, "No completed matches available")
+      .replace(/^No hay partidos programados disponibles/, "No scheduled matches available")
+      .replace(/^La cobertura depende de /, "Coverage depends on ")
+      .replace(/^Última actualización /, "Last updated ")
+      .replace(/^Datos importados, cobertura según competición/,
+        "Imported data, coverage varies by competition")
+      .replace(/^Archivo parcial; no es un historial completo/,
+        "Partial archive; not a complete history")
+      .replace(/^Cuota /, "Odds ");
   }
-  return value.replace(trim, target);
-};
+  return value.replace(trimmed,translation);
+}
 export function localizePage(language: "es" | "en") {
-  document.documentElement.lang = language;
-  const root = document.getElementById("app") || document.body;
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let node: Node | null;
-  while ((node = walker.nextNode())) {
-    const text = node as Text;
-    if (!text.parentElement || ["SCRIPT", "STYLE", "TEXTAREA"].includes(text.parentElement.tagName)) continue;
-    const saved = originals.get(text);
-    const original = saved && text.data === saved.translated ? saved.original : text.data;
-    const desired = language === "en" ? translate(original) : original;
-    if (text.data !== desired) text.data = desired;
-    originals.set(text, { original, translated: desired });
+  document.documentElement.lang=language;
+  const root=document.getElementById("app") || document.body;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  let node:Node|null;
+  while((node=walker.nextNode())) {
+    const txt=node as Text;
+    if(!txt.parentElement ||
+        ["SCRIPT","STYLE","TEXTAREA","CODE","PRE"].includes(txt.parentElement.tagName) ||
+        txt.parentElement.closest('[data-no-translate], [translate="no"]')) continue;
+    const previous=originals.get(txt);
+    const original=previous && txt.data===previous.translated ? previous.original : txt.data;
+    const desired=language==="en"?translateText(original):original;
+    if(txt.data!==desired)txt.data=desired;
+    originals.set(txt,{original,translated:desired});
   }
-  root.querySelectorAll("input[placeholder], input[aria-label], button[aria-label]").forEach((el) => {
-    for (const attr of ["placeholder", "aria-label"]) {
-      const current = el.getAttribute(attr);
-      if (!current) continue;
-      const key = attr === "placeholder" ? "placeholder" : "aria-label";
-      const original = placeholders.get(el) || current;
-      if (key === "placeholder") placeholders.set(el, original);
-      el.setAttribute(attr, language === "en" ? translate(original) : original);
+  root.querySelectorAll(
+    "[placeholder],[aria-label],[title],[aria-description],[data-tooltip],img[alt]"
+  ).forEach(el=>{
+    for(const attr of ["placeholder","aria-label","title","aria-description","data-tooltip","alt"]) {
+      const current=el.getAttribute(attr);
+      if(current==null||current==="")continue;
+      let history=attributeOriginals.get(el);
+      if(!history){history=new Map();attributeOriginals.set(el,history);}
+      const old=history.get(attr);
+      const expected=old ? translateText(old) : "";
+      // If UI updated its label, treat the new string as the canonical Spanish.
+      const original=old && (current===expected||current===old)?old:current;
+      history.set(attr,original);
+      const value=language==="en"?translateText(original):original;
+      if(current!==value)el.setAttribute(attr,value);
     }
   });
 }
