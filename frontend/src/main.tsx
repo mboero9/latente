@@ -1577,6 +1577,12 @@ function App() {
           </div>
         </div>
       </header>
+      {/* Vertical inventory is responsive and opt-in. On mobile and while
+          AdSense approval is pending, these produce no visible advertisements. */}
+      {view !== "bet" && view !== "match" && <>
+        <AdPlacement placement="rail-left"/>
+        <AdPlacement placement="rail-right"/>
+      </>}
       <div class="app-shell">
         <aside class="sidebar">
           <div class="sidebar-heading">
