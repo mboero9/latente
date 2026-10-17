@@ -17,6 +17,7 @@ import { observeLanguage } from "./i18n";
 import { MatchExtras } from "./match-extras";
 import { MatchOdds, LiveOddsMini } from "./match-odds";
 import type { LiveOddsSummary } from "./match-odds";
+import { LiveIncidentStrip, type LiveIncidentSnapshot } from "./live-incidents";
 import { CupBracket } from "./cup-bracket";
 import { WatchGuide } from "./watch-guide";
 import { BettingView } from "./betting-guide";
@@ -431,6 +432,11 @@ const STAR_CLUBS = [
   "palmeiras", "corinthians", "sao paulo", "santos", "gremio",
   "atletico madrid", "borussia dortmund", "benfica", "porto",
   "ajax", "al nassr", "al hilal",
+  "inter miami", "bayer leverkusen", "galatasaray", "fenerbahce",
+  "america", "chivas", "tigres uanl", "cruz azul", "colo colo",
+  "universidad de chile", "celtic", "sporting", "botafogo",
+  "atletico mineiro", "cruzeiro", "talleres", "huracan",
+  "lanus", "belgrano", "newell", "fluminense",
 ];
 const normalizeForFocus = (v: string) =>
   v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -514,6 +520,24 @@ function Focus({ match: m, tz }: { match: Match; tz: string }) {
   );
 }
 
+function MatchListing({
+  match: m, tz, odds, incidents, featured = false,
+}: {
+  match: Match;
+  tz: string;
+  odds?: LiveOddsSummary;
+  incidents?: LiveIncidentSnapshot;
+  featured?: boolean;
+}) {
+  const active = LIVE.has(m.status);
+  return <div class={`match-row-container${featured ? " featured-live-match" : ""}`}>
+    <MatchRow match={m} tz={tz} />
+    {active && <LiveIncidentStrip match={m} snapshot={incidents} />}
+    {active && <LiveOddsMini fixtureId={m.id} home={m.home.name}
+      away={m.away.name} entry={odds} />}
+  </div>;
+}
+
 function MiniTable({ league }: { league: League | undefined }) {
   const { result } = useApi<Standing[]>(
     league ? `/api/leagues/${league.id}/standings` : null,
@@ -590,19 +614,36 @@ function FixturesView({
   const { result: tomorrowForFocus } = useApi<Match[]>(
     `/api/fixtures?date=${nextDay}&limit=300`, DISPLAY_REFRESH_MS);
   const {result: liveOdds} = useApi<LiveOddsSummary[]>("/api/odds/live", 60000);
+  // Una consulta por toda la jornada: los eventos se leen de PostgreSQL.
+  // Ninguna visita a la página consume una llamada adicional a API-Football.
+  const {result: liveIncidents} = useApi<LiveIncidentSnapshot[]>(
+    "/api/fixtures/live/incidents", 15000);
+  const incidentsByFixture = new Map(
+    (liveIncidents?.data || []).map(row => [row.fixture_id, row]));
   const oddsByFixture = new Map((liveOdds?.data || []).map(row => [row.fixture_id, row]));
   const matches = result?.data || [],
     inPlay = matches.filter((m) => LIVE.has(m.status)),
     spotlight = selectSpotlight(globalLive?.data || inPlay,
       [...(todayForFocus?.data || []), ...(tomorrowForFocus?.data || [])]),
+    // Este orden es editorial (torneos y popularidad aproximada), no
+    // una estimación de ventas ni una medición de audiencia.
+    highlighted = live && !league && page === 0
+      ? [...inPlay].sort((a, b) =>
+        focusPriority(b) - focusPriority(a) ||
+        a.kickoff.localeCompare(b.kickoff) || a.id - b.id).slice(0, 6)
+      : [],
+    highlightedIds = new Set(highlighted.map(m => m.id)),
     groups = new Map<number, Match[]>();
-  for (const m of matches)
+  for (const m of matches.filter(m => !highlightedIds.has(m.id)))
     groups.set(m.league_id, [...(groups.get(m.league_id) || []), m]);
-  const sorted = [...groups].sort(
-    (a, b) =>
-      leagues.findIndex((l) => l.id === a[0]) -
-      leagues.findIndex((l) => l.id === b[0]),
-  );
+  const leagueOrder = (id: number) => {
+    const pos = leagues.findIndex(l => l.id === id);
+    return pos < 0 ? Number.MAX_SAFE_INTEGER : pos;
+  };
+  const sorted = [...groups].sort((a, b) => live
+    ? Math.max(...b[1].map(focusPriority)) - Math.max(...a[1].map(focusPriority))
+      || leagueOrder(a[0]) - leagueOrder(b[0])
+    : leagueOrder(a[0]) - leagueOrder(b[0]));
   return (
     <>
       <div class={"content-columns" + (!league ? " home-content-columns" : "")}>
@@ -659,6 +700,17 @@ function FixturesView({
                 : "Probá otra fecha o liga. Solo se muestran las temporadas y partidos ya sincronizados."}
             </Empty>
           )}
+          {highlighted.length > 0 && <section class="live-highlights" aria-label="Partidos destacados en vivo">
+            <div class="live-highlights-heading">
+              <h2>⭐ Destacados en vivo</h2>
+              <span>Primero los clubes y torneos más reconocidos</span>
+            </div>
+            <div class="match-group panel">
+              {highlighted.map(m => <MatchListing key={m.id}
+                match={m} tz={tz} featured odds={oddsByFixture.get(m.id)}
+                incidents={incidentsByFixture.get(m.id)} />)}
+            </div>
+          </section>}
           {sorted.map(([id, rows]) => (
             <article class="match-group panel">
               <header class="league-bar">
@@ -674,12 +726,12 @@ function FixturesView({
                   <Icon name="right" />
                 </a>
               </header>
-              {rows.map((m) => (
-                <div key={m.id} class="match-row-container">
-                  <MatchRow match={m} tz={tz} />
-                  {LIVE.has(m.status) && <LiveOddsMini fixtureId={m.id} home={m.home.name} away={m.away.name} entry={oddsByFixture.get(m.id)} />}
-                </div>
-              ))}
+              {(live ? [...rows].sort((a,b) => focusPriority(b)-focusPriority(a) ||
+                a.kickoff.localeCompare(b.kickoff) || a.id - b.id) : rows)
+                .map(m => <MatchListing key={m.id}
+                  match={m} tz={tz}
+                  odds={oddsByFixture.get(m.id)}
+                  incidents={incidentsByFixture.get(m.id)} />)}
             </article>
           ))}
           {(result?.meta.total || 0) > 150 && (
