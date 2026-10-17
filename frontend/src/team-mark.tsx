@@ -1,6 +1,7 @@
 import { useState } from "preact/hooks";
 
 const providers: Record<string,string> = {
+  football: "football",
   nhl: "hockey", mlb: "baseball", nfl: "american-football",
   nba: "basketball", wnba: "basketball",
   basketball: "basketball", handball: "handball",
