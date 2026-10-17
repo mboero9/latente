@@ -13,9 +13,7 @@ export function LiveBookmakers({audience,geoCountry}:{
   audience:BettingAudience|null;geoCountry:string|null|undefined;
 }) {
   if (geoCountry !== "AR" || !audience?.adult || audience.country !== "AR")
-    return <div class="live-bookmakers-teaser">
-      <a href="#/bet">18+ · Información legal sobre operadores según tu jurisdicción ↗</a>
-    </div>;
+    return null;
   const brands=audience.province==="CABA"?CABA:PBA;
   return <div class="live-bookmakers" aria-label="Referencias de operadores 18 años o más">
     <span class="live-bookmakers-intro">18+ · Referencias {audience.province}</span>
