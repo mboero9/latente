@@ -40,6 +40,54 @@ Se incorporaron al catálogo de lectura los **participantes**, separados de part
 - rugbyAPI.com es ideal para ligas internacionales de clubes; no muestra URBA/TDI en su catálogo de 41 competiciones.
 - Para competencia nacional conviene primero **API-Sports Rugby**, validar si su antiguo rótulo `Top12` tiene partidos nuevos de URBA 2026 sin asumir que cambió automáticamente a 14 participantes.
 
+## Octubre 2026: escudos y ligas argentinas adicionales
+
+**Escudos URBA**: la página oficial de la URBA publica imágenes de los 14
+participantes de Top 14 en `api.urba.org.ar/img/clubs/`. Se verificaron
+individualmente los 14 recursos públicos (no se adivinan filenames); Latente
+referencia directamente el host original. La inclusión no implica permiso
+contractual para explotación de marcas: antes de ampliar publicidad o caché
+local de logos, confirmar autorización correspondiente.
+
+**Torneos agregados al selector de Rugby (edición 2026):**
+
+- URBA Primera A, Primera B, Primera C, Segunda, Tercera y Desarrollo,
+  con fuente oficial pública `https://urba.org.ar/fixture`.
+- Torneo Regional del Litoral Top 10, **10 clubes confirmados** por
+  el Reglamento General del torneo 2026:
+  https://usr.org.ar/wp-content/uploads/2026/03/2026-Reglamento-General-TRL.pdf
+- Torneo Regional del Litoral Segunda (sin plantel inventado),
+  con programación oficial:
+  https://urr.org.ar/programacion-semanal-arranca-el-trl-%F0%9F%92%A5/
+- Unión Cordobesa Top 10 A, **10 clubes confirmados** en el
+  fixture oficial, y Super 9 B con enlace a la Unión:
+  https://unioncordobesaderugby.com.ar/fixtures-2026/
+- Los clubes de Litoral/Córdoba solo muestran escudo cuando se puede
+  enlazar uno verificado mediante una instantánea de encuentro o tabla.
+
+**Verificación de proveedores al 17/10/2026:**
+
+- [URBA oficial](https://urba.org.ar/) contiene resultados, posiciones,
+  fixtures y escudos de Top 14 2026. Hay una infraestructura técnica
+  `api.urba.org.ar`, pero **no** se confirmó una licencia de API pública
+  documentada para reutilizar en productos comerciales. La opción apropiada
+  para resultados oficiales automatizados es solicitar acceso/licencia a la
+  URBA, no implementar scraping periódico de endpoints internos.
+- [API-Sports Rugby](https://api-sports.io/sports/rugby) sigue denominando
+  al torneo argentino *Top 12*. No se da por garantizada cobertura de Top 14
+  2026, Primera A/B/C, Interior o ligas provinciales.
+- [rugbyAPI.com](https://rugbyapi.com/coverage) lista *Top 12 Argentina* con
+  últimos resultados en 2025. Permite una clave gratis con 50 consultas/día
+  para las competiciones cubiertas, pero no resuelve Top 14 2026 ni Litoral.
+- [Sportradar Rugby Union](https://developer.sportradar.com/rugby) dispone
+  de API comercial internacional; se requiere presupuesto/confirmación
+  contractual y catálogo específico por liga antes de comprar.
+
+**Estado de producto**: los nuevos torneos son fichas reales con fuente
+federativa, edición y clubes solo donde la composición se corroboró;
+los resultados, posiciones y puntos bonus **no** se rellenan hasta tener
+un feed con derecho de uso y cobertura actual.
+
 ## Prioridad técnica 30 días
 
 1. Conectar Free API-Sports Rugby **con autorización válida** y validar `GET /leagues`, `/games?league=...&season=2026`, `/standings` contra URBA, Top14 francés, Premiership, EPCR y URC; verificar primer snapshot en PostgreSQL. Si la URBA no publica el Top14 2026 actualizado, no mostrar Top12 histórico como torneo vigente.
