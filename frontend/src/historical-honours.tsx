@@ -1,4 +1,7 @@
 import { useState } from "preact/hooks";
+import { useApi } from "./api";
+import { HistoricFlag } from "./historic-flags";
+import { HistoricClubCrest } from "./historic-media";
 
 /** Historical reference snapshots; NOT automatically updated APIs.
  * Clubs: UEFA five major competitions + confederation equivalent +
@@ -68,15 +71,19 @@ const REGIONS:{id:Region|"all";label:string}[]=[
   {id:"afc",label:"Copa Asiática"},
   {id:"concacaf",label:"Copa Oro"},
 ];
-function ClubMark({club}:{club:ClubTitle}) {
+function ClubMark({club,logos}:{club:ClubTitle;logos:Record<string,number>}) {
   return <span class="historic-club-name">
-    {club.teamId ? <img src={`https://media.api-sports.io/football/teams/${club.teamId}.png`} loading="lazy" alt=""
-      onError={e=>{e.currentTarget.style.display="none";}}/>:<span aria-hidden="true">{club.flag}</span>}
-    <span>{club.name}<small>{club.country}</small></span>
+    <HistoricClubCrest name={club.name} verifiedId={logos[club.name]}
+      fallbackId={club.teamId}/>
+    <span class="historic-club-text">{club.name}
+      <small><HistoricFlag country={club.country} compact/>{club.country}</small>
+    </span>
   </span>;
 }
 /** Independent full-width table so the homepage can stack its rankings. */
 export function ClubHonours() {
+  const {result: crestResult} = useApi<Record<string,number>>("/api/history/club-crests",0);
+  const logos = crestResult?.data || {};
   return (
     <section class="historical-honours-section" id="copas-clubes">
       <div class="view-heading"><div><span class="eyebrow">PALMARÉS MUNDIAL · CLUBES</span>
@@ -85,7 +92,7 @@ export function ClubHonours() {
       <div class="panel table-scroll" tabIndex={0} role="region" aria-label="Ranking internacional de clubes">
         <table><thead><tr><th>#</th><th>Club</th><th>Copas continentales</th><th>Mundiales / intercontinentales</th><th>Otras int.</th><th>Total</th></tr></thead>
           <tbody>{sortedClubs.map((club,i)=><tr key={club.name}>
-            <td class="rank">{i+1}</td><th scope="row" title={club.detail}><ClubMark club={club}/></th>
+            <td class="rank">{i+1}</td><th scope="row" title={club.detail}><ClubMark club={club} logos={logos}/></th>
             <td>{club.confed}</td><td>{club.world}</td><td>{club.other||"—"}</td>
             <td class="points"><strong>{club.confed+club.world+(club.other||0)}</strong></td>
           </tr>)}</tbody>
@@ -120,7 +127,7 @@ export function NationalHonours() {
         <table><thead><tr><th>#</th><th>Selección</th><th>Mundiales</th><th>Copas continentales</th><th>Competición</th><th>Total</th></tr></thead>
           <tbody>{nations.map((nation,i)=><tr key={nation.name}>
             <td class="rank">{i+1}</td>
-            <th scope="row"><span class="historic-club-name"><span aria-hidden="true">{nation.flag}</span>{nation.name}</span></th>
+            <th scope="row"><span class="historic-club-name"><HistoricFlag country={nation.name}/>{nation.name}</span></th>
             <td>{nation.world}</td><td>{nation.continental}</td><td>{nation.competition}</td>
             <td class="points"><strong>{nation.world+nation.continental}</strong></td>
           </tr>)}</tbody>
