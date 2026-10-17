@@ -3197,3 +3197,24 @@
     .featured-live-match {transition:none;}
   }
 }
+
+
+/* Explicitly verified bookmakers: site favicons (not a claim of logo licence).
+   Bars compare gross decimal-odds payout for the same stake, not win chance. */
+@layer components {
+  .bookmaker-brand { display:inline-flex;align-items:center;gap:9px;min-width:0; }
+  .bookmaker-brand img {display:block;width:26px;height:26px;object-fit:contain;border-radius:6px;flex-shrink:0;}
+  .bookmaker-brand img[hidden] {display:none;}
+  .bookmaker-brand > strong {font-size:.88rem;overflow-wrap:anywhere;}
+  .bookmaker-brand-initials {flex-shrink:0;display:inline-grid;place-items:center;width:26px;height:26px;border:1px solid var(--line);border-radius:6px;background:var(--soft);color:var(--green);font-size:.64rem;font-weight:800;}
+  .odds-house-title {display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;}
+  .odds-house-title small {color:var(--muted);font-size:.7rem;}
+  .odds-choices .odds-best-choice small {color:var(--green);font-weight:750;}
+  .odds-choices .coverage-notice {font-size:.7rem;}
+  .odds-directory {display:block;margin:12px 0;color:var(--green);text-decoration:underline;font-size:.82rem;}
+  .betting-guide .licensed-operators {margin:15px 0 20px;}
+  .licensed-operators h3 {font-size:.95rem;margin-bottom:9px;}
+  .bookmaker-directory a {display:flex;flex-direction:column;align-items:start;gap:5px;}
+  .bookmaker-directory a .bookmaker-brand > strong {font-weight:750;}
+  .public-operator-mark {font-size:.9rem;}
+}

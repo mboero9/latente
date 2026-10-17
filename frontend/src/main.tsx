@@ -1591,7 +1591,7 @@ function App() {
               </select>
             </label>
           </div>
-          {view !== "bet" && <AdPlacement placement="top" />}
+          {view !== "bet" && view !== "match" && <AdPlacement placement="top" />}
           {mode === "demo" && (
             <div class="notice demo-notice">
               <strong>Modo demostración</strong>
@@ -1702,7 +1702,7 @@ function App() {
               <a href="#/">Volver a partidos</a>
             </Empty>
           )}
-          {view !== "bet" && <AdPlacement placement="bottom" />}
+          {view !== "bet" && view !== "match" && <AdPlacement placement="bottom" />}
           <footer>
             <a href="#/" class="footer-brand">
               latente.
@@ -1710,7 +1710,7 @@ function App() {
             <span>
               © {new Date().getFullYear()} Latente. Todos los derechos reservados.
             </span>
-            <span class="footer-links"><a href="/sobre-latente.html">Sobre Latente</a><a href="/metodologia.html">Fuentes</a><a href="/publicidad.html">Publicidad</a></span>
+            <span class="footer-links"><a href={language === "en" ? "/en/sobre-latente.html" : "/sobre-latente.html"}>Sobre Latente</a><a href={language === "en" ? "/en/metodologia.html" : "/metodologia.html"}>Fuentes</a><a href={language === "en" ? "/en/publicidad.html" : "/publicidad.html"}>Publicidad</a></span>
             <span>Hecho para seguir el juego.</span>
           </footer>
         </main>
