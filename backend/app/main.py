@@ -3,7 +3,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select, func, or_, text
+from sqlalchemy import select, func, or_, text, case
 from .config import settings
 from .db import session_scope
 from .models import (
@@ -282,6 +282,55 @@ def fixtures(
         return {
             "data": match_payload(s, rows),
             "meta": meta(rows, total=total, offset=offset, limit=limit),
+        }
+
+
+# Más vistos/relevantes editorialmente: el ID lo asigna API-Football.
+# El orden del feed se usa solo para recuperar candidatos; la selección final
+# considera clubes conocidos, estado y competición desde el frontend.
+FOCUS_LEAGUE_ORDER = (
+    2, 39, 140, 128, 135, 78, 61, 13, 11, 3, 1,
+    71, 253, 4, 9, 45, 129, 130, 262,
+)
+
+
+@app.get("/api/fixtures/focus")
+def fixture_focus_candidates():
+    """Priority leagues from the *entire* live pool, regardless of date/pagination.
+
+    One bounded DB read for each state; no external provider requests.
+    Filtering happens before LIMIT, unlike the former global first-300 query.
+    """
+    now = utcnow()
+    priority = case(
+        *((Fixture.league_id == league_id, i)
+          for i, league_id in enumerate(FOCUS_LEAGUE_ORDER)),
+        else_=len(FOCUS_LEAGUE_ORDER),
+    )
+    with session_scope() as s:
+        base = select(Fixture).where(Fixture.source == settings.mode)
+        if settings.mode == "api" and not settings.all_leagues:
+            base = base.where(Fixture.league_id.in_(settings.league_ids))
+        live_rows = list(s.scalars(
+            base.where(Fixture.status.in_(LIVE))
+                .order_by(priority, Fixture.kickoff.desc(), Fixture.id)
+                .limit(400)
+        ))
+        upcoming_rows = list(s.scalars(
+            base.where(
+                Fixture.status.in_(("NS", "TBD")),
+                Fixture.kickoff >= now - timedelta(minutes=5),
+                Fixture.kickoff <= now + timedelta(hours=36),
+            )
+            .order_by(priority, Fixture.kickoff, Fixture.id)
+            .limit(150)
+        ))
+        return {
+            "data": {
+                "live": match_payload(s, live_rows),
+                "upcoming": match_payload(s, upcoming_rows),
+            },
+            "meta": meta(live_rows, coverage=bool(live_rows or upcoming_rows)),
         }
 
 
