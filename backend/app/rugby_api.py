@@ -28,6 +28,18 @@ COMPETITIONS = (
     ("urba", "URBA · Top 14 (Argentina, 2026)", ("top 12", "top12", "top 14"), ("argentina",)),
     ("interior-a", "UAR · Torneo del Interior A", ("torneo del interior a",), ("argentina",)),
     ("interior-b", "UAR · Torneo del Interior B", ("torneo del interior b",), ("argentina",)),
+    # These competitions exist in the 2026 official calendars. A public
+    # fixture page does NOT imply an authorized JSON feed or full standings.
+    ("urba-primera-a", "URBA · Primera A", ("primera a", "primera division a"), ("argentina",)),
+    ("urba-primera-b", "URBA · Primera B", ("primera b", "primera division b"), ("argentina",)),
+    ("urba-primera-c", "URBA · Primera C", ("primera c", "primera division c"), ("argentina",)),
+    ("urba-segunda", "URBA · Segunda División", ("segunda division",), ("argentina",)),
+    ("urba-tercera", "URBA · Tercera División", ("tercera division",), ("argentina",)),
+    ("urba-desarrollo", "URBA · Desarrollo", ("desarrollo",), ("argentina",)),
+    ("litoral-top10", "Torneo Regional del Litoral · Top 10", ("torneo regional del litoral",), ("argentina",)),
+    ("litoral-segunda", "Torneo Regional del Litoral · Segunda", ("trl segunda",), ("argentina",)),
+    ("cordoba-top10", "Unión Cordobesa · Top 10 A", ("top 10 a",), ("argentina",)),
+    ("cordoba-super9", "Unión Cordobesa · Súper 9 B", ("super 9 b",), ("argentina",)),
     ("championship", "Rugby Championship · Los Pumas", ("rugby championship",), ("world",)),
     ("six-nations", "Seis Naciones", ("six nations",), ("europe",)),
     ("super-rugby", "Super Rugby", ("super rugby",), ("world",)),
@@ -253,7 +265,12 @@ def public_catalog():
             "region":mapped.get("region") or mapped.get("country"),
             "source_coverage":bool(mapped),
             "official_url":source_url(slug),
-            "seasons":sorted(set(from_api.get("seasons") or []).union(seasons_by_slug.get(slug,set())).union({2026} if slug in {"urba","interior-a","interior-b"} else set()),reverse=True)
+            "seasons":sorted(set(from_api.get("seasons") or []).union(seasons_by_slug.get(slug,set())).union({2026} if slug in {
+                "urba", "interior-a", "interior-b", "urba-primera-a",
+                "urba-primera-b", "urba-primera-c", "urba-segunda",
+                "urba-tercera", "urba-desarrollo", "litoral-top10",
+                "litoral-segunda", "cordoba-top10", "cordoba-super9",
+            } else set()),reverse=True)
         })
     for row in discovered:
         if not isinstance(row,dict) or not row.get("slug") or row["slug"] in BY_SLUG:
@@ -270,6 +287,55 @@ def public_catalog():
             "seasons":sorted(seasons_by_slug.get(row["slug"],set()),reverse=True)
         })
     return result
+
+
+# Explicit variants appearing in ESPN / API-Sports fixture feeds. Exact
+# normalized matching avoids attaching the crest of a different club.
+CLUB_FIXTURE_ALIASES = {
+    "belgrano athletic": ("belgrano ac", "belgrano athletic club"),
+    "la plata rugby club": ("la plata", "la plata rc"),
+    "buenos aires cricket & rugby club": ("b a c r c", "bacrc", "buenos aires c rc"),
+    "atletico del rosario": ("atletico del rosario",),
+    "hindu": ("hindu club",),
+    "cuba": ("cuba",),
+    "sic": ("sic",),
+    "regatas bella vista": ("regatas bella vista",),
+    "jockey club de villa maria": ("jockey villa maria",),
+}
+
+
+def _club_key(name):
+    import unicodedata
+    folded = "".join(c for c in unicodedata.normalize("NFKD", str(name or "").casefold())
+                     if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]+", " ", folded).strip()
+
+
+def attach_club_logos(clubs, games, official):
+    """Attach only official/published or provider-verified logos.
+    Prefer a federation logo embedded in the 2026 edition list; otherwise
+    find a cached match/official table exact alias. No vendor calls.
+    """
+    logos = {}
+    for match in games:
+        for side in ("home", "away"):
+            name, url = match.get(side), match.get(f"{side}_logo")
+            if name and isinstance(url, str) and url.startswith("https://"):
+                logos[_club_key(name)] = url
+    for row in official:
+        name, url = row.get("team"), row.get("logo")
+        if name and isinstance(url, str) and url.startswith("https://"):
+            logos[_club_key(name)] = url
+    updated = []
+    for club in clubs:
+        item = dict(club)
+        if not item.get("logo"):
+            key = _club_key(item["team"])
+            variants = (key,) + CLUB_FIXTURE_ALIASES.get(key, ())
+            item["logo"] = next((logos[variant] for variant in variants
+                                  if variant in logos), None)
+        updated.append(item)
+    return updated
 
 
 def read_competition(slug, season=None):
@@ -314,6 +380,8 @@ def read_competition(slug, season=None):
             by_game[identity] = game
     games = sorted(by_game.values(), key=lambda g: (g.get("date") or "", g.get("id") or ""))
     official = table_source.data if table_source else []
+    clubs = edition_clubs(slug, year)
+    clubs = attach_club_logos(clubs, games, official)
     sources = [src for src, row in (
         ("rugbyAPI.com", rugbyapi_games if rugbyapi_games and rugbyapi_games.data else None),
         ("rugbyAPI.com", rugbyapi_table if rugbyapi_table and rugbyapi_table.data else None),
@@ -330,12 +398,14 @@ def read_competition(slug, season=None):
         "provider": provider, "league_name": title,
         "season": year, "seasons": sorted(set([*available, *([year] if games or official else [])]), reverse=True),
         "games": games, "official": official,
-        "verified_clubs": edition_clubs(slug, year),
+        "verified_clubs": clubs,
         "published_schedule": published_schedule(slug, year),
         "schedule_verified_results": False,
         "clubs_source_url": source_url(slug),
-        "clubs_note": ("Participantes de la edición 2026, verificados contra la unión organizadora. No equivalen a una tabla de posiciones ni a resultados."
-                        if edition_clubs(slug, year) else None),
+        "clubs_note": ("Clubes de la edición 2026 confirmados en la publicación de la organización; "
+                       "los escudos provienen de su sitio o de imágenes verificadas del proveedor. "
+                       "Este listado no equivale a una tabla de posiciones."
+                        if clubs else None),
         "statistics": backup_stats.data if backup_stats else [],
         "updated_at": max((aware(row.updated_at) for row in (game_source, table_source, backup_stats) if row), default=None),
         "message": None if games or official else
