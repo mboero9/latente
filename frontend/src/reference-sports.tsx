@@ -148,7 +148,7 @@ function F1Content({data,tab,setTab}:{data:F1;tab:"drivers"|"constructors"|"resu
     <p class="f1-mobile-scroll-hint">← Deslizá la tabla para ver escuderías, puntos y victorias →</p>
     <div class="panel table-scroll f1-standings-scroll" role="region" tabIndex={0}
       aria-label="Clasificación de Fórmula 1. Desplazamiento horizontal disponible.">
-      <table class="f1-standings-table">
+      <table class={`f1-standings-table f1-standings-table--${tab}`}>
       <thead><tr>
         <th>#</th><th>{tab==="constructors"?"Escudería":"Piloto"}</th>
         {tab!=="constructors"&&<th>Nacionalidad piloto</th>}
