@@ -58,7 +58,9 @@ def test_csp_allows_flag_images_in_both_nginx_and_cloudflare():
     for path in ("deploy/nginx/nginx.conf", "deploy/railway/nginx.conf.template",
                  "frontend/public/_headers"):
         text = (ROOT / path).read_text()
-        assert "img-src 'self' data: https://flagcdn.com" in text
+        assert "img-src 'self' data:" in text
+        assert "https://flagcdn.com" in text
+        assert "https://api.urba.org.ar" in text
         assert "https://media.api-sports.io" in text
 
 
