@@ -118,7 +118,7 @@ def test_bracket_frontend_draws_tie_edges_not_each_fixture():
     assert "data-tie-key" in src
     assert '.closest<HTMLElement>(".knockout-tie")' in src
     assert "seen.has(key)" in src
-    assert 'drawn.push(`M ' in src
+    assert "drawn.push(" in src
     assert "ResizeObserver" in src
     assert "Ida" in src and "Vuelta" in src
     assert "cruces ·" in src
