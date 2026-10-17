@@ -22,7 +22,7 @@ def test_spotlight_candidates_are_database_only_and_unpaginated():
 
 def test_spotlight_uses_candidates_not_first_300_chronologically():
     frontend = (ROOT / "frontend/src/main.tsx").read_text(encoding="utf-8")
-    assert '"/api/fixtures/focus", DISPLAY_REFRESH_MS' in frontend
+    assert '"/api/fixtures/focus", 15000' in frontend
     assert "focusCandidates?.data?.live || inPlay" in frontend
     assert "focusCandidates?.data?.upcoming || []" in frontend
     assert '/api/fixtures?date=${day}&live=true&limit=300' not in frontend
