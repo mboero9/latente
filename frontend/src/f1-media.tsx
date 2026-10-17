@@ -16,6 +16,8 @@ const VERIFIED_LOGOS: Record<string,string> = {
  "williams racing":"Williams F1 logo 2026.png",
  "audi":"Audif1.com logo17 (cropped).svg",
  "cadillac":"Cadillac Formula 1 Team logo.png",
+ "red bull racing":"Red Bull Racing-Logo.png",
+ "red bull":"Red Bull Racing-Logo.png",
 };
 const TEAM_COLOURS:Record<string,string>={
  "ferrari":"#e80020","red bull":"#3671c6",
