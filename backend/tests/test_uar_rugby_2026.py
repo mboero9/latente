@@ -72,3 +72,64 @@ def test_verified_european_and_premiership_clubs_for_2026_27():
     assert edition_clubs("top-14", 2025) == []
     assert edition_clubs("champions", 2025) == []
     assert source_url("champions").startswith("https://www.epcrugby.com/")
+
+
+def test_all_fourteen_urba_clubs_have_verified_public_urba_crests():
+    from app.rugby_clubs import URBA_TOP14_OFFICIAL_LOGOS
+    clubs = edition_clubs("urba", 2026)
+    assert len(clubs) == 14
+    assert set(URBA_TOP14_OFFICIAL_LOGOS) == set(URBA_2026)
+    for club in clubs:
+        assert club["logo"] == ("https://api.urba.org.ar/img/clubs/" +
+                                URBA_TOP14_OFFICIAL_LOGOS[club["team"]])
+        assert club["logo"].endswith(".png")
+
+
+def test_additional_2026_urba_and_regional_leagues_have_official_sources():
+    from app.rugby_clubs import CORDOBA_TOP10_2026, LITORAL_TOP10_2026
+    from app.rugby_api import public_catalog
+    slugs = {
+        "urba-primera-a", "urba-primera-b", "urba-primera-c",
+        "urba-segunda", "urba-tercera", "urba-desarrollo",
+        "litoral-top10", "litoral-segunda", "cordoba-top10", "cordoba-super9",
+    }
+    catalog = {row["slug"]: row for row in public_catalog()}
+    for slug in slugs:
+        assert slug in catalog
+        assert 2026 in catalog[slug]["seasons"]
+        assert catalog[slug]["official_url"].startswith("https://")
+    assert len(edition_clubs("cordoba-top10", 2026)) == len(CORDOBA_TOP10_2026) == 10
+    assert len(edition_clubs("litoral-top10", 2026)) == len(LITORAL_TOP10_2026) == 10
+    assert not edition_clubs("litoral-top10", 2025)
+    assert not edition_clubs("urba-primera-a", 2026)  # Don't invent club rosters
+
+
+def test_cached_fixture_logo_matches_verified_club_name_only():
+    from app.rugby_api import attach_club_logos
+    clubs = [
+        {"team": "CUBA", "group": "URBA"},
+        {"team": "Belgrano Athletic", "group": "URBA"},
+        {"team": "SIC", "group": "URBA"},
+        {"team": "Al Ahly", "group": "Unrelated"},
+    ]
+    matches = [
+        {"home": "CUBA", "home_logo": "https://a.espncdn.com/cuba.png",
+         "away": "Belgrano AC", "away_logo": "https://a.espncdn.com/belgrano.png"},
+    ]
+    standings = [{"team": "SIC", "logo": "https://a.espncdn.com/sic.png"}]
+    rows = {row["team"]: row for row in attach_club_logos(clubs, matches, standings)}
+    assert rows["CUBA"]["logo"] == "https://a.espncdn.com/cuba.png"
+    assert rows["Belgrano Athletic"]["logo"] == "https://a.espncdn.com/belgrano.png"
+    assert rows["SIC"]["logo"] == "https://a.espncdn.com/sic.png"
+    assert rows["Al Ahly"]["logo"] is None
+
+
+def test_frontend_renders_logo_directly_and_no_fictitious_scheduled_zero_score():
+    view = (ROOT / "frontend/src/rugby-hub.tsx").read_text()
+    marks = (ROOT / "frontend/src/team-mark.tsx").read_text()
+    assert 'logo={club.logo}' in view
+    assert '"api.urba.org.ar"' in marks
+    assert 'm.completed || /in progress' in view
+    for file in ("frontend/public/_headers", "deploy/railway/nginx.conf.template",
+                 "deploy/nginx/nginx.conf"):
+        assert "https://api.urba.org.ar" in (ROOT / file).read_text()
