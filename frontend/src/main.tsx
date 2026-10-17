@@ -18,6 +18,8 @@ import { MatchExtras } from "./match-extras";
 import { MatchOdds, LiveOddsMini } from "./match-odds";
 import type { LiveOddsSummary } from "./match-odds";
 import { LiveIncidentStrip, type LiveIncidentSnapshot } from "./live-incidents";
+import { LiveBookmakers } from "./live-bookmakers";
+import { readBettingAudience, type BettingAudience } from "./betting-audience";
 import { CupBracket } from "./cup-bracket";
 import { WatchGuide } from "./watch-guide";
 import { BettingView } from "./betting-guide";
@@ -543,13 +545,15 @@ function Focus({ match: m, tz }: { match: Match; tz: string }) {
 }
 
 function MatchListing({
-  match: m, tz, odds, incidents, featured = false,
+  match: m, tz, odds, incidents, featured = false, audience, geoCountry,
 }: {
   match: Match;
   tz: string;
   odds?: LiveOddsSummary;
   incidents?: LiveIncidentSnapshot;
   featured?: boolean;
+  audience?: BettingAudience|null;
+  geoCountry?: string|null;
 }) {
   const active = LIVE.has(m.status);
   return <div class={`match-row-container${featured ? " featured-live-match" : ""}`}>
@@ -557,6 +561,7 @@ function MatchListing({
     {active && <LiveIncidentStrip match={m} snapshot={incidents} />}
     {active && <LiveOddsMini fixtureId={m.id} home={m.home.name}
       away={m.away.name} entry={odds} />}
+    {active && <LiveBookmakers audience={audience||null} geoCountry={geoCountry}/>} 
   </div>;
 }
 
@@ -614,6 +619,15 @@ function FixturesView({
 }) {
   const [live, setLive] = useState(false),
     [page, setPage] = useState(0);
+  const [audience,setAudience] = useState<BettingAudience|null>(null);
+  useEffect(()=>{
+    const sync=()=>setAudience(readBettingAudience());
+    sync();
+    window.addEventListener("latente:betting-audience",sync);
+    return ()=>window.removeEventListener("latente:betting-audience",sync);
+  },[]);
+  const {result:visitor} = useApi<{country:string|null}>(
+    "/api/visitor/country",0);
   useEffect(() => {
     setPage(0);
   }, [day, league?.id, live]);
@@ -725,7 +739,8 @@ function FixturesView({
             <div class="match-group panel">
               {highlighted.map(m => <MatchListing key={m.id}
                 match={m} tz={tz} featured odds={oddsByFixture.get(m.id)}
-                incidents={incidentsByFixture.get(m.id)} />)}
+                incidents={incidentsByFixture.get(m.id)}
+                audience={audience} geoCountry={visitor?.data?.country} />)}
             </div>
           </section>}
           {sorted.map(([id, rows]) => (
@@ -748,7 +763,8 @@ function FixturesView({
                 .map(m => <MatchListing key={m.id}
                   match={m} tz={tz}
                   odds={oddsByFixture.get(m.id)}
-                  incidents={incidentsByFixture.get(m.id)} />)}
+                  incidents={incidentsByFixture.get(m.id)}
+                  audience={audience} geoCountry={visitor?.data?.country} />)}
             </article>
           ))}
           {(result?.meta.total || 0) > pageSize && (
