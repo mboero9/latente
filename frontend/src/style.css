@@ -3096,3 +3096,17 @@
     }
   }
 }
+
+
+/* Transparencia editorial accesible desde todas las páginas. */
+@layer components {
+  footer .footer-links { display: inline-flex; gap: 12px; flex-wrap: wrap; }
+  footer .footer-links a { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+  footer .footer-links a:hover { color: var(--green); }
+}
+@layer responsive {
+  @media (max-width: 800px) {
+    footer { flex-wrap: wrap; }
+    footer .footer-links { width: 100%; order: 3; }
+  }
+}
