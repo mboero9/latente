@@ -94,6 +94,7 @@ def test_additional_2026_urba_and_regional_leagues_have_official_sources(monkeyp
         "urba-primera-a", "urba-primera-b", "urba-primera-c",
         "urba-segunda", "urba-tercera", "urba-desarrollo",
         "litoral-top10", "litoral-segunda", "cordoba-top10", "cordoba-super9",
+        "noa-regional-a", "noa-regional-b", "tucumano-anual",
     }
     catalog = {row["slug"]: row for row in public_catalog()}
     for slug in slugs:
