@@ -27,6 +27,7 @@ import { BettingView } from "./betting-guide";
 import { LeagueRecent } from "./league-recent";
 import { WatchView } from "./watch-options";
 import { PromediosPage } from "./argentina-promedios";
+import { lowerLeagueCode, LowerLeaguePromedios } from "./lower-league-promedios";
 import { ArgentinaAnnual } from "./argentina-annual";
 import { ArgentinaAlltime } from "./reference-sports";
 import { FootballAnalytics } from "./football-analytics";
@@ -309,6 +310,7 @@ function LeagueTabs({ league, view }: { league: League; view: string }) {
         ["history", "Históricos"],
         ["analytics", "Estadísticas"],
         ...(league.id === 128 ? [["promedios", "Promedios"], ["annual", "Tabla anual"], ["alltime", "Tabla histórica"]] : []),
+        ...(lowerLeagueCode(league) ? [["promedios", "PTS/PJ · Promedios"]] : []),
       ].map(([key, label]) => (
         <a
           class={view === key ? "active" : ""}
@@ -1748,6 +1750,8 @@ function App() {
                   <HistoryPage league={league} />
                 ) : view === "promedios" && league.id === 128 ? (
                   <PromediosPage league={league} />
+                ) : view === "promedios" && lowerLeagueCode(league) ? (
+                  <LowerLeaguePromedios league={league} />
                 ) : view === "annual" && league.id === 128 ? (
                   <ArgentinaAnnual />
                 ) : view === "alltime" && league.id === 128 ? (
