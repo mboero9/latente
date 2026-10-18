@@ -48,3 +48,22 @@ def test_header_uses_spaced_pill_selection_and_compact_progress_control():
     assert "@media (prefers-reduced-motion: reduce)" in css
     assert 'onClick={() => shift(-1)}' in nav
     assert 'onClick={() => shift(1)}' in nav
+
+
+def test_copa_argentina_libertadores_sudamericana_only_in_home_shortcuts():
+    main=(ROOT/"frontend/src/main.tsx").read_text(encoding="utf-8")
+    header=main.split('<NavRail activePath={route}>',1)[1].split('</NavRail>',1)[0]
+    assert "LATENTE_PRIMARY_LEAGUES" not in header
+    assert '["/", "Partidos"]' in header
+    assert '["/leagues", "Ligas"]' in header
+    assert '["/tv", "📺 Dónde ver"]' in header
+    assert '["/bet", "18+ Dónde apostar"]' in header
+    assert '...[...sports].sort(' in header
+
+    # The homepage still displays real, functional shortcuts to all cups.
+    shortcuts=main.split('<nav class="argentina-conmebol-shortcuts"',1)[1].split('</nav>',1)[0]
+    assert "LATENTE_PRIMARY_LEAGUES.filter" in shortcuts
+    assert '/league/${item.id}' in shortcuts
+    for ident in (130,13,11):
+        assert f'{{id:{ident},label:' in main
+    assert "leaguePriority" in main
