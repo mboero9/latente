@@ -3891,3 +3891,20 @@
   .ascenso-promedios-quick-link > small {width:100%;line-height:1.45;}
  }
 }
+
+/* LAB editorial mark: responsive, never stretched on mobile. */
+@layer components {
+  .sport-landing .view-heading h1:has(.sport-competition-mark) {
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  }
+  .sport-competition-mark {
+    width:42px; height:42px; flex:0 0 42px; object-fit:contain;
+    border-radius:8px;
+  }
+}
+@layer responsive {
+  @media(max-width:560px) {
+    .sport-competition-mark { width:34px; height:34px; flex-basis:34px; }
+    .sport-landing .view-heading h1:has(.sport-competition-mark) { gap:8px; }
+  }
+}

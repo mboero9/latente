@@ -14,14 +14,45 @@ const allowed = new Set([
   "www.thesportsdb.com", "r2.thesportsdb.com", "thesportsdb.com",
 ]);
 
-/** Real provider image when available; initial crest is only a placeholder. */
+// The official URBA 2026 Top 14 file names are independently listed by
+// backend/app/rugby_clubs.py. This name lookup also covers tables whose provider
+// omits a logo or returns an unrelated numerical team_id.
+// Keep exact names (including known short forms), never fuzzy guesses.
+const URBA_CRESTS: Record<string,string> = {
+  "hindu":"hindu", "los tilos":"lostilos",
+  "la plata rugby club":"laplata", "la plata rc":"laplata",
+  "sic":"sic", "san isidro club":"sic",
+  "belgrano ac":"belgrano", "belgrano athletic":"belgrano",
+  "belgrano athletic club":"belgrano",
+  "casi":"casi", "club atletico san isidro":"casi",
+  "cuba":"cuba", "club universitario de buenos aires":"cuba",
+  "newman":"newman", "newman rc":"newman",
+  "alumni":"alumni", "alumni rc":"alumni",
+  "los matreros":"losmatreros", "los matreros rc":"losmatreros",
+  "b a c r c":"bacrc", "bacrc":"bacrc",
+  "buenos aires cricket rugby club":"bacrc",
+  "buenos aires cricket and rugby club":"bacrc",
+  "regatas bella vista":"regatasbellavista", "club regatas bella vista":"regatasbellavista",
+  "champagnat":"champagnat", "club champagnat":"champagnat",
+  "club atletico del rosario":"rosario", "atletico del rosario":"rosario",
+  "atletico rosario":"rosario",
+};
+function urbaLogo(name:string):string|undefined {
+  const normalized=name.normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  const file=URBA_CRESTS[normalized];
+  return file ? `https://api.urba.org.ar/img/clubs/${file}.png` : undefined;
+}
+
+/** Use an official logo when available; initials are only the final fallback. */
 export function TeamMark({name,logo,sport,teamId}:{
   name:string; logo?:string|null; sport?:string;
   teamId?:number|string|null;
 }) {
   const [bad,setBad]=useState(false);
-  let url: string|undefined;
-  if (logo) {
+  // Prefer the verified URBA club crest to opaque provider URLs/IDs.
+  let url: string|undefined = sport==="rugby" ? urbaLogo(name) : undefined;
+  if (!url && logo) {
     try {
       const parsed = new URL(logo);
       if (parsed.protocol === "https:" && allowed.has(parsed.hostname)) url=logo;

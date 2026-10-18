@@ -14,13 +14,16 @@ const SPORT_LOGOS: Record<string,{file:string;kind:"shield"|"wide"|"tall";label:
   mlb: {file:"Major League Baseball logo.svg",kind:"wide",label:"MLB"},
   wnba: {file:"WNBA logo.png",kind:"wide",label:"WNBA"},
   cricket: {file:"ICC logo (2026).svg",kind:"wide",label:"Consejo Internacional de Cricket"},
-  basketball: {file:"FIBA logo.svg",kind:"shield",label:"Federación Internacional de Básquet"},
   handball: {file:"Internationalen Handballföderation.png",kind:"shield",label:"Federación Internacional de Handball"},
   volleyball: {file:"Fédération Internationale de Volleyball logo.svg",kind:"wide",label:"Federación Internacional de Vóley"},
 };
 
 export function SportNavLogo({slug,fallback}:{slug:string;fallback:string}) {
   const [failed,setFailed]=useState(false);
+  // Local editorial LAB insignia: no FIBA logo for the Argentine league.
+  if (slug==="basketball") return <img
+    class="sport-nav-logo sport-nav-logo--shield" src="/lab-mark.svg" alt=""
+    title="Liga Argentina de Básquetbol" width="26" height="24" loading="lazy"/>;
   const item=SPORT_LOGOS[slug];
   if(!item||failed) return <span class="sport-nav-pictogram" aria-hidden="true">{fallback}</span>;
   // Wikimedia Special:FilePath is an explicitly verified filename lookup.

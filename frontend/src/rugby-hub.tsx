@@ -126,7 +126,7 @@ export function RugbyHub() {
         <h3>Rendimiento registrado · partidos disponibles (no es la tabla oficial)</h3>
         <div class="panel table-scroll"><table><thead><tr><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>A favor</th><th>En contra</th></tr></thead>
           <tbody>{data!.statistics!.map(row=><tr key={row.team}>
-            <th scope="row"><span class="sport-team-inline"><TeamMark name={row.team}/>{row.team}</span></th>
+            <th scope="row"><span class="sport-team-inline"><TeamMark name={row.team} sport="rugby"/>{row.team}</span></th>
             <td>{row.pj}</td><td>{row.g}</td><td>{row.e}</td><td>{row.p}</td>
             <td>{row.for}</td><td>{row.against}</td>
           </tr>)}</tbody>
@@ -155,9 +155,9 @@ export function RugbyHub() {
     </label>
     {games.length ? <div class="sports-games">{games.slice(0,shown).map(m=><article class="panel sport-game" key={m.id}>
       <small class="sport-game-league">{m.date ? new Date(m.date).toLocaleDateString("es-AR") : "—"} · {m.status}</small>
-      <div class="sport-game-teams"><strong class="sport-team"><TeamMark name={m.home} logo={m.home_logo}/>{m.home}</strong>
+      <div class="sport-game-teams"><strong class="sport-team"><TeamMark name={m.home} logo={m.home_logo} sport="rugby"/>{m.home}</strong>
         <span>{m.completed || /in progress|half.?time|live|playing/i.test(m.status) ? (m.home_score ?? "—") : "—"} : {m.completed || /in progress|half.?time|live|playing/i.test(m.status) ? (m.away_score ?? "—") : "—"}</span>
-        <strong class="sport-team sport-team-away"><TeamMark name={m.away} logo={m.away_logo}/>{m.away}</strong></div>
+        <strong class="sport-team sport-team-away"><TeamMark name={m.away} logo={m.away_logo} sport="rugby"/>{m.away}</strong></div>
     </article>)}</div> : <p class="coverage-notice">
       No hay partidos {tab === "past" ? "finalizados" : tab==="future" ? "programados" : "verificados"} disponibles con el filtro seleccionado.
     </p>}

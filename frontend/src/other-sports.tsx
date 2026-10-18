@@ -14,7 +14,7 @@ export const sports = [
   { slug: "mlb", name: "MLB · Béisbol", emoji: "⚾" },
   { slug: "nba", name: "NBA", emoji: "🏀" },
   { slug: "wnba", name: "WNBA", emoji: "🏀" },
-  { slug: "basketball", name: "Básquet", emoji: "🏀" },
+  { slug: "basketball", name: "Liga Argentina", emoji: "🏀" },
   { slug: "handball", name: "Handball", emoji: "🤾" },
   { slug: "volleyball", name: "Vóley", emoji: "🏐" },
   { slug: "f1", name: "Fórmula 1", emoji: "🏎️" },
@@ -100,8 +100,13 @@ export function SportPage({ slug }: { slug: string }) {
   if (["f1", "nba", "wnba", "mlb", "nhl", "nfl", "cricket"].includes(slug)) return <ReferenceSportPage slug={slug} />;
   return <section class="sport-landing">
     <div class="view-heading"><div><span class="eyebrow">LATENTE · DEPORTES</span>
-      <h1>{sport.emoji} {sport.name}</h1>
-      <p>Partidos, equipos y resultados recientes con información real del proveedor.</p></div></div>
+      <h1>{slug==="basketball"
+        ? <><img class="sport-competition-mark" src="/lab-mark.svg" width="42" height="42"
+            alt="" aria-hidden="true" />{sport.name}</>
+        : <>{sport.emoji} {sport.name}</>}</h1>
+      <p>{slug==="basketball"
+        ? "Liga Argentina de Básquetbol (LAB). Partidos y equipos con datos verificados; también podés consultar otras ligas desde los filtros."
+        : "Partidos, equipos y resultados recientes con información real del proveedor."}</p></div></div>
     {multiCountry && <SportCountryExplorer sport={slug} country={country}
       onCountry={setCountry} league={competition} onLeague={setCompetition}
       competitions={competitions} loading={catalogLoading} numberOfGames={filtered.length}/>}
