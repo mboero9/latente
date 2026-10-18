@@ -1568,8 +1568,6 @@ function App() {
             {[
               ["/", "Partidos"],
               ["/leagues", "Ligas"],
-              ...LATENTE_PRIMARY_LEAGUES.filter(item=>leagues.some(l=>l.id===item.id))
-                .map(item=>[`/league/${item.id}`,item.label]),
               [`/table/${first}`, "Posiciones"],
               [`/scorers/${first}`, "Goleadores"],
               ["/league/253", "🇺🇸 MLS"],
