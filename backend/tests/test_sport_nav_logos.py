@@ -14,12 +14,16 @@ def test_all_branded_leagues_include_confirmed_assets():
         "mlb":"Major League Baseball logo.svg",
         "wnba":"WNBA logo.png",
         "cricket":"ICC logo (2026).svg",
-        "basketball":"FIBA logo.svg",
         "handball":"Internationalen Handballföderation.png",
         "volleyball":"Fédération Internationale de Volleyball logo.svg",
     }
     for slug,file in mapping.items():
         assert f"{slug}: {{file:\"{file}\"" in nav
+    # Basketball now labels the Argentine LAB, not the international FIBA.
+    # Its independent editorial mark is served locally (not claimed as official).
+    assert 'if (slug==="basketball")' in nav
+    assert 'src="/lab-mark.svg"' in nav
+    assert "FIBA logo.svg" not in nav
     # Rugby is a sport, not one single league or trademark; its ball remains.
     assert "rugby:" not in nav
     assert "commons.wikimedia.org/wiki/Special:FilePath/" in nav
